@@ -4,7 +4,9 @@ description: Build, sign, send, and authenticate email as streams.
 
 # Email
 
-Each step of sending or receiving email is a separate package. The packages pass messages to each other as `ReadableStream<Uint8Array>`. [mail](/packages/mail), [mime-stream](/packages/mime-stream), and [smtp](/packages/smtp) never hold a whole attachment in memory, but DKIM signing has to read the whole message first.
+Each step of sending or receiving email is a separate package. They pass messages to each other as `ReadableStream<Uint8Array>`.
+
+[mail](/packages/mail), [mime-stream](/packages/mime-stream), and [smtp](/packages/smtp) never hold a whole attachment in memory. DKIM signing reads the whole message first.
 
 Sending:
 
@@ -63,4 +65,5 @@ await Smtp.send(
 );
 ```
 
-`Dkim.sign` must read the whole message before it returns, because the DKIM-Signature field goes before the message and contains a hash of the body. `tee` splits the stream in two. While `Dkim.sign` reads the first copy, `tee` queues the second in memory, and `Smtp.send` sends it after the signature field, so the whole message is held in memory once.
+`Dkim.sign` reads the whole message before it returns, because the DKIM-Signature field goes before the message and contains a hash of the body. While it reads the first copy from `tee`, the second copy is queued in memory, so the message is held in memory once. `Smtp.send` then sends the field followed by that copy.
+

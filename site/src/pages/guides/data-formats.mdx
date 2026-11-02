@@ -4,7 +4,7 @@ description: Read and write CSV, JSON Lines, and large JSON documents as streams
 
 # Text and data formats
 
-Each package has a `DecoderStream` that gives the same output however the input is split into chunks. You can pipe a `fetch` body into it directly.
+Each package has a `DecoderStream` that you can pipe a `fetch` body into. Its output doesn't depend on how the input is split into chunks.
 
 - [csv](/packages/csv) decodes and encodes CSV, with or without a header row.
 - [jsonl](/packages/jsonl) decodes and encodes JSON Lines.
@@ -31,4 +31,5 @@ export default {
 };
 ```
 
-The Worker converts each row as it arrives, so its memory use doesn't grow with the size of the file.
+The Worker converts each row as it arrives, so memory use doesn't grow with file size.
+

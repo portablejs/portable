@@ -21,9 +21,9 @@ for await (const event of Streams.toAsyncIterable(events)) {
 }
 ```
 
-`Streams.toAsyncIterable` from [@portable/streams](https://portablejs.com/packages/streams) iterates a stream in every runtime. Where the runtime iterates streams itself, `for await (const event of events)` also works.
+`Streams.toAsyncIterable` from [@portable/streams](https://portablejs.com/packages/streams) works in every runtime. Where streams are async iterable, `for await (const event of events)` also works.
 
-Keep a stream open the way `EventSource` does, with your own method, headers, and body:
+`connect` reconnects like `EventSource`, but with your own method, headers, and body:
 
 ```ts
 const events = Sse.connect(new Request('https://example.com/feed', { headers: { authorization } }), {
@@ -31,7 +31,7 @@ const events = Sse.connect(new Request('https://example.com/feed', { headers: { 
 });
 ```
 
-Write events from a server through a `TransformStream`, and send a keep-alive comment every 15 seconds:
+To write events from a server, pipe them through `EncoderStream`. This example sends a keep-alive comment every 15 seconds:
 
 ```ts
 const { readable, writable } = new TransformStream<Sse.Message, Sse.Message>();
@@ -44,64 +44,66 @@ return new Response(readable.pipeThrough(new Sse.EncoderStream()), {
 });
 ```
 
-Call `writer.write({ event: 'tick', data })` for each event. The writes reject once the client disconnects, so stop writing and clear the interval then.
+Call `writer.write({ event: 'tick', data })` for each event. Writes reject once the client disconnects, so stop then.
 
 ## API
 
 ### `Sse.Event`
 
-What the decoder and `connect` produce, with the same values `EventSource` gives a `MessageEvent`:
+What the decoder and `connect` produce. The values match what `EventSource` gives a `MessageEvent`.
 
 | Field | Type | Value |
 | --- | --- | --- |
 | `event` | `string` | The block's `event` field, or `'message'`. |
 | `data` | `string` | The block's `data` fields joined with `\n`. |
-| `id` | `string \| undefined` | The last event ID: the value of the most recent `id` field in the stream, or `undefined` if the stream hasn't sent one. |
-| `retry` | `number \| undefined` | A reconnection time from a `retry` field that arrived since the previous event. |
+| `id` | `string \| undefined` | The most recent `id` field in the stream, or `undefined` if there hasn't been one. |
+| `retry` | `number \| undefined` | A `retry` field received since the previous event. |
 
-A block without a `data` field is not an event, but its `id` and `retry` still apply.
+A block without `data` isn't an event, but its `id` and `retry` still apply.
 
 ### `new Sse.DecoderStream(options)` and `Sse.decode(input, options)`
 
-`DecoderStream` is a `TransformStream<Uint8Array | string, Sse.Event>`. `decode` reads a complete body, as a string or bytes, into an array. Both follow the [WHATWG event stream rules](https://html.spec.whatwg.org/multipage/server-sent-events.html#event-stream-interpretation): bytes are UTF-8; one leading BOM is skipped; CR, LF, and CRLF all end a line; comments and unknown fields are ignored; an `id` containing NUL is ignored; `retry` is read only when it is all ASCII digits; and an event without its closing blank line is dropped when the input ends.
+`DecoderStream` is a `TransformStream<Uint8Array | string, Sse.Event>`. `decode` reads a complete string or byte body into an array. Both follow the [WHATWG event stream rules](https://html.spec.whatwg.org/multipage/server-sent-events.html#event-stream-interpretation), and decode bytes as UTF-8. An event without its closing blank line is dropped at the end of input.
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `maxLength` | `Infinity` | Longest line, and longest `data` of one event, in UTF-16 code units. A longer one throws `Sse.MaxLengthError`, which stores `maxLength`. |
+| `maxLength` | `Infinity` | Longest line, and longest `data` of one event, in UTF-16 code units. Longer input throws `Sse.MaxLengthError`. |
 | `signal` | | `DecoderStream` only. Fails the stream with `signal.reason` and cancels its source. |
 
 ### `new Sse.EncoderStream(options)` and `Sse.encode(message)`
 
-`EncoderStream` is a `TransformStream<Sse.Message, Uint8Array>`. `encode` returns one message as a string. A message has optional `event`, `data`, `id`, `retry`, and `comment` fields, so a decoded `Sse.Event` can be written back.
+`EncoderStream` is a `TransformStream<Sse.Message, Uint8Array>`. `encode` returns one message as a string. A message has optional `event`, `data`, `id`, `retry`, and `comment` fields, so you can write a decoded `Sse.Event` back.
 
-- Fields are written in the order `event`, `data`, `id`, `retry`, followed by the blank line that dispatches the event. A comment comes first and has no blank line, so `{ comment: '' }` is a keep-alive.
-- `data` is split on CR, LF, and CRLF into `data` lines, so it arrives unchanged.
-- A CR or LF in `event` or `id`, a NUL in `id`, or a `retry` that is not a non-negative integer throws `Sse.InvalidInputError`.
+- A message with only a comment has no closing blank line, so `{ comment: '' }` works as a keep-alive.
+- Multi-line `data` is split into several `data` lines, so it arrives unchanged.
+- A CR or LF in `event` or `id`, a NUL in `id`, or a `retry` that isn't a non-negative integer throws `Sse.InvalidInputError`.
 - `EncoderStream` takes a `signal` option, as `DecoderStream` does.
 
 ### `Sse.connect(request, options)`
 
-Sends `request` (a `Request`, URL, or string) with `fetch` and returns a `ReadableStream<Sse.Event>` that reconnects like `EventSource`:
+Sends `request` (a `Request`, URL, or string) with `fetch` and returns a `ReadableStream<Sse.Event>` that reconnects like `EventSource`.
 
-- It adds `Accept: text/event-stream` unless the request has an `Accept` header.
-- A response other than 200, or one whose content type is not `text/event-stream`, fails the stream with `Sse.ResponseError`. The error's `response` is left unread so you can read the error body. A 204 closes the stream.
-- When a response ends or fails, it waits and sends the request again with `Last-Event-ID` set to the last event ID. An empty `id` field removes the header. Events continue in the same stream.
-- To resume from a stored ID, for example after a page reload, set `Last-Event-ID` on the request. `connect` sends it until the server sends a new `id`.
-- Cancelling the stream, or aborting `signal` or the request's own signal, aborts the request in flight and any wait.
+- It adds `Accept: text/event-stream` if the request has no `Accept` header.
+- A status other than 200, or a content type other than `text/event-stream`, fails the stream with `Sse.ResponseError`. Its `response` body is unread. A 204 closes the stream.
+- When a response ends or fails, `connect` waits and sends the request again with `Last-Event-ID`. An empty `id` field removes the header.
+- To resume from a stored ID, e.g. after a page reload, set `Last-Event-ID` on the request.
+- Cancelling the stream aborts the request and any wait. So does aborting `signal` or the request's own signal.
 
-Each attempt sends a clone of `request`, so a POST body is sent again on every reconnect. `connect` clones the request once when you call it, which leaves yours unread, and throws a `TypeError` if its body was already read. A `ReadableStream` body works too: the clone keeps a copy of it in memory for as long as the stream runs. Of the browsers, only Chrome can send a `ReadableStream` body, and only over HTTP/2 or HTTP/3. Firefox and Safari send the text `[object ReadableStream]` instead, so collect the stream first there with `body: await Streams.toBytes(stream)` from [@portable/streams](https://portablejs.com/packages/streams).
+Every reconnect sends the request body again. `connect` clones your request when you call it, and throws a `TypeError` if its body was already read.
+
+A `ReadableStream` body is kept in memory for as long as the stream runs. Firefox and Safari can't send one and send the text `[object ReadableStream]`, so pass `body: await Streams.toBytes(stream)` from [@portable/streams](https://portablejs.com/packages/streams) there.
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `attempts` | `Infinity` | How many attempts in a row, counting the first, may fail before `connect` stops reconnecting, as in `WebSockets.connect` and `Timers.retry`. An accepted response resets the count, and the end of its body counts as the first failure, so `attempts: 1` never reconnects. When the count is used up, the stream errors with the last error, or closes if the last response ended normally. A value below 1 throws a `RangeError`. |
-| `delay` | `{ initial: 1000, max: 30_000 }` | Wait before each reconnect: milliseconds, exponential backoff `{ initial, max, factor?, jitter? }` (full jitter by default), or `({ attempt, error }) => ms`. `attempt` counts reconnects since the last accepted response. A `retry` field from the server replaces it. It is `Timers.Delay` from [@portable/timers](https://portablejs.com/packages/timers), and an invalid one throws a `RangeError`. |
-| `fetch` | `globalThis.fetch` | Sends each `Request`. Pass a wrapper to change each request before it is sent, for example to set a fresh token. |
-| `idleTimeout` | `Infinity` | How long to wait, in ms, for the response headers and then for each chunk of the body. If no data arrives in that time, `connect` aborts the request and handles the attempt as a failed connection with a `TimeoutError` `DOMException`, so by default it reconnects. Keep-alive comment lines from the server also restart the wait. Set it a little above the server's keep-alive interval, so a stalled connection reconnects and a quiet but healthy one doesn't. `connect` throws a `RangeError` if the value isn't positive. |
+| `attempts` | `Infinity` | How many attempts in a row may fail before `connect` stops, counting the first. An accepted response resets the count, and the end of its body counts as a failure, so `attempts: 1` never reconnects. The stream then errors with the last error, or closes if the last response ended normally. Below 1 throws a `RangeError`. |
+| `delay` | `{ initial: 1000, max: 30_000 }` | Wait before each reconnect: milliseconds, `{ initial, max, factor?, jitter? }` for exponential backoff with full jitter, or `({ attempt, error }) => ms`. A `retry` field from the server replaces it. It is `Timers.Delay` from [@portable/timers](https://portablejs.com/packages/timers). An invalid value throws a `RangeError`. |
+| `fetch` | `globalThis.fetch` | Sends each `Request`. Pass a wrapper to change each request, e.g. to set a fresh token. |
+| `idleTimeout` | `Infinity` | Ms to wait for the response headers, then for each chunk of the body, including keep-alive comments. On timeout, the attempt fails with a `TimeoutError` `DOMException` and by default reconnects. Set it a little above the server's keep-alive interval. A value that isn't positive throws a `RangeError`. |
 | `maxLength` | `Infinity` | As in `DecoderStream`. |
-| `reconnectIf` | see below | `(error, { attempt }) => boolean \| Promise<boolean>`, called after each connection ends while `attempts` isn't used up. `error` is `undefined` when the response ended normally. Return `false` to stop reconnecting: the stream then closes if `error` is `undefined`, and errors with `error` otherwise. |
+| `reconnectIf` | see below | `(error, { attempt }) => boolean \| Promise<boolean>`, called after each connection ends while `attempts` isn't used up. `error` is `undefined` if the response ended normally. Return `false` to stop: the stream then closes, or errors with `error` if there is one. |
 | `signal` | | Fails the stream with `signal.reason`. |
 
-By default `connect` reconnects after every error except `ResponseError` and `MaxLengthError`, and after a response that ends normally. For a request you don't want repeated, such as an LLM completion, pass `reconnectIf: () => false`. To also retry a 5xx response:
+By default `connect` reconnects after a normal end and after every error except `ResponseError` and `MaxLengthError`. For a request you don't want repeated, such as an LLM completion, pass `reconnectIf: () => false`. To also retry a 5xx response:
 
 ```ts
 Sse.connect(request, {
@@ -120,14 +122,13 @@ Sse.connect(request, {
 
 ## Why use this over eventsource-parser, eventsource, and fetch-event-source
 
-eventsource-parser only reads. The eventsource polyfill and fetch-event-source only connect, through callbacks, and neither returns a stream you can pipe or cancel. better-sse and hono only write. This package does all three with web streams and no dependencies outside `@portable/*`.
+eventsource-parser only reads. The eventsource polyfill and fetch-event-source only connect, through callbacks, and return no stream you can pipe or cancel. better-sse and hono only write. This package does all three with web streams and no dependencies outside `@portable/*`.
 
-- On Node 24, `DecoderStream` decoded bytes 1.4× faster than `TextDecoderStream` piped into eventsource-parser's `EventSourceParserStream` on one LLM token event per chunk, 1.7× faster on 2 to 16 byte chunks, and 1.6× faster on a 1 MB line in 128-byte chunks, and ran at the same speed on 16 KB chunks. `connect` read a mocked response 1.5× faster than `fetch` with the same pair. The exception is `decode` on one complete string, which ran at about two thirds of the speed of eventsource-parser's `createParser().feed` on short events, and at the same speed on the 1 MB line. See `test/*.bench.ts`.
-- Events have the values that `EventSource` gives: `event` defaults to `'message'`, and `id` is the last event ID, so an `id` from a block without data isn't lost. eventsource-parser reports `id` only on the block that set it.
-- fetch-event-source dispatches a block without `data` as an empty message, accepts `text/event-streaming` as a content type, retries an HTTP error forever, and uses `window` and `document`, so it fails in Workers and Node. It also ignores a signal that is already aborted.
-- The eventsource polyfill can't send a body without a custom `fetch`. Its issue #326 reports events lost on mixed CRLF and LF line breaks, which [test/DecoderStream.conformance.ts](https://github.com/portablejs/portable/blob/main/packages/sse/test/DecoderStream.conformance.ts) covers.
-- better-sse writes multi-line `data` as one `data:` line, so every line after the first is lost, and strips trailing line breaks.
-- With `maxLength`, the result is the same however the input is chunked.
+- In Node 24, `DecoderStream` is 1.4× to 1.7× faster than eventsource-parser on small chunks and as fast on 16 KB chunks. `decode` on one complete string is slower, as the table below shows.
+- Events have the values `EventSource` gives: `event` defaults to `'message'`, and `id` is the last event ID. eventsource-parser reports `id` only on the block that set it.
+- fetch-event-source dispatches a block without `data` as an empty message, accepts `text/event-streaming`, retries an HTTP error forever, and ignores an already aborted signal. It uses `window` and `document`, so it fails in Workers and Node.
+- The eventsource polyfill can't send a body without a custom `fetch`, and loses events on mixed CRLF and LF line breaks (issue #326).
+- better-sse writes multi-line `data` as one `data:` line, so every line after the first is lost. It also strips trailing line breaks.
 
 [test/PARITY.md](https://github.com/portablejs/portable/blob/main/packages/sse/test/PARITY.md) maps every upstream test to ours and lists the upstream bugs this package handles differently.
 
@@ -178,10 +179,10 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-- eventsource-parser's `onComment` and `onError` callbacks have no equivalent. Comments and invalid lines are ignored, as `EventSource` ignores them.
-- An event without its closing blank line is dropped at the end of a stream, as `EventSource` does. Some servers omit the last blank line, and their last event is lost in both.
-- `connect` reconnects after a response that ends normally, like `EventSource`. fetch-event-source stops there instead. Pass `reconnectIf: () => false` for the same behavior.
-- `connect` doesn't close the stream while a browser tab is hidden. fetch-event-source closes it by default.
+- eventsource-parser's `onComment` and `onError` have no equivalent. Comments and invalid lines are ignored, as in `EventSource`.
+- An event without its closing blank line is dropped at the end of a stream, as in `EventSource`. Some servers omit it, which loses their last event.
+- `connect` reconnects after a response ends normally. fetch-event-source stops there. Pass `reconnectIf: () => false` to stop.
+- `connect` doesn't close the stream while a browser tab is hidden. fetch-event-source does by default.
 - `connect` doesn't set `cache: 'no-store'`, because Cloudflare Workers needs a compatibility flag for it. Set `cache` on the `Request` if you need it.
-- `data` is a string, so call `JSON.stringify` before writing an object. better-sse's `session.push` serializes the data itself.
+- `data` is a string, so call `JSON.stringify` on an object first. better-sse's `session.push` does this for you.
 - better-sse sends keep-alive comments itself. With `EncoderStream`, write `{ comment: '' }` on an interval.

@@ -1,8 +1,8 @@
 # @portable/json-stream
 
-Streams JSON in and out: values selected by JSONPath from one large document, and JSON text written from a tree of promises and streams. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Reads values by JSONPath from a large JSON stream, and writes JSON from a tree of promises and streams. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces [JSONStream](https://www.npmjs.com/package/JSONStream), [stream-json](https://www.npmjs.com/package/stream-json), [json-stream-stringify](https://www.npmjs.com/package/json-stream-stringify), and [@worker-tools/json-stream](https://www.npmjs.com/package/@worker-tools/json-stream). For NDJSON, which ndjson and stream-json's `jsonl` modules handle, use [@portable/jsonl](https://portablejs.com/packages/jsonl).
+Replaces [JSONStream](https://www.npmjs.com/package/JSONStream), [stream-json](https://www.npmjs.com/package/stream-json), [json-stream-stringify](https://www.npmjs.com/package/json-stream-stringify), and [@worker-tools/json-stream](https://www.npmjs.com/package/@worker-tools/json-stream). For NDJSON, use [@portable/jsonl](https://portablejs.com/packages/jsonl).
 
 ```sh
 npm install @portable/json-stream
@@ -23,19 +23,23 @@ for await (const { value } of Streams.toAsyncIterable(matches)) {
 
 ## `DecoderStream`
 
-A `TransformStream<Uint8Array | string, { path, value }>` that emits each value found at one of the given JSONPath expressions. Only matched values are built. The rest of the document is checked for syntax and dropped, so memory use depends on the size of a match, not of the document. `path` holds the keys and array indexes from the root to the value. The input may hold several top-level values separated by whitespace. `path` doesn't include which top-level value a match came from.
+A `TransformStream<Uint8Array | string, { path, value }>` that emits each value matching one of the JSONPath expressions. `path` holds the keys and array indexes from the root to the value.
+
+Only matched values are built, so memory use depends on the size of a match, not the document. The input may hold several top-level values separated by whitespace, and `path` doesn't say which one a match came from.
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `paths` | `['$']` | JSONPath expressions. Supported: `$`, `.name`, `['name']`, `[0]`, `.*`, `[*]`, and `..` before any of them. The constructor throws a `RangeError` for any other expression. A nested match is emitted before the value that contains it. The default `['$']` emits each top-level value whole, like `JSON.parse`, so pass a narrower path to keep memory low. |
-| `maxLength` | `Infinity` | Longest matched value, in UTF-16 code units of its JSON text. The stream buffers each matched value until the value ends, and fails with `MaxLengthError` as soon as a buffered value grows past the limit. Values outside `paths` are never buffered. |
+| `paths` | `['$']` | JSONPath expressions using `$`, `.name`, `['name']`, `[0]`, `.*`, `[*]`, and `..` before any of them. Throws a `RangeError` for any other expression. A nested match is emitted before its parent. The default emits each top-level value whole, so pass a narrower path to keep memory low. |
+| `maxLength` | `Infinity` | Longest matched value, in UTF-16 code units of its JSON text. A longer match fails the stream with `MaxLengthError` as soon as it passes the limit. Unmatched values don't count. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
-The stream fails with `InvalidInputError` on malformed JSON, with `TruncatedError` when the input ends inside a value, and with `MaxLengthError` when a matched value is longer than `maxLength`. The `MaxLengthError` stores the limit in `maxLength`. The `InvalidInputError` message gives the offset, in UTF-16 code units of the decoded text. A structural error inside a matched value is reported when that value ends. Empty input emits nothing and doesn't fail.
+The stream fails with `InvalidInputError` on malformed JSON, and with `TruncatedError` if the input ends inside a value. Empty input emits nothing.
 
 ## `encodeStream`
 
-Returns a `ReadableStream<Uint8Array>` with the UTF-8 JSON text of a value whose parts may still be loading. Promises are awaited, functions are called with no arguments, and `ReadableStream`s and async iterables are written as arrays. Sync iterables such as generators and `Set` are not expanded, so convert them with `Array.from` first. Output pauses at each unresolved value until the value is ready, so you can read the start of the document before the rest has loaded. Cancelling the output cancels nested streams and calls `return()` on nested iterators.
+Returns a `ReadableStream<Uint8Array>` of UTF-8 JSON text for a value whose parts may still be loading. The output starts before the slow parts are ready.
+
+Promises are awaited, functions are called with no arguments, and `ReadableStream`s and async iterables are written as arrays. Sync iterables, such as generators and `Set`, are not expanded, so convert them with `Array.from` first.
 
 ```ts
 const body = JsonStream.encodeStream({ user: getUser(id), posts: db.posts.cursor() });
@@ -44,24 +48,25 @@ return new Response(body, { headers: { 'content-type': 'application/json' } });
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `replacer` | none | As in `JSON.stringify`: a function or a list of keys. The function receives resolved values. |
+| `replacer` | none | As in `JSON.stringify`: a function, which receives resolved values, or a list of keys. |
 | `space` | none | As in `JSON.stringify`. |
 | `signal` | none | Aborting errors the output with `signal.reason` and cancels nested streams and iterators. |
 
-The text matches what `JSON.stringify` gives for the resolved tree. The stream is empty if the root resolves to `undefined` or a symbol, or is a function that returns `undefined`. If a promise rejects, a function throws, or a nested stream errors, the output fails with that error. The output fails with a `TypeError` on a circular structure or a `BigInt`.
+The text matches `JSON.stringify` of the resolved tree. The stream is empty if the root resolves to `undefined` or a symbol.
+
+If a promise rejects, a function throws, or a nested stream errors, the output fails with that error. A circular structure or a `BigInt` fails it with a `TypeError`.
 
 ## Why use this over JSONStream, stream-json, and json-stream-stringify
 
-Those libraries are Node streams. This package does the same jobs with a `TransformStream` and a `ReadableStream`, and has no dependencies outside `@portable/*`.
+Those libraries are Node streams. This package uses a `TransformStream` and a `ReadableStream`, so it runs in any runtime.
 
-- `DecoderStream` selected the rows of a 3 MB document about 2.3× faster than JSONStream. It builds only the matched values, so memory use depends on the size of a match. JSONStream keeps the parents of every match and runs out of memory on large files (JSONStream #32, #101).
-- `encodeStream` ran at the same speed as json-stream-stringify on a 3 MB object, and about 1.3× faster on rows from an async iterable.
-- Invalid JSON fails the stream. JSONStream ends quietly on `{"]` (JSONStream #145) and accepts a trailing comma, and stream-json can miss invalid JSON or hang (stream-json #104).
+- `DecoderStream` selects the rows of a 3 MB document about 2.3× faster than JSONStream. JSONStream keeps the parents of every match and runs out of memory on large files (JSONStream #32, #101).
+- `encodeStream` is as fast as json-stream-stringify on a 3 MB object, and about 1.3× faster on rows from an async iterable.
+- Invalid JSON fails the stream. JSONStream ends quietly on `{"]` (JSONStream #145) and accepts a trailing comma. stream-json can miss invalid JSON or hang (stream-json #104).
 - `null` matches are emitted. JSONStream drops them.
-- `encodeStream` writes valid JSON in cases where json-stream-stringify doesn't: a stream that isn't the first property (#47), an empty key (#28), and a replacer that drops the last key (#7).
-- JSONStream's `parse` emits each matched value, and `DecoderStream` emits `{ path, value }`, so read `.value`.
-- JSONStream's `parse` takes a function that maps each match. `DecoderStream` has no such argument, so pipe its output through another `TransformStream`.
-- json-stream-stringify and `JSON.stringify` drop functions in the tree, and `encodeStream` calls them and writes their return values.
+- `encodeStream` writes valid JSON where json-stream-stringify doesn't: a stream after the first property (#47), an empty key (#28), and a replacer that drops the last key (#7).
+- `DecoderStream` emits `{ path, value }`, not the bare value as JSONStream's `parse` does. It has no map function, so pipe its output through another `TransformStream`.
+- `encodeStream` calls functions in the tree and writes their return values. json-stream-stringify and `JSON.stringify` drop them.
 - json-stream-stringify's `cycle` option has no equivalent.
 
 <!-- bench:start -->

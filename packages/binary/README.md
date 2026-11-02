@@ -8,7 +8,7 @@ Replaces [smart-buffer](https://www.npmjs.com/package/smart-buffer), [varint](ht
 npm install @portable/binary
 ```
 
-This example reads and writes Minecraft packets, which are a VarInt length followed by a VarInt packet id and the packet's fields:
+This example reads and writes Minecraft packets, which are a VarInt length, a VarInt packet id, and the packet's fields:
 
 ```ts
 import * as Binary from '@portable/binary';
@@ -41,7 +41,9 @@ await frames.writable.getWriter().write(writer.toBytes());
 
 ## Reading
 
-`Binary.createReader(bytes, options)` returns a `Reader` that reads values one after another from a `Uint8Array`. Each read moves `reader.offset` past the value. A read that fails throws and leaves `offset` where it was, so you can catch a `Binary.TruncatedError` and read the value again once more bytes arrive. A reader's `length` is fixed, so join the bytes you have with the next chunk, create a new reader over them, and set `offset` to `error.offset`. The reader doesn't copy `bytes`.
+`Binary.createReader(bytes, options)` returns a `Reader` that reads values in order from a `Uint8Array` without copying it. Each read moves `reader.offset` past the value.
+
+A failed read throws and leaves `offset` unchanged. To retry after a `Binary.TruncatedError`, create a new reader over the bytes joined with the next chunk, and set `offset` to `error.offset`.
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -55,7 +57,7 @@ await frames.writable.getWriter().write(writer.toBytes());
 | `uint(byteLength)`, `int(byteLength)` | `number` | An integer of 1 to 6 bytes, such as the 24-bit lengths in TLS. |
 | `varint(options)` | `number` | A varint that fits in a safe integer. A larger one throws `Binary.InvalidInputError`. |
 | `bigVarint(options)` | `bigint` | A varint of up to 64 bits. |
-| `bytes(byteLength)` | `Uint8Array` | The next bytes, as a view of the reader's bytes. Copy them with `.slice()` to keep them after the input changes. |
+| `bytes(byteLength)` | `Uint8Array` | The next bytes, as a view of the reader's bytes. Use `.slice()` to keep them after the input changes. |
 | `string(byteLength, options)` | `string` | The next bytes, decoded as UTF-8. A leading byte order mark is kept. |
 | `cstring(options)` | `string` | UTF-8 up to the next zero byte. `offset` moves past the zero byte. |
 | `skip(byteLength)` | | Moves `offset` forward. |
@@ -72,15 +74,23 @@ await frames.writable.getWriter().write(writer.toBytes());
 | `'zigzag'` | 0, -1, 1, -2 stored as 0, 1, 2, 3 | protobuf `sint32` and `sint64` |
 | `'signed'` | SLEB128 | WebAssembly `i32` and `i64`, DWARF |
 
-Protobuf writes `int32` and `int64` values as the unsigned LEB128 of their two's complement, and Minecraft does the same for VarInt and VarLong. `'unsigned'` therefore reads a negative value as a large positive one. Convert the result with `reader.varint() | 0` for a Minecraft VarInt, and with `BigInt.asIntN(64, reader.bigVarint())` for a VarLong or a protobuf `int32` or `int64`. A negative protobuf `int32` takes 10 bytes, so it needs `bigVarint` too. To write a negative value, pass `value >>> 0` to `writer.varint` for a VarInt, or `BigInt.asUintN(64, value)` to `writer.bigVarint`.
+Protobuf `int32` and `int64`, and Minecraft VarInt and VarLong, store negative values as two's complement, so `'unsigned'` reads them as large positive numbers. Convert with `reader.varint() | 0` for a VarInt, and `BigInt.asIntN(64, reader.bigVarint())` for a VarLong or a protobuf `int32` or `int64`.
+
+A negative protobuf `int32` takes 10 bytes, so read it with `bigVarint`. To write a negative value, pass `value >>> 0` to `writer.varint` for a VarInt, or `BigInt.asUintN(64, value)` to `writer.bigVarint`.
 
 `string` and `cstring` take `fatal`, which defaults to `false`. With `fatal: true`, malformed UTF-8 throws `Binary.InvalidInputError` instead of decoding to U+FFFD.
 
 ## Writing
 
-`Binary.createWriter(options)` returns a `Writer` with a buffer that grows as you write. It takes the same `endian` option as `createReader`, and each read method has a write method of the same name that takes the value: `writer.uint16(value)`, `writer.uint(byteLength, value)`, `writer.varint(value, options)`, `writer.bytes(value)`, `writer.string(text)`, and `writer.cstring(text)`. `writer.toBytes()` returns a copy of the bytes written so far.
+`Binary.createWriter(options)` returns a `Writer` whose buffer grows as you write. It takes the same `endian` option as `createReader`. Each read method has a write method of the same name that takes the value, such as `writer.uint16(value)`, `writer.uint(byteLength, value)`, `writer.varint(value, options)`, `writer.bytes(value)`, `writer.string(text)`, and `writer.cstring(text)`. `writer.toBytes()` returns a copy of the bytes written so far.
 
-Each write method throws a `RangeError` for an integer that doesn't fit its type and writes nothing, as `Buffer.writeUInt8(256)` does. `DataView.setUint8(0, 256)` writes 0 instead. `float32` rounds to the nearest float32, as `DataView.setFloat32` does, so a value outside its range becomes `Infinity`. `varint` takes a safe integer, and with `encoding: 'zigzag'` one from -2^52 to 2^52 − 1. Use `bigVarint` for larger values. A write method throws a `TypeError` for a value of the wrong type, such as a number passed to `bigUint64`. `string` writes only the UTF-8 bytes, so write the length first with `Binary.utf8Length(text)`. `cstring` throws a `RangeError` for text that contains U+0000.
+A write method throws a `TypeError` for a value of the wrong type, such as a number passed to `bigUint64`. It throws a `RangeError` and writes nothing for an integer that doesn't fit its type (`DataView` would write the low bits instead).
+
+`float32` rounds to the nearest float32, as `DataView.setFloat32` does, so a value outside its range becomes `Infinity`.
+
+`varint` takes a safe integer, or with `encoding: 'zigzag'` one from -2^52 to 2^52 − 1. Use `bigVarint` for larger values.
+
+`string` writes only the UTF-8 bytes, so write the length first with `Binary.utf8Length(text)`. `cstring` throws a `RangeError` for text that contains U+0000.
 
 To fill in a length after writing what it counts, set `offset` back, write the length, and set `offset` to `length` to continue at the end:
 
@@ -97,24 +107,26 @@ writer.uint32(end - 4);
 writer.offset = writer.length;
 ```
 
-`length` counts up to the furthest byte any write reached, so writing at an earlier offset doesn't shorten the output.
+Writing at an earlier offset overwrites bytes and doesn't shorten the output.
 
 ## `Binary.utf8Length(text)`
 
-Returns the number of bytes in the UTF-8 encoding of `text` without encoding it. A lone surrogate counts as 3 bytes, because `TextEncoder` and `writer.string` write it as U+FFFD.
+Returns the length of `text` in UTF-8 bytes without encoding it. A lone surrogate counts as 3 bytes, because `TextEncoder` and `writer.string` write it as U+FFFD.
 
 ## Frames
 
-`Binary.FrameDecoderStream` is a `TransformStream<Uint8Array, Uint8Array>` that reads a length prefix and that many bytes, and emits the bytes without the prefix. A frame can arrive split across chunks, and one chunk can hold many frames. Each frame is a copy, so it stays valid after later chunks arrive. `Binary.FrameEncoderStream` does the reverse: for each chunk, it writes one output chunk with the length prefix followed by the chunk's bytes.
+`Binary.FrameDecoderStream` is a `TransformStream<Uint8Array, Uint8Array>` that reads a length prefix and emits that many bytes, without the prefix, as a copy. Frames can be split across chunks, and one chunk can hold many frames.
+
+`Binary.FrameEncoderStream` does the reverse: it writes each chunk as one output chunk with a length prefix.
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `prefix` | `'varint'` | `'uint8'`, `'uint16'`, `'uint32'`, or `'varint'`. The length counts only the frame's bytes, not the prefix. |
 | `endian` | `'big'` | Byte order of a `uint16` or `uint32` prefix. |
-| `maxBytes` | `Infinity` | `FrameDecoderStream` only. The largest frame, not counting the prefix. If a prefix gives a larger length, the stream errors with `Binary.MaxBytesError` as soon as it reads the prefix, before it buffers any of the frame. Set it when the input comes from outside the program. |
+| `maxBytes` | `Infinity` | `FrameDecoderStream` only. The largest frame, not counting the prefix. A larger length errors the stream with `Binary.MaxBytesError` before any of the frame is buffered. Set it for untrusted input. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
-`FrameDecoderStream` errors with `Binary.TruncatedError` if the input ends inside a frame or a prefix, and with `Binary.InvalidInputError` if a varint prefix is longer than 10 bytes or larger than `Number.MAX_SAFE_INTEGER`. `FrameEncoderStream` errors with `Binary.InvalidInputError` for a chunk too long for its prefix, such as 256 bytes with `prefix: 'uint8'`.
+`FrameDecoderStream` errors with `Binary.TruncatedError` if the input ends inside a frame or prefix, and with `Binary.InvalidInputError` if a varint prefix is longer than 10 bytes or above `Number.MAX_SAFE_INTEGER`. `FrameEncoderStream` errors with `Binary.InvalidInputError` for a chunk too long for its prefix, such as 256 bytes with `prefix: 'uint8'`.
 
 ## Errors
 
@@ -136,16 +148,15 @@ Returns the number of bytes in the UTF-8 encoding of `text` without encoding it.
 
 ## Why use this over smart-buffer, varint, and it-length-prefixed
 
-smart-buffer wraps a Node `Buffer`, so a browser or a Worker needs a `Buffer` polyfill to run it. varint and it-length-prefixed work everywhere, but it-length-prefixed reads iterables of `Uint8ArrayList` instead of streams and installs six other packages. @portable/binary uses only `Uint8Array`, `DataView`, `TextEncoder`, and Web Streams, and covers all three jobs.
+smart-buffer needs a `Buffer` polyfill outside Node. it-length-prefixed reads iterables of `Uint8ArrayList` instead of streams and installs six other packages. This package uses only web APIs and covers what all three do.
 
 - In Node, it wrote mixed records about 5 times as fast as smart-buffer and read them about 10 times as fast. It encoded and decoded unsigned varints slightly faster than @bufbuild/protobuf, and 18 to 38 times as fast as varint.
-- `FrameDecoderStream` split frames at about half the speed of it-length-prefixed, because each frame passes through a `TransformStream` queue, which costs more than an async generator's `yield`.
-- varint's `decode` throws the same `RangeError` for a truncated varint and for one longer than 8 bytes, and it returns rounded values from 2<sup>53</sup> to 2<sup>56</sup>: the bytes for 2<sup>53</sup> + 1 decode to 2<sup>53</sup>. `reader.varint()` throws `Binary.TruncatedError` for a truncated varint and `Binary.InvalidInputError` for one past the safe integer range, so it never returns a rounded value. Use `bigVarint` for 64-bit values.
-- `bigVarint` throws `Binary.InvalidInputError` for a 10-byte varint with bits above 64, where @bufbuild/protobuf keeps the low 64 bits.
-- smart-buffer's write methods take an optional offset that inserts at that position and shifts later bytes along. Here a write at an earlier `offset` overwrites the bytes there, so you can go back and fill in a length.
+- `FrameDecoderStream` split frames at about half the speed of it-length-prefixed, because a `TransformStream` costs more per frame than an async generator.
+- varint's `decode` throws the same `RangeError` for a truncated varint and an overlong one, and returns rounded values from 2<sup>53</sup> to 2<sup>56</sup>. `reader.varint()` throws `Binary.TruncatedError` or `Binary.InvalidInputError` instead, and never rounds.
+- `bigVarint` throws `Binary.InvalidInputError` for a 10-byte varint with bits above 64. @bufbuild/protobuf keeps the low 64 bits.
+- smart-buffer's write methods take an offset that inserts bytes. Here a write at an earlier `offset` overwrites bytes.
 - `string` keeps a leading byte order mark. `TextDecoder` and `Buffer.toString` remove it by default.
-- A Minecraft VarInt and a protobuf `int32` encode negative numbers differently. Read a Minecraft VarInt with `reader.varint() | 0` and write it with `writer.varint(value >>> 0)`. A negative protobuf `int32` is 10 bytes: write it with `writer.bigVarint(BigInt.asUintN(64, BigInt(value)))`.
-- `FrameDecoderStream` checks `maxBytes` as soon as it reads the length, so a peer can't make it buffer a large frame before the check. Its default is `Infinity`, while it-length-prefixed rejects frames over 4 MB by default, so set `maxBytes` when the input comes from the network.
+- `FrameDecoderStream` defaults `maxBytes` to `Infinity`, and it-length-prefixed rejects frames over 4 MB by default, so set `maxBytes` for network input.
 
 <!-- bench:start -->
 <table>

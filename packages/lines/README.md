@@ -19,18 +19,18 @@ for await (const line of Streams.toAsyncIterable(lines)) {
 }
 ```
 
-`Lines.DecoderStream` is a `TransformStream<Uint8Array | string, string>`. Each line is emitted without its separator. A last line without a separator is emitted too, and a separator at the very end of the input doesn't add an empty line: `'a\nb\n'` gives `'a'` and `'b'`.
+`Lines.DecoderStream` is a `TransformStream<Uint8Array | string, string>`. It emits each line without its separator. A separator at the end of the input doesn't add an empty line: `'a\nb\n'` gives `'a'` and `'b'`.
 
-Byte chunks are decoded with `TextDecoder`, so a multi-byte character split across chunks is decoded correctly. A CRLF split across chunks counts as one line break. Invalid bytes are replaced with U+FFFD, as `TextDecoder` does by default, and a leading byte order mark is removed.
+Byte chunks are decoded with `TextDecoder`, which replaces invalid bytes with U+FFFD and removes a leading byte order mark. A character or a CRLF split across chunks is read correctly.
 
 ## Options
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `separator` | `/\r?\n/` | A string, a `RegExp`, or any object with `[Symbol.split]`. With the default or a string, a line that spans many chunks is split in linear time. With any other separator, the unfinished line is split again for each chunk, so set `maxLength` when lines can be long. The default splits at LF and CRLF, not at a lone CR. Use a `RegExp` without capturing groups, because `split` emits each captured group as a line. |
-| `encoding` | `'utf-8'` | `TextDecoder` label for byte chunks. The constructor throws a `RangeError` for an unknown label. |
-| `maxLength` | `Infinity` | Longest allowed line, in UTF-16 code units, not counting the separator. The constructor throws a `RangeError` for a negative value. |
-| `overflow` | `'error'` | When a line exceeds `maxLength`: `'error'` fails the stream with `MaxLengthError`. `'skip'` drops the line, so the output has one line fewer. |
+| `separator` | `/\r?\n/` | A string, a `RegExp`, or any object with `[Symbol.split]`. The default splits at LF and CRLF, not at a lone CR. Any other `RegExp` or object re-splits the unfinished line on each chunk, so set `maxLength` if lines can be long. Don't use capturing groups, because `split` emits each group as a line. |
+| `encoding` | `'utf-8'` | `TextDecoder` label for byte chunks. Throws a `RangeError` for an unknown label. |
+| `maxLength` | `Infinity` | Longest allowed line, in UTF-16 code units, not counting the separator. Throws a `RangeError` if negative. |
+| `overflow` | `'error'` | When a line exceeds `maxLength`, `'error'` fails the stream with `Lines.MaxLengthError`, and `'skip'` drops the line. |
 | `skipEmpty` | `false` | Drop empty lines. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
@@ -42,14 +42,13 @@ Byte chunks are decoded with `TextDecoder`, so a multi-byte character split acro
 
 ## Why use this over split2 and byline
 
-split2 and byline are Node `Transform` streams. `Lines.DecoderStream` is a `TransformStream`, so it splits a `fetch` response body in any JavaScript runtime, and it has no dependencies outside `@portable/*`.
+split2 and byline are Node `Transform` streams. `Lines.DecoderStream` is a `TransformStream`, so it works on a `fetch` response body in any runtime.
 
-- It split 1.7 MB of text at the same speed as split2 in Node. `node:readline` was about 2× faster than both, but it exists only in Node.
-- `maxLength` is checked on every line. split2 checks only the unfinished line at the end of each chunk, so whether it catches a long line depends on how the input was chunked.
-- A multi-byte character or a CRLF split across two chunks is read as one character or one line break.
-- Empty lines are kept by default, as in split2. byline drops them unless you pass `keepEmptyLines`, and `skipEmpty: true` drops them here.
-- split2 takes a mapper function, such as `split2(JSON.parse)`. `Lines.DecoderStream` has no mapper, so pipe its output through another `TransformStream`.
-- byline splits on every Unicode line break by default. Pass `separator: /\r\n|[\n\v\f\r\x85\u2028\u2029]/` for the same result.
+- It is as fast as split2 in Node. `node:readline` is about 2× faster, but runs only in Node.
+- `maxLength` is checked on every line. split2 checks only the unfinished line at the end of each chunk, so it can miss a long line depending on how the input is chunked.
+- Empty lines are kept by default, as in split2. byline drops them unless you pass `keepEmptyLines`.
+- There is no mapper function like `split2(JSON.parse)`. Pipe the output through another `TransformStream` instead.
+- byline splits on every Unicode line break. Pass `separator: /\r\n|[\n\v\f\r\x85\u2028\u2029]/` for the same result.
 
 <!-- bench:start -->
 <table>

@@ -22,7 +22,7 @@ const response = await fetch('https://example.com/logo.png');
 const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 76 }));
 ```
 
-`encode` and `decode` call `Uint8Array.prototype.toBase64` and `Uint8Array.fromBase64` where the runtime has them (current Chromium, Firefox, and Safari). Elsewhere, Node 24 included, a JavaScript fallback gives the same output and throws on the same input. The browser tests check the two against each other.
+`encode` and `decode` use `Uint8Array.prototype.toBase64` and `Uint8Array.fromBase64` where the runtime has them (current Chromium, Firefox, and Safari). Elsewhere, including Node 24, a JavaScript fallback gives the same results.
 
 ## API
 
@@ -30,8 +30,8 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 | --- | --- |
 | `encode(input, options?)` | Encodes a `Uint8Array`, or a string as UTF-8, to a base64 string. |
 | `decode(input, options?)` | Decodes a base64 string, or its bytes, to a `Uint8Array`. |
-| `new EncoderStream(options?)` | `TransformStream<Uint8Array \| string, Uint8Array>` that emits the base64 text as ASCII bytes. However the input is split into chunks, the output equals `encode` of the whole input. |
-| `new DecoderStream(options?)` | `TransformStream<string \| Uint8Array, Uint8Array>`. Same output as `decode` of the whole input. Line breaks, padding, and groups of four characters can be split across chunks anywhere. |
+| `new EncoderStream(options?)` | `TransformStream<Uint8Array \| string, Uint8Array>` that emits base64 text as ASCII bytes. The output equals `encode` of the whole input, however it is chunked. |
+| `new DecoderStream(options?)` | `TransformStream<string \| Uint8Array, Uint8Array>`. The output equals `decode` of the whole input, however it is chunked. |
 | `InvalidInputError` | Thrown, or errors the stream, for a character outside the alphabet or misplaced padding. |
 | `TruncatedError` | Thrown, or errors the stream, when the input ends inside a group of four characters. |
 
@@ -43,7 +43,7 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 | --- | --- | --- |
 | `alphabet` | `'base64'` | `'base64'` uses `+` and `/`. `'base64url'` uses `-` and `_` (RFC 4648 §5). |
 | `omitPadding` | `false` | Leave out the trailing `=`. |
-| `lineLength` | `false` | Characters per line, or `false` for one line. MIME uses 76. The output never ends with a line ending. `encode` and `EncoderStream` throw a `RangeError` for any value other than a positive integer or `false`. |
+| `lineLength` | `false` | Characters per line, or `false` for one line. MIME uses 76. The output never ends with a line ending. Throws a `RangeError` unless it is a positive integer or `false`. |
 | `newline` | `'\r\n'` | Inserted between lines when `lineLength` is set. |
 | `signal` | none | `EncoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
@@ -65,7 +65,7 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 
 `'loose'` and `'strict'` match `Uint8Array.fromBase64` with `lastChunkHandling` set to the same name. `'strict'` also rejects non-zero bits before the padding (`'YR=='`). Both throw `TruncatedError` for one leftover character (`'YWJjZ'`) or a single `=` where two are needed (`'YQ='`).
 
-`'mime'` follows RFC 2045 §6.8, which tells decoders to ignore characters outside the alphabet, and libbase64, which decodes each `=`-terminated segment on its own. It reads both alphabets and never throws, so use it for mail bodies and other input you don't control. A single character left over at the end is dropped.
+`'mime'` reads both alphabets, skips characters outside them (RFC 2045 §6.8), and decodes each `=`-terminated segment on its own, as libbase64 does. It never throws, so use it for mail bodies and other untrusted input. It drops a single leftover character at the end.
 
 ## Types
 
@@ -76,19 +76,20 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 
 ## Why use this over base64-js, js-base64, libbase64, and undio
 
-One package does what the three did separately: base64 and base64url, MIME line wrapping, and streams. It calls the platform's `toBase64` and `fromBase64` where the runtime has them, and depends only on other `@portable/*` packages.
+This package covers base64, base64url, MIME line wrapping, and streams in one API, and uses the platform's `toBase64` and `fromBase64` where they exist.
 
-- In Node, which has no native base64 on `Uint8Array`, encoding 1 MB was about 8× faster than base64-js and 3× faster than js-base64. Decoding 1 MB was as fast as base64-js and about 11× faster than js-base64.
+- In Node, encoding 1 MB was about 8× faster than base64-js and 3× faster than js-base64. Decoding 1 MB was as fast as base64-js and about 11× faster than js-base64.
 - `EncoderStream` at 76 columns was about 1.3× slower than libbase64's `Encoder`, and `DecoderStream` was about 1.4× faster than its `Decoder`.
-- In Node, `Buffer` encodes and decodes 1 MB 11 to 21× faster than this package, and so do libbase64's plain `encode` and `decode`, which call `Buffer`. If your code runs only in Node and you need that speed, keep using `Buffer`.
+- In Node, `Buffer` (and libbase64's `encode` and `decode`, which call it) is 11 to 21× faster than this package on 1 MB. If your code runs only in Node and you need that speed, keep using `Buffer`.
 - The default mode throws `InvalidInputError` on characters outside the alphabet. base64-js drops them and returns wrong bytes (base64-js #81), and throws a `RangeError` on `'===='` (base64-js #73).
-- undio's `uint8ArrayToBase64` passes every byte to `String.fromCodePoint` as a separate argument, so on Node it throws `RangeError: Maximum call stack size exceeded` for input over about 150 KB. `encode` has no size limit. The benchmark table leaves undio out of the 1 MB encode row for this reason.
+- undio's `uint8ArrayToBase64` throws `RangeError: Maximum call stack size exceeded` on Node for input over about 150 KB, so the benchmark leaves it out of the 1 MB encode row. `encode` has no size limit.
 - undio's `uint8ArrayToBase64` returns a data URL such as `data:;base64,AQID` unless you pass `dataURL: false`. `encode` returns only the base64 text.
-- `encode` throws a `TypeError` for an `Int8Array`, which base64-js encoded to wrong output (base64-js #38). The stream output doesn't depend on chunk boundaries. libbase64's did before 1.3.2.
+- `encode` throws a `TypeError` for an `Int8Array`, which base64-js encoded wrongly (base64-js #38).
+- Stream output doesn't depend on chunk boundaries. libbase64's did before 1.3.2.
 
 ### Performance
 
-Node 24 has no native base64 on `Uint8Array`, so it runs the fallback. libbase64's `encode` and `decode` call `Buffer`, which is C++.
+Node 24 has no native base64 on `Uint8Array`, so these numbers are for the JavaScript fallback. libbase64's `encode` and `decode` call `Buffer`, which is C++.
 
 <!-- bench:start -->
 <table>
@@ -150,11 +151,11 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 Differences to check when you switch:
 
-- libbase64's `Encoder` wraps lines at 76 characters by default, and `encode` and `EncoderStream` write one line unless you pass `lineLength: 76`.
-- libbase64 rounds a fractional line length down and replaces any other invalid value with 76. `lineLength` must be a positive integer or `false`, and anything else throws `RangeError`.
-- libbase64 and js-base64 skip characters outside the alphabet and data after padding, and base64-js stops at the first `=`. The default `'loose'` mode throws `InvalidInputError` for both, and `'mime'` mode gives libbase64's result.
-- base64-js and js-base64 accept `+/` and `-_` mixed in one string. `decode` accepts only the alphabet that `alphabet` selects, except in `'mime'` mode.
-- js-base64's `decode` returns a string, and `decode` returns bytes, so pass them to `TextDecoder` to get the text.
+- libbase64's `Encoder` wraps lines at 76 characters by default. `encode` and `EncoderStream` write one line unless you pass `lineLength: 76`.
+- libbase64 rounds a fractional line length down and replaces other invalid values with 76. Here those throw a `RangeError`.
+- libbase64 and js-base64 skip characters outside the alphabet and data after padding, and base64-js stops at the first `=`. The default `'loose'` mode throws `InvalidInputError` for these, and `'mime'` mode matches libbase64.
+- base64-js and js-base64 accept `+/` and `-_` mixed in one string. `decode` accepts only the selected `alphabet`, except in `'mime'` mode.
+- js-base64's `decode` returns a string. `decode` returns bytes, so pass them to `TextDecoder` to get text.
 - libbase64's `decode` returns a `Buffer` argument unchanged. `decode` reads a `Uint8Array` as base64 text.
-- js-base64 encodes lone surrogates as they are. `encode` encodes strings with `TextEncoder`, which replaces a lone surrogate with U+FFFD.
-- libbase64's `Encoder` options `skipStartBytes`, `limitOutputBytes`, and `startPadding` and its byte counters have no equivalent in `EncoderStream`, and string chunks are always encoded as UTF-8.
+- js-base64 encodes lone surrogates as they are. `encode` uses `TextEncoder`, which replaces a lone surrogate with U+FFFD.
+- `EncoderStream` has no equivalent of libbase64's `skipStartBytes`, `limitOutputBytes`, `startPadding`, or byte counters, and always encodes string chunks as UTF-8.

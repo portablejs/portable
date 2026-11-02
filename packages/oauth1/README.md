@@ -23,9 +23,9 @@ const response = await fetch(
 );
 ```
 
-`OAuth1.sign(request, options)` returns a new `Request` with an `Authorization: OAuth …` header. Like `new Request(request)`, it uses up the body of the request you pass in. `OAuth1.authorization(request, options)` returns only the header value and leaves the request unchanged. Both are async.
+`OAuth1.sign(request, options)` resolves to a new `Request` with an `Authorization: OAuth …` header. Like `new Request(request)`, it uses up the original request's body.
 
-If your HTTP client, such as axios or got, doesn't take a `Request`, build a `Request` only to sign it, and pass the header value to the client:
+`OAuth1.authorization(request, options)` resolves to only the header value and leaves the request unchanged. Use it with HTTP clients that don't take a `Request`, such as axios or got:
 
 ```ts
 const header = await OAuth1.authorization(
@@ -34,19 +34,20 @@ const header = await OAuth1.authorization(
 );
 ```
 
-`sign` and `authorization` include a form body in the signature only when the `Request` has the content type `application/x-www-form-urlencoded`. `new Request` sets that content type for a `URLSearchParams` body.
+The package only signs requests. It can't verify a signature you receive.
 
-The package signs outgoing requests. It has no function to verify a signature you receive.
+The signature is computed from the `Request` itself, so it covers what the server sees:
 
-The signature covers what the server will see, because it is computed from the `Request` itself:
-
-- The method is upper-cased. The URL is normalized by the `URL` parser: scheme and host are lowercased, the default port is dropped, an empty path becomes `/` and the fragment is ignored.
-- Query parameters and `application/x-www-form-urlencoded` body parameters are decoded (`+` is a space) and re-encoded with RFC 3986 percent-encoding, so `!*'()` become `%21%2A%27%28%29`. Repeated names are all signed, sorted by name and then by value. Percent-encoded bytes that aren't UTF-8 are re-encoded unchanged.
-- JSON, multipart, and other bodies are not signed. Pass `bodyHash: true` to sign their hash as `oauth_body_hash`, as LTI 1.x and other providers require.
+- The method is upper-cased. The URL is normalized by the `URL` parser: scheme and host are lowercased, the default port is dropped, an empty path becomes `/`, and the fragment is ignored.
+- Query and form body parameters are decoded (`+` is a space) and re-encoded with RFC 3986 percent-encoding, so `!*'()` become `%21%2A%27%28%29`. Repeated names are all signed, sorted by name and then value. Percent-encoded bytes that aren't UTF-8 are kept as they are.
+- A form body is signed only when the content type is `application/x-www-form-urlencoded`, which `new Request` sets for a `URLSearchParams` body.
+- JSON, multipart, and other bodies are not signed. Pass `bodyHash: true` to sign their hash as `oauth_body_hash`, as LTI 1.x and some other providers require.
 
 ## Getting a token
 
-To get token credentials for a user, follow the three steps in [RFC 5849 section 2](https://www.rfc-editor.org/rfc/rfc5849#section-2). First, request temporary credentials: sign the request with `callback` and without `token`. The server responds with `oauth_token` and `oauth_token_secret` in a form-encoded body. Then redirect the user to the server's authorization URL with that `oauth_token`:
+Getting token credentials for a user takes three steps ([RFC 5849 section 2](https://www.rfc-editor.org/rfc/rfc5849#section-2)).
+
+First, request temporary credentials by signing with `callback` and no `token`. Then redirect the user to the server's authorization URL with the returned `oauth_token`:
 
 ```ts
 import * as OAuth1 from '@portable/oauth1';
@@ -65,9 +66,9 @@ authorize.searchParams.set('oauth_token', temporary.get('oauth_token')!);
 const redirect = Response.redirect(authorize, 302);
 ```
 
-Store the temporary `secret` until the user comes back, for example in the session. If you can't receive a callback, pass `callback: 'oob'`, and the server shows the verifier to the user instead.
+Keep the temporary `secret` until the user comes back, e.g. in the session. If you can't receive a callback, pass `callback: 'oob'`, and the server shows the verifier to the user instead.
 
-When the user approves, the server redirects to `callback` with `oauth_token` and `oauth_verifier` in the query. Last, sign a request to the token URL with the temporary credentials as `token` and the `verifier`. The response holds the token credentials, which you pass as `token` to sign API requests:
+When the user approves, the server redirects to `callback` with `oauth_token` and `oauth_verifier` in the query. Sign a request to the token URL with the temporary credentials as `token` and the `verifier`. The response holds the token credentials to pass as `token` from then on:
 
 ```ts
 const query = new URL(request.url).searchParams;
@@ -89,21 +90,23 @@ const token = { key: credentials.get('oauth_token')!, secret: credentials.get('o
 | `consumer` | required | `{ key, secret }`, or `{ key, privateKey }` for RSA-SHA1. |
 | `token` | none | `{ key, secret }` token credentials. Leave it out when requesting temporary credentials. |
 | `signatureMethod` | `'HMAC-SHA1'` | `'HMAC-SHA1'`, `'HMAC-SHA256'`, `'RSA-SHA1'`, or `'PLAINTEXT'`. |
-| `realm` | none | Sent as the first header parameter. It is not signed. |
+| `realm` | none | Sent as the first header parameter. Not signed. |
 | `callback` | none | `oauth_callback`, for the temporary credentials request. |
 | `verifier` | none | `oauth_verifier`, for the token request. |
-| `bodyHash` | `false` | Add `oauth_body_hash`: the base64 SHA-1 of the body, or SHA-256 with HMAC-SHA256. Form bodies never get one, because their parameters are signed. |
-| `nonce`, `now` | random, `new Date()` | Fix `oauth_nonce` and `oauth_timestamp` in tests. `now` is a `Date` or a `Temporal.Instant`, sent in whole seconds. The default nonce is 32 hex digits from `crypto.getRandomValues`. |
-| `signal` | none | Aborting rejects with `signal.reason`, and cancels a request body that is still being read. Firefox has no `Request.prototype.body`, so there the body is read whole and isn't cancelled. |
-| `placement` | `'header'` | `sign()` only. `'query'` appends the protocol parameters to the URL instead of setting `Authorization`. `realm` isn't sent with `'query'`. |
+| `bodyHash` | `false` | Add `oauth_body_hash`: the base64 SHA-1 of the body, or SHA-256 with HMAC-SHA256. Never added for form bodies, whose parameters are signed. |
+| `nonce`, `now` | random, `new Date()` | Set `oauth_nonce` and `oauth_timestamp`, e.g. in tests. `now` is a `Date` or a `Temporal.Instant`, sent in whole seconds. The default nonce is 32 hex digits from `crypto.getRandomValues`. |
+| `signal` | none | Aborting rejects with `signal.reason` and cancels a body still being read. In Firefox, which has no `Request.prototype.body`, the body is read whole and isn't cancelled. |
+| `placement` | `'header'` | `sign()` only. `'query'` appends the protocol parameters to the URL instead of setting `Authorization`, and doesn't send `realm`. |
 | `hmac` | `crypto.subtle` HMAC | `(algorithm: 'SHA-1' \| 'SHA-256', key, data) => Uint8Array \| Promise<Uint8Array>`, used for HMAC-SHA1 and HMAC-SHA256. |
 | `digest` | `crypto.subtle.digest` | `(algorithm: 'SHA-1' \| 'SHA-256', data: Uint8Array) => Uint8Array \| Promise<Uint8Array>`, used for `oauth_body_hash`. |
 
-`sign` and `authorization` reject with a `RangeError` for an RSA key that can't be used or an invalid `now`, and with `UnsupportedError` for another signature method. Both check `now` and the signature method before they read the body.
+`sign` and `authorization` reject with a `RangeError` for an unusable RSA key or an invalid `now`, and with `UnsupportedError` for an unknown signature method. Both check `now` and the signature method before reading the body.
 
 ### RSA-SHA1
 
-`privateKey` is a `CryptoKey` for `RSASSA-PKCS1-v1_5` with SHA-1, or a PEM string. Both `-----BEGIN PRIVATE KEY-----` (PKCS #8) and `-----BEGIN RSA PRIVATE KEY-----` (PKCS #1, as OpenSSL writes it) are accepted. A PEM string is imported on every call, so import a `CryptoKey` once with `WebCrypto.importPem` from [@portable/web-crypto](https://portablejs.com/packages/web-crypto) when you sign often:
+`privateKey` is a `CryptoKey` for `RSASSA-PKCS1-v1_5` with SHA-1, or a PEM string in PKCS #8 (`-----BEGIN PRIVATE KEY-----`) or PKCS #1 (`-----BEGIN RSA PRIVATE KEY-----`, as OpenSSL writes it).
+
+A PEM string is imported on every call. If you sign often, import a `CryptoKey` once with `WebCrypto.importPem` from [@portable/web-crypto](https://portablejs.com/packages/web-crypto):
 
 ```ts
 const privateKey = await WebCrypto.importPem({ name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-1' }, pem);
@@ -112,9 +115,9 @@ await OAuth1.sign(request, { signatureMethod: 'RSA-SHA1', consumer: { key, priva
 
 ## Crypto
 
-HMAC uses `crypto.subtle` HMAC and `oauth_body_hash` uses `crypto.subtle.digest` by default, so the package has no dependency for them. RSA-SHA1 uses `crypto.subtle.sign`.
+By default, HMAC and `oauth_body_hash` use `crypto.subtle`, and so does RSA-SHA1.
 
-On Node, WebCrypto HMAC is several times slower than @noble/hashes. To sign many requests on Node, install @noble/hashes and pass it as `hmac`, and as `digest` if you use `bodyHash`:
+In Node, WebCrypto HMAC is several times slower than @noble/hashes. To sign many requests in Node, pass @noble/hashes as `hmac`, and as `digest` if you use `bodyHash`:
 
 ```ts
 import { hmac as nobleHmac } from '@noble/hashes/hmac.js';
@@ -134,25 +137,25 @@ await OAuth1.sign(request, { consumer, token, hmac });
 | `OAuth1.SignatureMethod` | `'HMAC-SHA1' \| 'HMAC-SHA256' \| 'RSA-SHA1' \| 'PLAINTEXT'`. |
 | `OAuth1.Credentials` | The `consumer` and `signatureMethod` options. |
 | `OAuth1.Token` | `{ key, secret? }`, the `token` option. |
-| `OAuth1.Hmac` | The `hmac` option: `(algorithm, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from [@portable/web-crypto](https://portablejs.com/packages/web-crypto). `OAuth1` passes only `'SHA-1'` and `'SHA-256'`. |
-| `OAuth1.Digest` | The `digest` option: `(algorithm, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from [@portable/web-crypto](https://portablejs.com/packages/web-crypto). `OAuth1` passes only `'SHA-1'` and `'SHA-256'`. |
+| `OAuth1.Hmac` | The `hmac` option: `(algorithm, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from [@portable/web-crypto](https://portablejs.com/packages/web-crypto). Called only with `'SHA-1'` or `'SHA-256'`. |
+| `OAuth1.Digest` | The `digest` option: `(algorithm, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from [@portable/web-crypto](https://portablejs.com/packages/web-crypto). Called only with `'SHA-1'` or `'SHA-256'`. |
 
 ## Why use this over oauth-1.0a and node-oauth
 
-Both libraries sign some requests wrongly, and the server then rejects the signature. This package computes the signature from the `Request` you send, with WebCrypto, in any JavaScript runtime.
+Both libraries sign some requests wrongly, so the server rejects them. This package signs the `Request` you send, with WebCrypto, in any JavaScript runtime.
 
-- A `+` in the query and a default port such as `:443` are signed as RFC 5849 requires. oauth-1.0a signs them wrongly ([#24](https://github.com/ddo/oauth-1.0a/issues/24), [#59](https://github.com/ddo/oauth-1.0a/issues/59)).
-- Repeated query names and a form body passed as a string are signed. node-oauth signs `a[0]` and `a[1]` ([#375](https://github.com/ciaranj/node-oauth/issues/375)) and leaves the string body out ([#366](https://github.com/ciaranj/node-oauth/issues/366)).
+- A `+` in the query and a default port such as `:443` are signed as RFC 5849 requires. oauth-1.0a gets both wrong ([#24](https://github.com/ddo/oauth-1.0a/issues/24), [#59](https://github.com/ddo/oauth-1.0a/issues/59)).
+- Repeated query names and a string form body are signed. node-oauth signs `a[0]` and `a[1]` ([#375](https://github.com/ciaranj/node-oauth/issues/375)) and leaves the string body out ([#366](https://github.com/ciaranj/node-oauth/issues/366)).
 - A JSON body is not signed as parameters ([oauth-1.0a #60](https://github.com/ddo/oauth-1.0a/issues/60)). `bodyHash: true` signs its hash instead.
-- RSA-SHA1 takes a PKCS #1 key as OpenSSL writes it. oauth-1.0a percent-encodes the key before signing ([#109](https://github.com/ddo/oauth-1.0a/issues/109)).
-- The nonce comes from `crypto.getRandomValues`. oauth-1.0a's comes from `Math.random`.
-- An escaped name in the query, an uppercase host, and a name in both the query and the body are signed correctly. oauth-1.0a signs the first two wrongly and keeps only one value of the third. [PARITY.md](https://github.com/portablejs/portable/blob/main/packages/oauth1/test/PARITY.md) lists each case with its test.
-- The default signature method is HMAC-SHA1, where oauth-1.0a defaults to PLAINTEXT.
-- `oauth_version` is always `1.0`, and the signing key always ends in `&` when there is no token secret, as RFC 5849 requires. oauth-1.0a's `version` and `last_ampersand` options and node-oauth's `1.0A` version string are not supported.
-- The header separator is always `", "` and the nonce is always 32 hex digits, so oauth-1.0a's `parameter_seperator` and `nonce_length` options have no equivalent.
-- If you overrode oauth-1.0a's `getTimeStamp`, which returns seconds, pass `now: new Date(seconds * 1000)` instead, because `now` takes a `Date` or a `Temporal.Instant`.
-- oauth-1.0a can put the protocol parameters in a form body. This package puts them only in the `Authorization` header, or in the URL with `placement: 'query'`.
-- The package has no HTTP client. On a same-origin redirect, `fetch` sends the same `Authorization` header, whose signature covers the old URL, and on a cross-origin redirect it drops the header. node-oauth signs the request again for the new URL. To do the same, pass `redirect: 'manual'` and sign a new request for the `Location`.
+- RSA-SHA1 accepts a PKCS #1 key. oauth-1.0a percent-encodes the key before signing ([#109](https://github.com/ddo/oauth-1.0a/issues/109)).
+- The nonce comes from `crypto.getRandomValues`, not `Math.random`.
+- An escaped query name and an uppercase host are signed correctly, and a name in both the query and the body keeps both values. oauth-1.0a gets all three wrong. [PARITY.md](https://github.com/portablejs/portable/blob/main/packages/oauth1/test/PARITY.md) lists each case with its test.
+- The default signature method is HMAC-SHA1. oauth-1.0a defaults to PLAINTEXT.
+- `oauth_version` is always `1.0`, and the signing key always ends in `&` when there is no token secret (RFC 5849). oauth-1.0a's `version` and `last_ampersand` options and node-oauth's `1.0A` version string are not supported.
+- The header separator is always `", "` and the nonce is always 32 hex digits. oauth-1.0a's `parameter_seperator` and `nonce_length` options have no equivalent.
+- Instead of overriding oauth-1.0a's `getTimeStamp`, which returns seconds, pass `now: new Date(seconds * 1000)`.
+- Protocol parameters go only in the `Authorization` header, or in the URL with `placement: 'query'`. oauth-1.0a can also put them in a form body.
+- The package has no HTTP client. On a same-origin redirect, `fetch` resends the `Authorization` header, signed for the old URL, and on a cross-origin redirect it drops it. node-oauth signs again for the new URL. To do the same, pass `redirect: 'manual'` and sign a new request for the `Location`.
 
 ### Performance
 

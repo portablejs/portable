@@ -4,9 +4,10 @@ description: Sign, verify, and hash with crypto.subtle in browsers, Cloudflare W
 
 # Crypto and auth
 
-These packages call `crypto.subtle` for every hash, signature, key derivation, and cipher. The same code signs and verifies in browsers, Cloudflare Workers, Node, Bun, and Deno.
+These packages use `crypto.subtle` for hashing, signing, key derivation, and encryption, so they run in browsers, Cloudflare Workers, Node, Bun, and Deno.
 
-- [web-crypto](/packages/web-crypto) wraps `digest`, `hmac`, and `hkdf` as bytes-in, bytes-out functions, and builds Ed25519 and X25519 keys from 32-byte seeds.
+- [web-crypto](/packages/web-crypto) wraps `digest`, `hmac`, and `hkdf` as functions that take and return bytes, and builds
+ Ed25519 and X25519 keys from 32-byte seeds.
 - [password](/packages/password) hashes and verifies passwords with PBKDF2.
 - [webhooks](/packages/webhooks) verifies and signs webhooks from Stripe, GitHub, Slack, and Standard Webhooks senders.
 - [oauth1](/packages/oauth1) signs OAuth 1.0a requests.

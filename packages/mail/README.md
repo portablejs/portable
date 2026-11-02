@@ -1,6 +1,6 @@
 # @portable/mail
 
-Builds a raw RFC 5322 email message, with text and HTML alternatives, attachments, inline images, and custom headers, as a `ReadableStream<Uint8Array>`. It doesn't send mail: pass the result to an SMTP client or to an email API that takes raw MIME, or write it to an `.eml` file. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Builds a raw email message, with text and HTML bodies, attachments, inline images, and custom headers, as a `ReadableStream<Uint8Array>`. Pass it to an SMTP client or an email API that takes raw MIME, or write it to an `.eml` file. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces nodemailer's `MailComposer` (`nodemailer/lib/mail-composer`) and the `MimeNode` it builds on.
 
@@ -29,48 +29,50 @@ const { from, to } = Mail.envelope(message); // for MAIL FROM and RCPT TO
 await fetch('https://api.example.com/send-raw', { method: 'POST', body: raw, duplex: 'half' });
 ```
 
-The report is read from the network while you read the message, so a large attachment is never held in memory. Cancelling `raw` cancels the response body.
+Attachments are read only as you read the message, so a large attachment is never held in memory. Cancelling `raw` cancels the response body.
 
 ## API
 
 | Export | Description |
 | --- | --- |
-| `encodeStream(message, options?)` | Returns the message as a `ReadableStream<Uint8Array>` with CRLF line breaks. If the message can't be written, `encodeStream` throws `InvalidInputError`, `TypeError`, or `RangeError` when it is called, before it reads any content. |
-| `envelope(message)` | Returns `{ from, to }`: the first `From` address (else `Sender`) and every `To`, `Cc`, and `Bcc` address once, with group members in place of groups. Throws `InvalidInputError` if the message has neither a `From` nor a `Sender` address. The result has the fields `Smtp.send` takes for the envelope. |
-| `InvalidInputError` | Thrown for an address, header name, content type, file name, or `Date` that can't be written, and for a name in `headers` of a field that `encodeStream` writes itself, such as `From`. |
+| `encodeStream(message, options?)` | Returns the message as a `ReadableStream<Uint8Array>` with CRLF line breaks. Throws `InvalidInputError`, `TypeError`, or `RangeError` for an invalid message before it reads any content. |
+| `envelope(message)` | Returns `{ from, to }` for `Smtp.send`: the first `From` address (else `Sender`), and every `To`, `Cc`, and `Bcc` address once. Throws `InvalidInputError` if there is no `From` or `Sender`. |
+| `InvalidInputError` | Thrown for an address, header, content type, file name, or `Date` that can't be written. |
 | `Message`, `Attachment`, `Part`, `Content`, `Addresses`, `Mailbox`, `HeaderFields`, `TransferEncoding`, `Envelope`, `Instant` | Types. |
 
 ### Message
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `from`, `sender`, `to`, `cc`, `replyTo` | `Addresses` | An address list as text (`'Mari <mari@example.com>, b@example.com'`), a `{ name?, address }`, or a list of either. Groups are allowed in text. |
+| `from`, `sender`, `to`, `cc`, `replyTo` | `Addresses` | An address list as text (`'Mari <mari@example.com>, b@example.com'`, groups allowed), a `{ name?, address }`, or a list of either. |
 | `bcc` | `Addresses` | Read by `envelope`. `encodeStream` writes the header only with `keepBcc`. |
 | `subject` | `string` | Encoded as RFC 2047 words when it isn't printable ASCII. |
-| `messageId`, `inReplyTo` | `string` | Angle brackets are added if missing. The default Message-ID is a random ID at the `From` domain, or at `localhost` if there is no `From`. |
+| `messageId`, `inReplyTo` | `string` | Angle brackets are added if missing. The default Message-ID is random, at the `From` domain or `localhost`. |
 | `references` | `string \| string[]` | Message IDs separated by whitespace. |
-| `date` | `Date \| Instant \| string` | Defaults to now. A `Date`, a `Temporal.Instant`, or a `Temporal.ZonedDateTime` is written in UTC, as `Tue, 2 Jan 2024 03:04:05 +0000`. A string is written as given. |
-| `text`, `amp`, `html` | `Content` | The bodies, written as `multipart/alternative` in that order. An empty string counts as no body. If there is no body, `encodeStream` writes an empty `text/plain` body. |
-| `alternatives` | `Part[]` | More alternatives after the HTML, each `{ content, contentType, headers?, transferEncoding? }`. `encodeStream` writes a string `content` as UTF-8 regardless of `charset`, so include `charset=utf-8` in a text `contentType`. |
+| `date` | `Date \| Instant \| string` | Defaults to now. An instant is written in UTC, as `Tue, 2 Jan 2024 03:04:05 +0000`. A string is written as given. |
+| `text`, `amp`, `html` | `Content` | The bodies, written as `multipart/alternative` in that order. An empty string counts as no body. With no body, an empty `text/plain` body is written. |
+| `alternatives` | `Part[]` | More alternatives after the HTML, each `{ content, contentType, headers?, transferEncoding? }`. A string `content` is always UTF-8, so include `charset=utf-8` in a text `contentType`. |
 | `attachments` | `Attachment[]` | Each `{ content, filename?, contentType?, cid?, disposition?, headers?, transferEncoding? }`. |
-| `headers` | `HeaderFields` | Extra header fields, written first, in order. A list value is written as one field per value. These headers, and the `headers` of a `Part` or `Attachment`, can't include a field that `encodeStream` writes itself, such as `From`, `Subject`, `Message-ID`, `Date`, or `Content-Type`. `encodeStream` throws `InvalidInputError` for such a name. Line breaks in a value become spaces, and non-ASCII text is written as encoded words. |
+| `headers` | `HeaderFields` | Extra header fields, written first, in order. A list value is written as one field per value. Throws `InvalidInputError` for a field `encodeStream` writes itself, such as `From`, `Date`, or `Content-Type`. The same applies to the `headers` of a `Part` or `Attachment`. Line breaks in a value become spaces, and non-ASCII text is written as encoded words. |
 
 `Content` is a `string`, `Uint8Array`, `Blob` (including `File`), or `ReadableStream<Uint8Array>`. An attachment takes its file name from a `File` and its content type from a `Blob`.
 
-If the message has an HTML body, attachments with a `cid` go into `multipart/related` beside it. Other attachments go into `multipart/mixed`, and so do attachments with a `cid` if there is no HTML body. An image with a `cid` defaults to `Content-Disposition: inline`, everything else to `attachment`.
+Attachments with a `cid` go into `multipart/related` beside the HTML body. Other attachments, and all attachments if there is no HTML body, go into `multipart/mixed`. An image with a `cid` is `inline` by default, and everything else is `attachment`.
 
-Text bodies are `7bit` when every line is ASCII and at most 76 characters, otherwise `quoted-printable` for mostly Latin text and `base64` for the rest. `encodeStream` can't scan a body from a stream or `Blob` before writing it, so it writes that body as `quoted-printable`. Attachments are `base64`, except `message/*`, which is `8bit`. Line breaks in `7bit`, `8bit`, and text `quoted-printable` bodies become CRLF.
+Text bodies are `7bit` if every line is ASCII and at most 76 characters. Otherwise they are `quoted-printable` for mostly Latin text and `base64` for the rest. A body from a stream or `Blob` can't be scanned first, so it is `quoted-printable`.
+
+Attachments are `base64`, except `message/*`, which is `8bit`. Line breaks in `7bit`, `8bit`, and text `quoted-printable` bodies become CRLF.
 
 ### Options
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `boundary` | `'=_'`, 16 random hex digits, `'_'` | The start of every multipart boundary. Each boundary is this value followed by the position of its multipart among all parts, leaves included, counted from 1 in the order the parts are written. It can have up to 60 characters from RFC 2046's `bchars`, and `encodeStream` throws `RangeError` for any other value. |
-| `charset` | UTF-8 | A `CharsetEncoder` (`{ name, encode(text) }`) for encoded words and for `text`, `amp`, and `html` given as strings, for mail that has to use another charset. [@portable/charset](https://portablejs.com/packages/charset) loads a `CharsetEncoder` for each of its charsets. |
+| `boundary` | `'=_'`, 16 random hex digits, `'_'` | The prefix of every multipart boundary, followed by the multipart's position among all parts, counted from 1. Up to 60 characters from RFC 2046's `bchars`. Throws `RangeError` for any other value. |
+| `charset` | UTF-8 | A `CharsetEncoder` (`{ name, encode(text) }`) for encoded words and for string `text`, `amp`, and `html`. [@portable/charset](https://portablejs.com/packages/charset) has one for each of its charsets. |
 | `keepBcc` | `false` | Write the `Bcc` header, for a transport such as sendmail that reads recipients from it. |
-| `signal` | | Aborting it errors the result with `signal.reason` and cancels every content stream not yet read. |
+| `signal` | | Aborting errors the result with `signal.reason` and cancels every unread content stream. |
 
-Set `boundary`, `messageId`, and `date` to get the same bytes on every run, for example in tests.
+To get the same bytes on every run, e.g. in tests, set `boundary`, `messageId`, and `date`.
 
 ```ts
 import { iso2022Jp } from '@portable/charset/iso-2022-jp';
@@ -83,7 +85,7 @@ Mail.encodeStream(
 
 ### Signing and sending
 
-[@portable/dkim](https://portablejs.com/packages/dkim) signs the bytes `encodeStream` produces and [@portable/smtp](https://portablejs.com/packages/smtp) sends them. `Dkim.sign` needs the whole body to compute the signature field, which goes above the other headers, so read the message into bytes first:
+Sign the message with [@portable/dkim](https://portablejs.com/packages/dkim) and send it with [@portable/smtp](https://portablejs.com/packages/smtp). The signature goes above the other headers and covers the whole body, so read the message into bytes first:
 
 ```ts
 import * as Bytes from '@portable/bytes';
@@ -107,7 +109,7 @@ await Smtp.send(
 );
 ```
 
-Without DKIM, pass the stream from `Mail.encodeStream(message)` to `Smtp.send`, which sends each chunk as soon as it reads it.
+Without DKIM, pass the stream from `Mail.encodeStream(message)` straight to `Smtp.send`.
 
 ## Types
 
@@ -126,33 +128,35 @@ Without DKIM, pass the stream from `Mail.encodeStream(message)` to `Smtp.send`, 
 
 ## Why use this over nodemailer
 
-nodemailer's composer needs Node streams, `Buffer`, `fs`, `http`, and `crypto`, so it doesn't run in browsers or Workers. This package uses only web APIs and has no dependencies outside `@portable/*`. With the same boundary, Message-ID, and Date, its output matches `MailComposer` byte for byte on most messages: 254 of 300 generated messages in the oracle test were identical, and the other 46 differed only where libqp breaks a quoted-printable line.
+nodemailer's composer needs Node streams, `Buffer`, `fs`, `http`, and `crypto`, so it doesn't run in browsers or Workers. With the same boundary, Message-ID, and Date, this package's output matches `MailComposer` byte for byte on 254 of 300 generated messages. The other 46 differ only where libqp breaks a quoted-printable line.
 
-- In the benchmarks on Node 24, `encodeStream` was 3× faster than `MailComposer` on 100 text and HTML messages. `MailComposer` was 1.5× faster with a 1 MB attachment in memory and 1.2× faster with a 4 MB attachment read from a stream. There is no native API that composes MIME to compare with.
-- Line breaks in `7bit` and `8bit` bodies are written as CRLF. Without its `newline` option, nodemailer writes a bare LF as is, which is how SMTP smuggling starts.
-- An invalid address, such as `a,b@good.com`, `a@evil.com@good.com`, or a bare `root`, throws `InvalidInputError`. nodemailer quotes it or keeps it and sends the message.
-- `encodeStream` throws for a recipient that is only a comment, such as `(a@evil.com)`, instead of dropping it.
-- Text that looks like an encoded word (`=?x?q?y?=`) is encoded, so the recipient's mail client shows the subject as the sender wrote it instead of decoding it. Quotes in a subject are written as they are, so they stay readable, but nodemailer 10.2.1 encodes them.
-- A `Uint8Array` text body is scanned like a string and can be `7bit`. nodemailer always encodes a `Buffer` body.
-- `Message` has no `path` or `href` field, so untrusted input can't make the composer read a file or fetch a URL. Pass `(await fetch(url)).body` or a `File` instead.
-- Cancelling the output cancels every content stream that hasn't been read, and a failing stream errors the output and cancels the rest.
-- nodemailer's `getEnvelope()` returns `from: false` for a message without a sender, and `envelope` throws `InvalidInputError`.
-- nodemailer accepts a Node `Readable` as attachment `content`. Here pass a `ReadableStream`, which `Readable.toWeb(stream)` returns in Node.
-- nodemailer detects `contentType` from the file name, and this package doesn't: an attachment without `contentType` gets the `Blob`'s type or `application/octet-stream`. @remix-run/mime maps file names to types.
-- nodemailer's `encoding: 'base64'` on string content has no equivalent. Decode the string first and pass the bytes.
-- nodemailer's `icalEvent` has no equivalent. Add an `alternatives` entry with `contentType: 'text/calendar; charset=utf-8; method=REQUEST'` and an attachment with `contentType: 'application/ics'`.
-- nodemailer's `watchHtml` has no equivalent. Add an `alternatives` entry with `contentType: 'text/watch-html; charset=utf-8'`.
-- nodemailer's `baseBoundary` and `boundaryPrefix` have no equivalent. `boundary: '--_NmP-test-Part_'` gives the boundaries nodemailer writes for `baseBoundary: 'test'`.
-- nodemailer's `textEncoding` and `encoding` options have no equivalent. Set `transferEncoding` on a `Part` in `alternatives`.
-- nodemailer's `newline` option has no equivalent, because the output always uses CRLF. Pipe it through a `TransformStream` to get LF.
-- nodemailer's `raw` option isn't supported.
-- nodemailer's `envelope` option has no equivalent. Pass your own envelope to the transport.
-- nodemailer capitalizes each word of a header name, and its `normalizeHeaderKey` option has no equivalent, because this package writes header names as given.
-- nodemailer makes `message/rfc822` attachments `inline`, and this package makes them `attachment`.
-- nodemailer writes a file name containing `"` with RFC 2231 encoding, and this package writes it as a quoted string with `\"` in `filename`.
-- nodemailer splits a name longer than about 40 bytes into encoded words of up to 52 characters, and this package uses up to 75, as [@portable/mime-headers](https://portablejs.com/packages/mime-headers) writes them.
-- nodemailer decodes an A-label domain to UTF-8 and maps it with UTS #46 when the local part isn't ASCII. This package keeps the domain as given, lowercased.
-- nodemailer accepts a backslash in a domain, and this package throws for it.
+- `encodeStream` is 3× faster than `MailComposer` on text and HTML messages. `MailComposer` is 1.2× to 1.5× faster with a 1 MB or 4 MB attachment.
+- Line breaks in `7bit` and `8bit` bodies are written as CRLF. nodemailer writes a bare LF as is unless you set `newline`, which allows SMTP smuggling.
+- An invalid address, such as `a,b@good.com`, `a@evil.com@good.com`, or a bare `root`, throws `InvalidInputError`. nodemailer quotes or keeps it and sends the message.
+- A recipient that is only a comment, such as `(a@evil.com)`, throws instead of being dropped.
+- Text that looks like an encoded word (`=?x?q?y?=`) is encoded, so mail clients show the subject as written. Quotes in a subject are written as is. nodemailer 10.2.1 encodes them.
+- A `Uint8Array` text body can be `7bit`. nodemailer always encodes a `Buffer` body.
+- There is no `path` or `href` field, so untrusted input can't make the composer read a file or fetch a URL. Pass `(await fetch(url)).body` or a `File` instead.
+- `envelope` throws `InvalidInputError` for a message without a sender. nodemailer's `getEnvelope()` returns `from: false`.
+- Attachment `content` takes a `ReadableStream`, not a Node `Readable`. In Node, convert with `Readable.toWeb(stream)`.
+- `contentType` isn't detected from the file name. Without it, an attachment gets the `Blob`'s type or `application/octet-stream`. @remix-run/mime maps file names to types.
+- Header names are written as given. nodemailer capitalizes each word, and its `normalizeHeaderKey` option has no equivalent.
+- `message/rfc822` attachments are `attachment`, not `inline`.
+- A file name containing `"` is written as a quoted string with `\"`, not with RFC 2231 encoding.
+- Encoded words in names are up to 75 characters, as [@portable/mime-headers](https://portablejs.com/packages/mime-headers) writes them. nodemailer splits names longer than about 40 bytes into words of up to 52.
+- Domains are kept as given, lowercased. nodemailer decodes an A-label domain and maps it with UTS #46 when the local part isn't ASCII.
+- A backslash in a domain throws. nodemailer accepts it.
+
+These nodemailer options have no equivalent:
+
+- `encoding: 'base64'` on string content: decode the string and pass the bytes.
+- `icalEvent`: add an `alternatives` entry with `contentType: 'text/calendar; charset=utf-8; method=REQUEST'` and an attachment with `contentType: 'application/ics'`.
+- `watchHtml`: add an `alternatives` entry with `contentType: 'text/watch-html; charset=utf-8'`.
+- `baseBoundary` and `boundaryPrefix`: `boundary: '--_NmP-test-Part_'` gives the boundaries nodemailer writes for `baseBoundary: 'test'`.
+- `textEncoding` and `encoding`: set `transferEncoding` on a `Part` in `alternatives`.
+- `newline`: the output always uses CRLF. Pipe it through a `TransformStream` to get LF.
+- `raw`.
+- `envelope`: pass your own envelope to the transport.
 
 <!-- bench:start -->
 <table>

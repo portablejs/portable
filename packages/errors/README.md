@@ -1,8 +1,8 @@
 # @portable/errors
 
-The shared error classes for `@portable/*` packages, and `is`, which checks an error's kind even when two copies of a package are installed. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+The error classes that every `@portable/*` package extends, and `is`, which checks an error's kind even when two copies of a package are installed. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces hand-written `class XError extends Error` hierarchies and `instanceof` checks, which fail when two copies of a package are installed.
+Replaces hand-written `class XError extends Error` classes and `instanceof` checks.
 
 ```sh
 npm install @portable/errors
@@ -22,13 +22,13 @@ try {
 }
 ```
 
-`Streams.MaxBytesError` and `Compress.MaxBytesError` are different classes, and `Errors.is(error, 'MaxBytes')` matches both, from any copy of either package.
+`Errors.is(error, 'MaxBytes')` matches both `Streams.MaxBytesError` and `Compress.MaxBytesError`, from any copy of either package.
 
 ## Why not `instanceof`
 
-You can end up with two copies of a package, for example when your app needs version 2 of a package and one of its dependencies needs version 1. An error thrown by one copy then fails `instanceof` against the class from the other copy. `@portable/*` packages depend on each other at exact versions, because pnpm publishes `workspace:*` that way, and npm installs a separate copy for each exact version it is asked for. Two copies are therefore more likely with these packages than with most.
+If your app and one of its dependencies need different versions of a package, npm installs two copies, and an error from one copy fails `instanceof` against the class from the other. This is more likely with `@portable/*` packages, because they depend on each other at exact versions.
 
-Each error stores its class's `kind`, and the `kind` of every parent class, under `Symbol.for('portable.error')`. `Symbol.for` returns the same symbol in every copy of every package. Other libraries don't set this key by accident, and `JSON.stringify` and `Object.keys` skip it. The classes define `static [Symbol.hasInstance]` to read it, so `instanceof` works across copies too:
+Each error stores the `kind` of its class and of every parent class under `Symbol.for('portable.error')`, which is the same symbol in every copy. `JSON.stringify` and `Object.keys` skip it. The classes define `static [Symbol.hasInstance]` to read it, so `instanceof` works across copies too:
 
 ```ts
 error instanceof Errors.MaxBytesError; // any package's MaxBytesError, from any copy
@@ -49,9 +49,7 @@ error instanceof Errors.BaseError; // any @portable/* error, from any copy
 | `MaxLengthError` | Text exceeded a `maxLength` option. `new MaxLengthError({ maxLength, message, cause })`. The default message is `` `Exceeded maxLength of ${maxLength}.` ``. | `maxLength` |
 | `ResponseError` | The package can't use the status or body of a server's response. `new ResponseError({ response, body, message, cause })`. The default message is `` `${response.url} answered ${response.status}.` ``. A `Response` you construct yourself has an empty `url`, so pass `message` for it. | `response`; `body`; and `status`, which reads `response.status` |
 
-An error with only a message takes `(message?, options?)`, as `Error` does. An error with other fields takes one object.
-
-Each `@portable/*` package defines the errors it throws as subclasses of these classes:
+Each `@portable/*` package throws subclasses of these classes:
 
 ```ts
 export class MaxBytesError extends Errors.MaxBytesError {
@@ -59,7 +57,7 @@ export class MaxBytesError extends Errors.MaxBytesError {
 }
 ```
 
-A subclass must set its own `kind`, namespaced by package, such as `'Compress.MaxBytesError'`. `instanceof` and `is` compare these strings, so two classes with the same `kind` match each other's errors. A subclass without its own `kind` inherits its parent's, so `instanceof` against the subclass matches every error of the parent's kind.
+Set a `kind` on each subclass, namespaced by package. `instanceof` and `is` compare `kind` strings, so two classes with the same `kind` match each other's errors, and a subclass without its own `kind` matches every error of its parent's kind.
 
 ## Types
 

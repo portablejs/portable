@@ -19,9 +19,11 @@ for await (const event of Streams.toAsyncIterable(events)) {
 }
 ```
 
-`DecoderStream` is a `TransformStream<Uint8Array | string, unknown>` that parses each line with `JSON.parse`. Lines may end in LF or CRLF, and a lone CR doesn't end a line. Blank and whitespace-only lines are skipped. A last line without a newline is decoded too. Byte chunks are decoded as UTF-8, so a multi-byte character split across chunks is decoded correctly. Invalid UTF-8 is replaced with U+FFFD, and a leading byte order mark is removed. Decode other encodings to strings before you pipe them in.
+`DecoderStream` is a `TransformStream<Uint8Array | string, unknown>` that parses each line with `JSON.parse`. Lines end in LF or CRLF, not a lone CR. Blank and whitespace-only lines are skipped.
 
-`EncoderStream` is a `TransformStream<unknown, Uint8Array>` that writes each value as `JSON.stringify(value)` followed by `\n`, in UTF-8. A value that `JSON.stringify` can't encode (`undefined`, a function, a symbol, a `BigInt`, or a circular structure) fails the stream with a `TypeError`. Its output can be a `Response` body as it is:
+Byte chunks are decoded as UTF-8, with invalid bytes replaced by U+FFFD and a leading byte order mark removed. For other encodings, decode to strings first.
+
+`EncoderStream` is a `TransformStream<unknown, Uint8Array>` that writes each value as `JSON.stringify(value)` and `\n`, in UTF-8. A value `JSON.stringify` can't encode, such as `undefined`, a `BigInt`, or a circular structure, fails the stream with a `TypeError`. The output can be a `Response` body:
 
 ```ts
 const body = Streams.fromIterable(rows)
@@ -35,21 +37,21 @@ return new Response(body, { headers: { 'content-type': 'application/x-ndjson' } 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `invalid` | `'error'` | A line that isn't valid JSON: `'error'` fails the stream with `InvalidInputError`, whose message gives the 1-based line number in the input, counting blank lines. `'skip'` drops the line. |
-| `maxLength` | `Infinity` | Longest line, in UTF-16 code units, not counting the line ending. As soon as a line grows past the limit, the stream fails with `Jsonl.MaxLengthError`, which stores the limit in `maxLength`. Whitespace-only lines count too. The constructor throws a `RangeError` for a negative value. Set it when the input comes from outside the program. |
+| `invalid` | `'error'` | For a line that isn't valid JSON, `'error'` fails the stream with `Jsonl.InvalidInputError`, whose message gives the 1-based line number. `'skip'` drops the line. |
+| `maxLength` | `Infinity` | Longest line, in UTF-16 code units, not counting the line ending. A longer line, even a whitespace-only one, fails the stream with `Jsonl.MaxLengthError` as soon as it passes the limit. Throws a `RangeError` if negative. Set it for untrusted input. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
 ## Why use this over ndjson and stream-json
 
-ndjson is a pair of Node object streams. `DecoderStream` and `EncoderStream` are `TransformStream`s, so they read a `fetch` body and write a `Response` body in any JavaScript runtime, and the package has no dependencies outside `@portable/*`.
+ndjson uses Node object streams. `DecoderStream` and `EncoderStream` are `TransformStream`s, so they read a `fetch` body and write a `Response` body in any runtime.
 
-- Decoding 20,000 rows ran about 1.1× faster than ndjson, and encoding them about 1.5× faster. stream-json's `jsonl/Stringer` encoded them about 1.3× faster than `EncoderStream`.
-- A `null` line is emitted as `null`. In ndjson a `null` line ends the stream, because Node object streams treat `null` as the end (ndjson #6).
-- `EncoderStream` ends every line with `\n`. ndjson uses `os.EOL`, so on Windows it writes `\r\n`.
-- A circular value fails the stream with a `TypeError`. ndjson writes `"[Circular ~]"` in its place, which changes the data.
-- A whitespace-only line is skipped, where ndjson reports it as invalid.
-- stream-json's `jsonl/Parser` emits `{ key, value }` objects, and `DecoderStream` emits each value on its own.
-- stream-json's `jsonl/Parser` can replace a bad line with another value or pass its raw text on, and `DecoderStream` can't. To do that, split with `Lines.DecoderStream` from [@portable/lines](https://portablejs.com/packages/lines) and call `JSON.parse` yourself.
+- Decoding is about 1.1× faster than ndjson, and encoding about 1.5× faster. stream-json encodes about 1.3× faster than `EncoderStream`.
+- A `null` line is emitted as `null`. In ndjson it ends the stream (ndjson #6).
+- Lines end in `\n`. ndjson uses `os.EOL`, which is `\r\n` on Windows.
+- A circular value fails the stream. ndjson writes `"[Circular ~]"` instead.
+- A whitespace-only line is skipped. ndjson reports it as invalid.
+- stream-json's `jsonl/Parser` emits `{ key, value }` objects. `DecoderStream` emits the values.
+- stream-json can replace a bad line or pass its raw text on. To do that here, split with `Lines.DecoderStream` from [@portable/lines](https://portablejs.com/packages/lines) and call `JSON.parse` yourself.
 
 <!-- bench:start -->
 <table>

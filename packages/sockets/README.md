@@ -1,6 +1,6 @@
 # @portable/sockets
 
-TCP and TLS client sockets with the shape of the [WinterTC Sockets API](https://sockets-api.proposal.wintertc.org/), the API of `connect` from `cloudflare:sockets`. The main entry exports only types. [@portable/smtp](https://portablejs.com/packages/smtp) and other protocol clients take a `connect` function of type `Sockets.Connect` instead of opening sockets themselves. `@portable/sockets/node` has a `connect` built on `node:net` and `node:tls`, so the same client runs in Cloudflare Workers, Node 24+, Bun, and Deno.
+TCP and TLS client sockets with the shape of the [WinterTC Sockets API](https://sockets-api.proposal.wintertc.org/), which `connect` from `cloudflare:sockets` implements. The main entry exports only types, and protocol clients such as [@portable/smtp](https://portablejs.com/packages/smtp) take a `Sockets.Connect` function. `@portable/sockets/node` has a `connect` built on `node:net` and `node:tls`, so the same client runs in Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [@arrowood.dev/socket](https://www.npmjs.com/package/@arrowood.dev/socket).
 
@@ -45,29 +45,31 @@ await greeting(connect, 'mx.example.com');
 
 ### `connect(address, options)`
 
-Imported from `@portable/sockets/node`. Opens a connection to `address` (`{ hostname, port }`) and returns a `Socket` at once. Deno and Bun run it through their `node:net` and `node:tls`. It throws a `TypeError` when `address` isn't an object, `hostname` isn't a non-empty string, `port` isn't a number, or `allowHalfOpen` isn't a boolean. It throws a `RangeError` when `port` isn't an integer from 0 to 65535 or `secureTransport` is unknown.
+Imported from `@portable/sockets/node`. Opens a connection to `address` (`{ hostname, port }`) and returns a `Socket` at once.
+
+It throws a `TypeError` when `address` isn't an object, `hostname` isn't a non-empty string, `port` isn't a number, or `allowHalfOpen` isn't a boolean. It throws a `RangeError` when `port` isn't an integer from 0 to 65535 or `secureTransport` is unknown.
 
 | Option | Description |
 | --- | --- |
 | `secureTransport` | `'off'` for plain TCP, `'on'` for TLS from the start, or `'starttls'` for plain TCP that `startTls()` can upgrade. |
-| `allowHalfOpen` | When `false`, the writable side closes as soon as the peer ends its side. When `true`, it stays open until you close it. |
+| `allowHalfOpen` | `false` closes the writable side when the peer ends its side. `true` keeps it open until you close it. |
 
-With `secureTransport: 'on'` and after `startTls()`, `connect` checks the server certificate against Node's bundled root certificates and the hostname. It also sends the hostname as SNI unless the hostname is an IP address.
+For TLS, `connect` checks the server certificate against Node's bundled root certificates and the hostname, and sends the hostname as SNI unless it is an IP address.
 
 The socket has these members:
 
 | Member | Description |
 | --- | --- |
-| `readable` | A `ReadableStream<Uint8Array>` of the bytes the peer sends. It closes when the peer ends its side and errors if the connection fails. Cancelling it discards incoming bytes and leaves the writable side open. |
+| `readable` | A `ReadableStream<Uint8Array>` of the bytes the peer sends. It closes when the peer ends its side and errors if the connection fails. Cancelling it discards incoming bytes and keeps the writable side open. |
 | `writable` | A `WritableStream<Uint8Array>` for the bytes to send. Closing it ends this side of the connection. A write after the connection closes rejects with a `TypeError`. |
-| `opened` | Resolves with `{ remoteAddress, localAddress }` (each as `host:port`, with an IPv6 host in brackets, as in `[::1]:25`) once the connection and the TLS handshake are done. Rejects with Node's error, such as one with `code` `ECONNREFUSED`, if the connection fails, and with a `TypeError` if the socket is closed before it connects. |
+| `opened` | Resolves with `{ remoteAddress, localAddress }` (as `host:port`, e.g. `[::1]:25`) after the connection and TLS handshake. Rejects with Node's error (e.g. `ECONNREFUSED`) if the connection fails, or a `TypeError` if the socket is closed before it connects. |
 | `closed` | Resolves when the connection closes and rejects with the error if it fails. |
 | `close()` | Closes both sides at once, without waiting for the peer, and returns `closed`. Reads after it are done, and writes reject. |
-| `startTls()` | Starts TLS on a socket opened with `secureTransport: 'starttls'` and returns the TLS socket. The old socket's `upgraded` becomes `true`, its readable closes, its writes reject, and its `closed` resolves. It throws a `TypeError` for any other socket and on a second call. |
+| `startTls()` | Starts TLS on a socket opened with `secureTransport: 'starttls'` and returns the TLS socket. The old socket becomes `upgraded`: its readable closes, its writes reject, and its `closed` resolves. Throws a `TypeError` for any other socket and on a second call. |
 | `upgraded` | Whether `startTls()` was called on this socket. |
-| `[Symbol.asyncDispose]()` | Calls `close()` and ignores its rejection, so `await using socket = connect(address, options)` closes the socket at the end of the scope without throwing. It exists only where the runtime has `Symbol.asyncDispose`. |
+| `[Symbol.asyncDispose]()` | Calls `close()` and ignores its rejection, so `await using` closes the socket without throwing. Only where the runtime has `Symbol.asyncDispose`. |
 
-`connect` has no timeout, so `opened` can stay pending for minutes when the host drops the connection attempt. To limit how long it takes, race `opened` with a timer and close the socket if the timer fires first:
+`connect` has no timeout, and `opened` can stay pending for minutes if the host drops the attempt. To limit it, race `opened` with a timer and close the socket if the timer wins:
 
 ```ts
 import { connect } from '@portable/sockets/node';
@@ -94,7 +96,7 @@ Imported from `@portable/sockets/node`. Returns a `connect` that verifies TLS ce
 | Option | Description |
 | --- | --- |
 | `ca` | Certificates to trust instead of Node's bundled root certificates, as PEM text or an array of them. |
-| `rejectUnauthorized` | Defaults to `true`. With `false`, any certificate is accepted. Turn it off only to test against a self-signed certificate, and pass `ca` instead where you can. |
+| `rejectUnauthorized` | Defaults to `true`. With `false`, any certificate is accepted. Prefer `ca` for a self-signed certificate. |
 
 ```ts
 import { create } from '@portable/sockets/node';
@@ -104,15 +106,15 @@ const connect = create({ ca: await readFile('internal-ca.pem', 'utf8') });
 
 ### Differences between runtimes
 
-The Sockets API leaves some behavior open, and workerd, the Workers runtime, differs from this package's Node adapter in these cases. If your code runs on both, don't rely on either behavior.
+The Sockets API leaves some behavior open, and workerd (the Workers runtime) differs from the Node adapter in these cases. If your code runs on both, don't rely on either behavior.
 
-- When you close the writable side first and then read to the end, `closed` resolves in Node. In workerd it stays pending until you call `close()`. Call `close()` when you are done with a socket.
+- If you close the writable side and then read to the end, `closed` resolves in Node but stays pending in workerd until you call `close()`. Call `close()` when you are done with a socket.
 - When a connection is refused, Node rejects `opened` before `closed`, and workerd rejects `closed` first. Both reject.
 - A read after `close()` is done in Node and rejects in workerd.
 - With `allowHalfOpen: true`, workerd delivered no bytes when the peer wrote and then immediately ended its side.
 - workerd resolved `closed` for a connection reset by the peer, where Node rejects it with `ECONNRESET`.
 
-These were seen in workerd under Miniflare, which connects through a local proxy. Cloudflare's own network may behave differently.
+These were seen in workerd under Miniflare, which uses a local proxy. Cloudflare's network may differ.
 
 ## Types
 
@@ -121,17 +123,17 @@ These were seen in workerd under Miniflare, which connects through a local proxy
 | `Sockets.Connect` | `(address, options) => Socket`. Both `connect` from `cloudflare:sockets` and `connect` from `@portable/sockets/node` match this type. |
 | `Sockets.Socket` | A connection: `readable`, `writable`, `opened`, `closed`, `upgraded`, `close()`, and `startTls()`. |
 | `Sockets.Address` | `{ hostname, port }`. |
-| `Sockets.Options` | `{ secureTransport, allowHalfOpen }`. Both are required, because the `cloudflare:sockets` types require `allowHalfOpen`. |
+| `Sockets.Options` | `{ secureTransport, allowHalfOpen }`. Both are required, as in the `cloudflare:sockets` types. |
 | `Sockets.Info` | What `opened` resolves with: `remoteAddress` and `localAddress`, where the runtime knows them. |
 | `Socket` | From `@portable/sockets/node`: a `Sockets.Socket` with `[Symbol.asyncDispose]()`. |
 
 ## Why use this over @arrowood.dev/socket
 
-- `startTls()` verifies the server certificate and sends SNI. @arrowood.dev/socket wraps the plain socket in `new tls.TLSSocket(socket)`, which does neither, so a STARTTLS connection accepts any certificate.
-- `opened` resolves after the connection and the TLS handshake, as the Sockets API specifies. @arrowood.dev/socket has no `opened`.
-- `close()` closes both sides at once. @arrowood.dev/socket calls `end()`, which only ends this side, so its readable still receives what the peer sends after `close()`.
+- `startTls()` verifies the server certificate and sends SNI. @arrowood.dev/socket does neither, so its STARTTLS connections accept any certificate.
+- `opened` resolves after the connection and the TLS handshake. @arrowood.dev/socket has no `opened`.
+- `close()` closes both sides at once. @arrowood.dev/socket only ends this side, so its readable still receives data after `close()`.
 - `allowHalfOpen` is a required option. @arrowood.dev/socket defaults it to `true`, while the Sockets API and `cloudflare:sockets` default to `false`.
-- It is an ES module with no dependencies outside `@portable/*`, and its tests run in Deno and Bun as well as Node.
+- It is an ES module, and its tests run in Deno and Bun as well as Node.
 
 <!-- bench:start -->
 <table>

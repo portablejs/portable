@@ -24,7 +24,7 @@ if (!Bytes.timingSafeEqual(expected, Bytes.fromHex(signature))) {
 }
 ```
 
-`toHex` and `fromHex` call `Uint8Array.prototype.toHex` and `Uint8Array.fromHex` where the runtime has them (current Chromium, Firefox, and Safari). Elsewhere, Node 24 included, a JavaScript fallback gives the same output. Both paths throw `Bytes.InvalidInputError` with the position of the first bad character. The browser tests check the two against each other.
+`toHex` and `fromHex` use `Uint8Array.prototype.toHex` and `Uint8Array.fromHex` where the runtime has them (current Chromium, Firefox, and Safari). Elsewhere, including Node 24, a JavaScript fallback gives the same results.
 
 ## API
 
@@ -37,31 +37,33 @@ if (!Bytes.timingSafeEqual(expected, Bytes.fromHex(signature))) {
 | `timingSafeEqual(a, b)` | Whether `a` and `b` hold the same bytes, in time that depends only on the length. Returns `false` for different lengths. |
 | `InvalidInputError` | Thrown by `fromHex` for odd-length input or a character that isn't a hex digit. Extends `Errors.InvalidInputError` from [@portable/errors](https://portablejs.com/packages/errors). |
 
-`fromHex` follows `Uint8Array.fromHex` and throws for whitespace, a `0x` prefix, and any other character that isn't a hex digit. The error message gives the position of the first bad character.
+`fromHex` throws for whitespace, a `0x` prefix, or any other non-hex character, as `Uint8Array.fromHex` does. The message gives the position of the first bad character.
 
-Use `timingSafeEqual` to compare a secret, such as an HMAC signature, with a value from the request. `equal` returns as soon as it finds a difference, so its timing shows an attacker how many leading bytes they guessed right. `timingSafeEqual` returns `false` at once for arrays of different lengths, so it doesn't hide the length. For a signature or a hash the algorithm fixes the length, so it isn't secret.
+Use `timingSafeEqual` to compare a secret, such as an HMAC signature, with a value from a request. `equal` returns at the first difference, so its timing can reveal how many leading bytes match.
 
-`concat` and `fromHex` return `Uint8Array<ArrayBuffer>`, so TypeScript 5.9 and later accept them as a `BlobPart` or a `BufferSource` for `crypto.subtle`.
+`timingSafeEqual` doesn't hide the length, because it returns `false` at once for different lengths. For a signature or hash, the algorithm fixes the length.
+
+`concat` and `fromHex` return `Uint8Array<ArrayBuffer>`, which TypeScript 5.9 and later accept as a `BlobPart` or a `BufferSource` for `crypto.subtle`.
 
 ### Byte input
 
-Every `@portable/*` function that takes bytes accepts a `Uint8Array` or a Node `Buffer`, which is a subclass of `Uint8Array`, and throws a `TypeError` for an `ArrayBuffer`, a `DataView`, or another typed array. Given a buffer or a view, a function can't tell which of its bytes you meant: `view.buffer` also holds the bytes outside the view, and an `Int16Array` has two bytes per element in the platform's byte order. Convert the value to a `Uint8Array` yourself, so your code shows which bytes the function reads:
+Every `@portable/*` function that takes bytes accepts a `Uint8Array`, including a Node `Buffer`, and throws a `TypeError` for an `ArrayBuffer`, a `DataView`, or another typed array. Convert those yourself, so your code shows which bytes the function reads:
 
 ```ts
 new Uint8Array(arrayBuffer);
 new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
 ```
 
-A `Uint8Array` over a `SharedArrayBuffer` is accepted. Don't write to it from another thread until the function returns, its promise settles, or the stream has read the chunk. Otherwise the function may read some bytes before the write and some after.
+A `Uint8Array` over a `SharedArrayBuffer` is accepted. Don't write to it from another thread until the function returns, its promise settles, or the stream has read the chunk, or the function may read a mix of old and new bytes.
 
 ## Why use this over uint8array-extras and node:crypto
 
-- `node:crypto` exists only in Node, Deno, and Bun. This package runs in browsers and Workers too.
-- `timingSafeEqual` returns `false` for different lengths. Node's throws a `RangeError`, so you have to check the length first or catch the error.
-- `fromHex` throws `Bytes.InvalidInputError`, so you can tell it apart from other errors. uint8array-extras throws a plain `Error`, and reports the position of the pair rather than of the bad character (`'0G'` gives position 0).
-- Inputs are `Uint8Array` only. uint8array-extras also takes an `ArrayBuffer`, and passing `view.buffer` by mistake reads every byte of the buffer, not only the view's.
+- `node:crypto` exists only in Node, Deno, and Bun. This package also runs in browsers and Workers.
+- `timingSafeEqual` returns `false` for different lengths. Node's throws a `RangeError`.
+- `fromHex` throws `Bytes.InvalidInputError` with the position of the bad character. uint8array-extras throws a plain `Error` with the position of the pair (`'0G'` gives position 0).
+- Inputs are `Uint8Array` only. uint8array-extras also takes an `ArrayBuffer`, so passing `view.buffer` by mistake reads the whole buffer.
 
-Node's `Buffer` methods are C++ and are faster on large input. In runtimes that have `Uint8Array.prototype.toHex` and `Uint8Array.fromHex`, `toHex` and `fromHex` call those instead of the JavaScript fallback measured here.
+Node's `Buffer` methods are C++ and faster on large input. The benchmarks measure the JavaScript fallback, which runtimes with native `toHex` and `fromHex` don't use.
 
 <!-- bench:start -->
 <table>
@@ -121,5 +123,5 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 Differences to check when you switch from uint8array-extras:
 
-- `concatUint8Arrays` takes an optional `totalLength`. `concat` has no such argument, and its result is always as long as the chunks together.
+- `concatUint8Arrays` takes an optional `totalLength`. `concat` doesn't, and its result is always as long as the chunks together.
 - uint8array-extras' string, base64, compare, `indexOf`, and `getUintBE` functions have no equivalent here. Use [@portable/base64](https://portablejs.com/packages/base64) for base64.

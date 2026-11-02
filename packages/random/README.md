@@ -1,6 +1,6 @@
 # @portable/random
 
-Draws unbiased random integers, floats, strings, shuffles, and bytes from `crypto.getRandomValues`, and has a seeded generator with the same functions for tests. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Draws unbiased random integers, floats, strings, shuffles, and bytes from `crypto.getRandomValues`, with a seeded generator for tests. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [random-int](https://www.npmjs.com/package/random-int), [crypto-random-string](https://www.npmjs.com/package/crypto-random-string), [nanoid](https://www.npmjs.com/package/nanoid)'s `customAlphabet`, [seedrandom](https://www.npmjs.com/package/seedrandom), and [lodash](https://www.npmjs.com/package/lodash)'s `random`, `sample`, and `shuffle`.
 
@@ -35,23 +35,23 @@ random.int(1, 6); // the same number on every run, in every runtime
 | `bytes(length)` | A new `Uint8Array` of random bytes, with no 65,536-byte limit. |
 | `seeded(seed)` | A `Random.Seeded` object with all of the functions above, drawing from a deterministic generator. `seed` is a safe integer. |
 
-Arguments outside these rules throw a `RangeError`: a fractional or unsafe bound, `min > max`, a length that is negative or fractional, an empty alphabet, an empty array for `pick`, or a fractional seed. Nothing is coerced or swapped.
+Invalid arguments throw a `RangeError`: a fractional or unsafe bound; `min > max`; a negative or fractional length; an empty alphabet; an empty array for `pick`; or a fractional seed. Nothing is coerced or swapped.
 
 ### Unbiased results
 
-`int`, `string`, `shuffle`, and `pick` use rejection sampling. A random value at or above the largest multiple of the range size is discarded and drawn again, so every result comes from the same number of source values. Reducing the value with a modulo instead, as `Math.floor(Math.random() * n)` and `bytes[i] % n` do, makes some results more likely whenever `n` is not a power of two. The tests check every function with a chi-squared test over ranges that aren't powers of two.
+`int`, `string`, `shuffle`, and `pick` use rejection sampling, so every result is equally likely. `Math.floor(Math.random() * n)` and `bytes[i] % n` favor some results when `n` isn't a power of two.
 
-`crypto.getRandomValues` is a system call, so the package draws 16 KiB at a time into a private pool and takes values from it. For an alphabet of at most 256 ASCII characters, `string` also keeps up to 32,768 generated characters for the last alphabet it used, as nanoid does. Each pooled value is returned only once. Until then it stays in memory, as in nanoid.
+The package draws from `crypto.getRandomValues` 16 KiB at a time and keeps the unused values in memory until it returns them, as nanoid does. Each value is returned only once.
 
 ### Seeded generator
 
-`Random.seeded(seed)` is for tests and reproducible simulations. It is not for secrets: a few outputs are enough to predict the rest.
+`Random.seeded(seed)` is for tests and reproducible simulations, not secrets: a few outputs are enough to predict the rest.
 
-All methods of one `seeded(seed)` object share one generator, and each call advances it. The same seed replays the same values only for the same sequence of calls, so adding or reordering a call changes every later result. Use a separate `seeded` object for each independent sequence.
+All methods of one `seeded` object share one generator. The same seed replays the same values only for the same sequence of calls, so use a separate `seeded` object for each independent sequence.
 
-The generator is xoshiro128** 1.1, seeded with two SplitMix64 outputs as its authors recommend. Its 32-bit outputs, which `seeded(seed).bytes(n)` returns least significant byte first, match Rust's `Xoshiro128StarStar::seed_from_u64(seed)` from `rand_xoshiro`, and a negative seed is read as its 64-bit two's complement. The generator uses 32-bit integer arithmetic only, so a seed gives the same values in every runtime. The values for a seed change only in a major version.
+A seed gives the same values in every runtime, and they change only in a major version. The generator is xoshiro128** 1.1, and its outputs match Rust's `Xoshiro128StarStar::seed_from_u64(seed)` from `rand_xoshiro`.
 
-xoshiro128** has 128 bits of state, so `seeded(seed).shuffle` can reach at most 2^128 orders. That is fewer than the 35! orders of a 35-element array. `Random.shuffle` doesn't have that limit.
+`seeded(seed).shuffle` can reach at most 2^128 orders, fewer than the 35! orders of a 35-element array. `Random.shuffle` doesn't have that limit.
 
 ## Types
 
@@ -61,20 +61,20 @@ xoshiro128** has 128 bits of state, so `seeded(seed).shuffle` can reach at most 
 
 ## Why use this over random-int, crypto-random-string, nanoid, seedrandom, and lodash
 
-Each of these libraries does part of the job: random-int and lodash use `Math.random`, which is not a cryptographic generator; crypto-random-string and nanoid only make strings; and seedrandom only makes floats. This package has one set of functions with a cryptographic source, and the same functions with a seeded source for tests.
+random-int and lodash use `Math.random`, which isn't cryptographically secure. crypto-random-string and nanoid only make strings, and seedrandom only makes floats. This package has one set of functions with a cryptographic source and a seeded copy for tests.
 
 - `int` throws on fractional bounds. `randomInteger(1.5, 3.5)` can return 1 or 4.
-- `int` throws when `min > max` or a bound is not a safe integer. random-int and lodash swap reversed bounds, and `_.random(2 ** 60, 2 ** 62)` returns integers that aren't safe.
-- `pick([])` throws. `_.sample([])` returns `undefined`, so its return type has to include `undefined`.
+- `int` throws when `min > max` or a bound isn't a safe integer. random-int and lodash swap reversed bounds, and `_.random(2 ** 60, 2 ** 62)` returns unsafe integers.
+- `pick([])` throws. `_.sample([])` returns `undefined`, so its return type includes `undefined`.
 - `string` picks whole code points. nanoid's `customAlphabet('😀🎉')` returns lone surrogates.
 - `string` accepts an alphabet of any size. crypto-random-string rejects more than 65,536 characters.
-- `string` throws for a length that is not a non-negative integer. nanoid truncates `2.1` to 2, and a size passed as a string once made it run out of memory ([nanoid#381](https://github.com/ai/nanoid/issues/381)).
+- `string` throws for a negative or fractional length. nanoid truncates `2.1` to 2, and a string size once made it run out of memory ([nanoid#381](https://github.com/ai/nanoid/issues/381)).
 - `seeded` takes integer seeds, and different seeds give different sequences. seedrandom gives `'sf'` and `'sfsf'` the same sequence.
 - random-int's `randomInteger(max)` returns an integer from 0 to `max`. `int` has no one-argument form, so write `int(0, max)`.
 - `_.random(min, max, true)` returns a float in a range. `float` takes no bounds, so write `min + Random.float() * (max - min)`.
 - crypto-random-string's `type` option has no equivalent. Pass its characters as `alphabet`: `'distinguishable'`, for example, is `'CDEHKMPRTUWXY012458'`.
-- `seeded` uses xoshiro128**, so its sequences differ from seedrandom's. A string seed has to become an integer first, for example a hash of it.
-- `seeded` has no state export like seedrandom's `{ state: true }`. Call `seeded` with the same seed again to replay a sequence.
+- `seeded` uses xoshiro128**, so its sequences differ from seedrandom's. Convert a string seed to an integer first, e.g. by hashing it.
+- `seeded` has no state export like seedrandom's `{ state: true }`. Call `seeded` with the same seed to replay a sequence.
 
 Each benchmark makes 1,000 calls per sample.
 

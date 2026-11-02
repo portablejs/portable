@@ -1,14 +1,14 @@
 # @portable/web-push
 
-Sends Web Push notifications, with aes128gcm payload encryption (RFC 8291) and VAPID (RFC 8292), on WebCrypto and `fetch`. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Sends Web Push notifications with aes128gcm encryption (RFC 8291) and VAPID (RFC 8292), using WebCrypto and `fetch`. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces [web-push](https://www.npmjs.com/package/web-push), which uses `node:crypto` and `node:https` and runs only on Node.
+Replaces [web-push](https://www.npmjs.com/package/web-push), which runs only on Node.
 
 ```sh
 npm install @portable/web-push
 ```
 
-Generate a VAPID key pair once. Store the private key as a secret, and give the public key to browsers as `applicationServerKey`:
+Generate a VAPID key pair once. Store the private key as a secret, and give browsers the public key as `applicationServerKey`:
 
 ```ts
 import * as WebPush from '@portable/web-push';
@@ -70,20 +70,20 @@ Keys from web-push's `generateVAPIDKeys()` work unchanged, so existing subscript
 
 | Export | Does |
 | --- | --- |
-| `send({ subscription, payload, vapid, ... })` | Encrypts `payload`, signs the request with VAPID, POSTs it to the subscription's endpoint, and returns `{ kind: 'sent', status }` or, for a 404 or 410, `{ kind: 'gone', status }`. |
-| `toRequest({ subscription, payload, vapid, ... })` | Returns the `Request` that `send` would pass to `fetch`, to send it yourself or put it on a queue. Send it within 12 hours, before its VAPID token expires. |
+| `send({ subscription, payload, vapid, ... })` | Encrypts `payload`, signs the request with VAPID, and POSTs it to the subscription's endpoint. Returns `{ kind: 'sent', status }`, or `{ kind: 'gone', status }` for a 404 or 410. |
+| `toRequest({ subscription, payload, vapid, ... })` | Returns the `Request` that `send` would pass to `fetch`, e.g. to put on a queue. Send it within 12 hours, before its VAPID token expires. |
 | `encrypt({ subscription, payload, ... })` | Returns the aes128gcm body for `payload`: an 86-byte header, then one AES-GCM record. |
 | `generateVapidKeys(options?)` | Returns a new `{ publicKey, privateKey }` pair as base64url strings. |
 | `maxPayloadBytes` | `3993`, the largest payload in bytes. |
-| `ResponseError` | Thrown by `send` when the push service answers with any other status, such as 400, 403, 413, or 429. It has `status`, `response`, and the response `body` as text. `send` has already read the body of `response` into `body`, so read only `response.status` and `response.headers` from `response`. |
-| `InvalidInputError` | Thrown when the subscription can't be used: its endpoint isn't an `https:` URL, or a payload is given and the subscription has no `keys`, a key isn't base64, `p256dh` isn't a P-256 public key, or `auth` isn't 16 bytes. Subscriptions come from browsers, so delete one that fails this way. |
-| `MaxBytesError` | Thrown when the payload is longer than `maxPayloadBytes`, before anything is sent. Its `maxBytes` property is `3993`. The subscription is still valid. |
+| `ResponseError` | Thrown by `send` for any other status, such as 400, 403, 413, or 429. It has `status`, `response`, and the response text as `body`. Read only `response.status` and `response.headers`, because the body was already read. |
+| `InvalidInputError` | Thrown when the subscription can't be used: its endpoint isn't `https:`, or a payload is given and `keys` is missing, a key isn't base64, `p256dh` isn't a P-256 public key, or `auth` isn't 16 bytes. Delete a subscription that fails this way. |
+| `MaxBytesError` | Thrown before sending when the payload is longer than `maxPayloadBytes`. Its `maxBytes` is `3993`. The subscription is still valid. |
 
-`payload` is a string, sent as UTF-8, or a `Uint8Array`. Leave it out to send a push with no data. A push with no data also works for a subscription without `keys`. An empty string is encrypted and arrives as empty data.
+`payload` is a string, sent as UTF-8, or a `Uint8Array`. Leave it out to send a push with no data, which also works for a subscription without `keys`. An empty string arrives as empty data.
 
-`subscription` has the shape of `PushSubscription.toJSON()`: `{ endpoint, keys: { p256dh, auth } }`. The keys may be base64url or standard base64, with or without padding, or a `Uint8Array`.
+`subscription` has the shape of `PushSubscription.toJSON()`: `{ endpoint, keys: { p256dh, auth } }`. The keys can be base64url or base64, with or without padding, or a `Uint8Array`.
 
-A mistake in the call gives a `TypeError` for an option of the wrong type, and a `RangeError` for a malformed `vapid` key or subject, an unknown `urgency`, a `topic` that isn't base64url, a `ttl` that isn't a non-negative integer, or an invalid `now`.
+An option of the wrong type throws a `TypeError`. A malformed `vapid` key or subject, an unknown `urgency`, a `topic` that isn't base64url, a `ttl` that isn't a non-negative integer, or an invalid `now` throws a `RangeError`.
 
 ### Options
 
@@ -91,16 +91,16 @@ A mistake in the call gives a `TypeError` for an option of the wrong type, and a
 | --- | --- | --- |
 | `subscription` | required | The browser's subscription, as above. |
 | `payload` | none | The message. `encrypt` requires it. |
-| `vapid` | required | `{ subject, publicKey, privateKey }`. `subject` is a `mailto:` or `https:` URL the push service can contact you at. The keys are base64url strings from `generateVapidKeys`. Apple rejects an `https://localhost` subject. |
+| `vapid` | required | `{ subject, publicKey, privateKey }`. `subject` is a `mailto:` or `https:` URL where the push service can contact you. Apple rejects an `https://localhost` subject. The keys are base64url strings from `generateVapidKeys`. |
 | `ttl` | `2419200` (four weeks) | Seconds the push service keeps the message for an offline browser. `0` means deliver now or drop it. |
-| `urgency` | not sent | `'very-low'`, `'low'`, `'normal'`, or `'high'`. Push services may hold back low-urgency messages to save battery. |
+| `urgency` | not sent | `'very-low'`, `'low'`, `'normal'`, or `'high'`. Push services may delay low-urgency messages to save battery. |
 | `topic` | not sent | Up to 32 base64url characters. A new message with the same topic replaces an undelivered one. |
-| `now` | `new Date()` | The time to sign the VAPID token at, as a `Date` or a `Temporal.Instant`. The token expires 12 hours after it is signed. The package reuses a token for up to an hour, so the token in a request can be signed up to an hour before `now`. |
+| `now` | `new Date()` | The time to sign the VAPID token, as a `Date` or a `Temporal.Instant`. A token can be reused for up to an hour, so it may be signed up to an hour before `now`. |
 | `fetch` | `globalThis.fetch` | `send` only. Called with the `Request`. Pass one to add retries, logging, or a proxy. |
 | `signal` | none | Cancels the encryption and the `fetch`, and the call rejects with `signal.reason`. |
-| `salt`, `keyPair` | random | `encrypt` only. The 16-byte salt and the server's ECDH P-256 key pair. Only for test vectors: reusing either for two messages weakens the encryption. |
+| `salt`, `keyPair` | random | `encrypt` only. The 16-byte salt and the server's ECDH P-256 key pair. Use only for test vectors, because reusing either weakens the encryption. |
 
-The JWT in the `Authorization` header expires 12 hours after it is signed. `send` and `toRequest` reuse a token for the same push service and keys for up to an hour, because Apple rejects senders that sign new tokens more often.
+The VAPID token expires 12 hours after it is signed. `send` and `toRequest` reuse a token for the same push service and keys for up to an hour, because Apple rejects senders that sign new tokens more often.
 
 ## Types
 
@@ -114,23 +114,23 @@ The JWT in the `Authorization` header expires 12 hours after it is signed. `send
 
 ## Why use this over web-push
 
-It runs anywhere WebCrypto and `fetch` do, so you can send notifications from a Worker or from a Deno or Bun server. It depends only on four other `@portable/*` packages, where web-push has five dependencies, including an ASN.1 library and an HTTPS proxy agent.
+It runs anywhere WebCrypto and `fetch` do, including Workers, Deno, and Bun. Its only dependencies are four `@portable/*` packages. web-push has five, including an ASN.1 library and an HTTPS proxy agent.
 
-- `send` returns `{ kind: 'gone' }` for a 404 or 410, so you can tell an expired subscription from a failed send without checking status codes yourself.
-- Payloads over 3993 bytes are rejected before sending. web-push has no limit, and http_ece splits a payload over about 4079 bytes into several records, which push services reject.
-- `ttl` must be a non-negative integer. web-push sends `TTL: NaN` for a non-numeric value, and Apple rejects it.
-- `p256dh` must be a point on the P-256 curve and `auth` exactly 16 bytes, as RFC 8291 requires, and both must be valid base64. web-push checks lengths only, and skips characters outside the alphabet.
-- VAPID keys must be a matching pair, and a `mailto:` subject with a space is rejected. Push services reject both, and web-push sends them anyway.
-- Only `https:` endpoints are accepted, so a subscription posted by a client can't point your server at an internal `http:` address.
+- `send` returns `{ kind: 'gone' }` for a 404 or 410, so you don't need to check status codes to find expired subscriptions.
+- Payloads over 3993 bytes are rejected before sending. web-push has no limit and splits a payload over about 4079 bytes into several records, which push services reject.
+- `ttl` must be a non-negative integer. web-push sends `TTL: NaN` for a non-numeric value, which Apple rejects.
+- `p256dh` must be a P-256 point and `auth` exactly 16 bytes (RFC 8291), both in valid base64. web-push checks only lengths and skips invalid characters.
+- VAPID keys must be a matching pair, and a `mailto:` subject can't contain a space. web-push sends both, and push services reject them.
+- Only `https:` endpoints are accepted, so a subscription from a client can't point your server at an internal `http:` address.
 - `signal` cancels the encryption and the request. web-push has only a socket idle `timeout`.
-- web-push's `contentEncoding: 'aesgcm'` isn't supported. Every current browser accepts aes128gcm.
-- web-push's `gcmAPIKey` option and `setGCMAPIKey` aren't supported. GCM shut down in 2019, and FCM takes VAPID.
-- web-push rejects with a `WebPushError` that has `statusCode`, `headers`, and `body`. `send` rejects with a `ResponseError` that has `status`, `response.headers`, and `body`.
-- web-push's `headers` option has no equivalent in `send`. Set the headers on the `Request` from `toRequest`, then `fetch` it.
-- web-push's `proxy` and `agent` options have no equivalent. Pass a `fetch` option that uses them.
-- An empty string payload is encrypted and sent. web-push sends no body for `''`, so the service worker's `event.data` is `null`.
-- `send` sends no `Urgency` header unless you pass `urgency`. web-push always sends `Urgency: normal`, which push services treat the same as no header.
 - The VAPID token is reused for up to an hour per push service. web-push signs a new one for every message.
+- `contentEncoding: 'aesgcm'` isn't supported. Every current browser accepts aes128gcm.
+- `gcmAPIKey` and `setGCMAPIKey` aren't supported. GCM shut down in 2019, and FCM takes VAPID.
+- web-push rejects with a `WebPushError` that has `statusCode`, `headers`, and `body`. `send` rejects with a `ResponseError` that has `status`, `response.headers`, and `body`.
+- There is no `headers` option. Set headers on the `Request` from `toRequest`, then `fetch` it.
+- There are no `proxy` or `agent` options. Pass a `fetch` that uses them.
+- An empty string payload is encrypted and sent. web-push sends no body, so `event.data` is `null`.
+- `send` sends no `Urgency` header unless you pass `urgency`. web-push always sends `Urgency: normal`, which push services treat the same as no header.
 
 ### Performance
 
@@ -163,4 +163,4 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-On Node, web-push is about 2.5 times faster at encrypting one message and 1.2 times faster at encrypting many at once. Node runs each WebCrypto call on its thread pool, and an encryption makes 11 calls, while web-push makes synchronous `node:crypto` calls that block the event loop for their duration. Building a request is faster than encrypting plus signing because the token is reused.
+On Node, web-push encrypts about 2.5 times faster, or 1.2 times when encrypting many at once. Each encryption makes 11 WebCrypto calls, which Node runs on its thread pool. web-push's synchronous `node:crypto` calls block the event loop instead.
