@@ -1,5 +1,11 @@
 # @portable/exif
 
+## 0.1.1
+
+### Patch Changes
+
+- [#61](https://github.com/portablejs/portable/pull/61) [`c437905`](https://github.com/portablejs/portable/commit/c4379052f1e97d8c64fce323a5529799824b5a4f) - `parse` decodes at most twice the size of the TIFF data in values longer than 4 bytes and skips the tags after that, so many entries that point at one large value no longer decode to far more than the input. It also skips a second tag with the same name in one IFD.
+
 ## 0.1.0
 
 ### Minor Changes
