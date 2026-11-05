@@ -1,5 +1,11 @@
 # @portable/dkim
 
+## 0.2.0
+
+### Minor Changes
+
+- [#61](https://github.com/portablejs/portable/pull/61) [`c437905`](https://github.com/portablejs/portable/commit/c4379052f1e97d8c64fce323a5529799824b5a4f) - `Dkim.verify` takes a `maxSignatures` option, 10 by default, and reports each signature past the limit as `neutral` with the reason `too many signatures` instead of looking up its key and hashing the body. Selecting the header fields that `h=` lists now takes linear time, so a long `h=` list over many fields no longer takes quadratic time.
+
 ## 0.1.0
 
 ### Minor Changes
