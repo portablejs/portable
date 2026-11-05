@@ -59,7 +59,7 @@ Dates stay strings, as stored (`'2019:10:20 18:34:30'`), because EXIF dates have
 | `Exif.InvalidInputError` | The TIFF header is malformed: no `II` or `MM` byte order mark, a magic number other than 42, or an IFD0 offset inside the header. |
 | `Exif.TruncatedError` | TIFF or raw EXIF input is shorter than its 8-byte header. |
 
-A broken IFD doesn't throw. `parse` skips a tag if its type is unknown or its values point outside the data, and returns the other tags. If the EXIF data starts past the end of the input, `parse` returns empty IFDs.
+A broken IFD doesn't throw. `parse` skips a tag if its type is unknown or its values point outside the data, and returns the other tags. It also skips a tag once the values it has decoded add up to more than twice the size of the TIFF data, which only happens when tags point at the same bytes. Without that limit, a 32 KB file whose tags all point at one value decodes to about 250 MB of numbers. If the EXIF data starts past the end of the input, `parse` returns empty IFDs.
 
 ## `Exif.parseStream(stream, options?)`
 
