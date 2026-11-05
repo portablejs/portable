@@ -85,6 +85,8 @@ export declare namespace authenticate {
     now?: Instant | undefined;
     /** RSA keys shorter than this give DKIM `policy` and fail the ARC chain. @default 1024 */
     minKeyBits?: number | undefined;
+    /** The most DKIM-Signature fields to check, as in `Dkim.verify`. @default 10 */
+    maxSignatures?: number | undefined;
     /**
      * Creates the body hashes, as in `Dkim.verify`.
      * @default buffers the body for `crypto.subtle.digest`
@@ -133,7 +135,7 @@ export async function authenticate(
   message: Dkim.Message,
   options: authenticate.Options,
 ): Promise<Result> {
-  const { resolver, ip, helo, sender, minKeyBits, hasher, signal } = options;
+  const { resolver, ip, helo, sender, minKeyBits, maxSignatures, hasher, signal } = options;
   const authservId = assertAuthservId(options.authservId);
   assertResolver(resolver);
   const now = toDate(options.now);
@@ -144,7 +146,7 @@ export async function authenticate(
   const { header, body } = await splitMessage(message, signal);
   const fields = parseFields(toBinary(header));
   const verifyOptions = { resolver, now, minKeyBits, signal };
-  const dkimPlan = planDkim(fields, verifyOptions);
+  const dkimPlan = planDkim(fields, { ...verifyOptions, maxSignatures });
   const arcPlan = planArc(fields, verifyOptions);
   const digests = await hashBody(
     body,

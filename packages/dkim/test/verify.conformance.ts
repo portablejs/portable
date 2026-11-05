@@ -744,6 +744,53 @@ describe('the result object', () => {
   });
 });
 
+describe('maxSignatures', () => {
+  const many = (count: number) =>
+    Array.from(
+      { length: count },
+      (_, i) =>
+        `DKIM-Signature: v=1; a=rsa-sha256; d=${D}; s=s${i}; h=from; bh=AAAA; b=AAAA; l=${i + 1}\r\n`,
+    ).join('') + `From: joe@${D}\r\n\r\n${'x'.repeat(100)}`;
+
+  test('checks the first 10 signatures by default and gives the rest neutral without a lookup', async () => {
+    const { results, log } = await run(many(12), {});
+    expect(results.map((r) => r.reason)).toEqual([
+      ...Array.from({ length: 10 }, () => 'body hash did not verify'),
+      'too many signatures',
+      'too many signatures',
+    ]);
+    expect(results.slice(10).map((r) => r.result)).toEqual(['neutral', 'neutral']);
+    expect(log).toHaveLength(10);
+  });
+
+  test('hashes the body only for the signatures it checks', async () => {
+    const algorithms: string[] = [];
+    await run(
+      many(5),
+      {},
+      {
+        maxSignatures: 2,
+        hasher: (hash) => {
+          algorithms.push(hash);
+          let total = 0;
+          return {
+            update: (data) => {
+              total += data.length;
+            },
+            digest: async () => new Uint8Array([total]),
+          };
+        },
+      },
+    );
+    expect(algorithms).toHaveLength(2);
+  });
+
+  test('rejects a negative or NaN maxSignatures', async () => {
+    await expect(run(many(1), {}, { maxSignatures: -1 })).rejects.toThrow(RangeError);
+    await expect(run(many(1), {}, { maxSignatures: Number.NaN })).rejects.toThrow(RangeError);
+  });
+});
+
 describe('d= values that are not host names', () => {
   for (const separator of ['/', '?', '#', '\\', '@', ':', ' ']) {
     const d = `${D}${separator}x.attacker.test`;

@@ -55,6 +55,7 @@ A message is a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which 
 | `seal` | none | `{ domain, selector, privateKey, headers?, now? }`, as `Arc.seal` takes them. `authenticate` fills in the ARC-Authentication-Results payload and `cv=`. |
 | `now` | `new Date()` | The time to check DKIM and ARC signature expiry against and to use for `%{t}` in SPF explanations, as a `Date` or a `Temporal.Instant`. |
 | `minKeyBits` | `1024` | RSA keys shorter than this give DKIM `policy` and fail the ARC chain. |
+| `maxSignatures` | `10` | The most DKIM-Signature fields to check, as in [`Dkim.verify`](https://portablejs.com/packages/dkim#verifying). |
 | `hasher` | WebCrypto | Creates the body hashes. See [Crypto in @portable/dkim](https://portablejs.com/packages/dkim#crypto). |
 | `organizationalDomain` | the DNS tree walk | Finds organizational domains from a public suffix list, as in [`Dmarc.check`](https://portablejs.com/packages/dmarc#options). |
 | `signal` | none | Stops reading the message and every DNS lookup. The promise rejects with `signal.reason`. |
