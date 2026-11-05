@@ -99,7 +99,7 @@ It runs anywhere WebCrypto and `fetch` do, so you can send notifications from a 
 - `ttl` must be a non-negative integer. web-push sends `TTL: NaN` for a non-numeric value, and Apple rejects it.
 - `p256dh` must be a point on the P-256 curve and `auth` exactly 16 bytes, as RFC 8291 requires, and both must be valid base64. web-push checks lengths only, and skips characters outside the alphabet.
 - VAPID keys must be a matching pair, and a `mailto:` subject with a space is rejected. Push services reject both, and web-push sends them anyway.
-- Only `https:` endpoints are accepted, so a subscription posted by a client can't point your server at an internal `http:` address.
+- Only `https:` endpoints are accepted, and redirects aren't followed, so a subscription posted by a client can't point your server at an internal `http:` address. A push service answers with 201 and has no reason to redirect, so `send` throws `ResponseError` for a 3xx.
 - `signal` cancels the encryption and the request. web-push has only a socket idle `timeout`.
 - web-push's `contentEncoding: 'aesgcm'` isn't supported. Every current browser accepts aes128gcm.
 - web-push's `gcmAPIKey` option and `setGCMAPIKey` aren't supported. GCM shut down in 2019, and FCM takes VAPID.
