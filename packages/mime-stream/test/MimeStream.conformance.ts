@@ -124,6 +124,16 @@ describe('DecoderStream', () => {
     expect(bodies(await decode(message, { maxBoundaryLineBytes: 200 }))).toEqual(['x']);
   });
 
+  test('fails on a boundary parameter too long for maxBoundaryLineBytes', async () => {
+    const boundary = 'b'.repeat(2000);
+    const message = `Content-Type: multipart/mixed; boundary=${boundary}\r\n\r\n--${boundary.slice(0, -1)}x\r\n`;
+    const error = await decode(chunked(binary(message), 100), {
+      maxBoundaryLineBytes: 1000,
+    }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(MimeStream.MaxBoundaryLineBytesError);
+    expect(error).toMatchObject({ maxBoundaryLineBytes: 1000 });
+  });
+
   test('streams long lines that start like a delimiter', async () => {
     const line = '--B' + 'x'.repeat(100000);
     const message = `Content-Type: multipart/mixed; boundary=B\r\n\r\n--B\r\n\r\n${line}\r\n--B--`;

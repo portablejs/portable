@@ -591,3 +591,39 @@ describe('known upstream issues', () => {
     expect(Exif.parse(withXmp).ifd0).toEqual({ Orientation: 8 });
   });
 });
+
+describe('decoded size', () => {
+  // Every entry points at one shared value, so each entry would add another copy of it.
+  const overlapping = (entries: number, valueLength: number) => {
+    const valueAt = 8 + 2 + entries * 12 + 4;
+    const bytes = new Uint8Array(valueAt + valueLength);
+    const view = new DataView(bytes.buffer);
+    bytes.set([0x49, 0x49, 42, 0]);
+    view.setUint32(4, 8, true);
+    view.setUint16(8, entries, true);
+    for (let i = 0; i < entries; i++) {
+      const at = 10 + i * 12;
+      view.setUint16(at, 0xc000 + i, true);
+      view.setUint16(at + 2, 1, true);
+      view.setUint32(at + 4, valueLength, true);
+      view.setUint32(at + 8, valueAt, true);
+    }
+    return bytes;
+  };
+
+  test('keeps the decoded values within twice the size of the TIFF data', () => {
+    const input = overlapping(1000, 12_000);
+    const { ifd0 } = Exif.parse(input);
+    const decoded = Object.values(ifd0).reduce<number>(
+      (total, value) => total + (Array.isArray(value) ? value.length : 0),
+      0,
+    );
+    expect(decoded).toBeGreaterThan(0);
+    expect(decoded).toBeLessThanOrEqual(2 * input.length);
+  });
+
+  test('reads tags that share a value when they fit in the limit', () => {
+    const { ifd0 } = Exif.parse(overlapping(3, 8));
+    expect(Object.keys(ifd0)).toEqual(['0xC000', '0xC001', '0xC002']);
+  });
+});

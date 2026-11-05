@@ -56,6 +56,12 @@ export declare namespace verify {
     now?: Instant | undefined;
     /** RSA keys shorter than this give `policy` (RFC 8301 section 3.2). @default 1024 */
     minKeyBits?: number | undefined;
+    /**
+     * The most DKIM-Signature fields to check. Each field can need its own body hash and key
+     * lookup, so a sender could otherwise make one message cost any amount of work. Fields after
+     * this many give `neutral` with the reason `too many signatures`. @default 10
+     */
+    maxSignatures?: number | undefined;
     /** Creates the body hash. @default buffers the canonicalized body for `crypto.subtle.digest` */
     hasher?: ((hash: Hash) => Hasher) | undefined;
     /** Stops reading the message and the key lookups, and rejects with `signal.reason`. */
@@ -103,11 +109,20 @@ export async function verify(message: Message, options: verify.Options): Promise
  * uses it to hash the body once for DKIM, ARC, and the seal.
  */
 export function planVerify(fields: readonly Field[], options: verify.Options): Plan<Result[]> {
-  const { resolver, minKeyBits = 1024, signal } = options;
+  const { resolver, minKeyBits = 1024, maxSignatures = 10, signal } = options;
+  assertMaxSignatures(maxSignatures);
   const now = toDate(options.now);
   const signatures = fields
     .filter((field) => field.name === 'dkim-signature')
-    .map((field) => prepare(field, now));
+    .map((field, index) => {
+      const signature = prepare(field, now);
+      if (index >= maxSignatures && !signature.outcome) {
+        signature.outcome = { result: 'neutral', reason: 'too many signatures' };
+        signature.result.result = 'neutral';
+        signature.result.reason = 'too many signatures';
+      }
+      return signature;
+    });
   const pending = signatures.filter((signature) => !signature.outcome);
   const keys = new Map<string, Promise<KeyRecord>>();
   for (const { keyName } of pending) {
@@ -149,4 +164,10 @@ export function planVerify(fields: readonly Field[], options: verify.Options): P
       }),
     );
   return { requests: pending.map((signature) => signature.body), finish };
+}
+
+function assertMaxSignatures(value: number): void {
+  if (!(value >= 0)) {
+    throw new RangeError(`options.maxSignatures must be 0 or more, got ${value}.`);
+  }
 }

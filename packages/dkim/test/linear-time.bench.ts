@@ -53,4 +53,16 @@ describe('linear time', () => {
       await Dkim.verify((await sign(text)) + text, { resolver });
     }, 256 * 1024);
   });
+
+  test(
+    'selects the fields of a long h= list over many header fields',
+    { timeout: 60_000 },
+    async () => {
+      await expectLinear(async (count) => {
+        const text = `From: a@example.com\r\n${'X: y\r\n'.repeat(count)}\r\n`;
+        const signature = (await sign(text)).replace('h=From', `h=From${':z'.repeat(count)}`);
+        await Dkim.verify(signature + text, { resolver });
+      }, 4000);
+    },
+  );
 });

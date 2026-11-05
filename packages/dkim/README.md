@@ -66,6 +66,7 @@ await Dkim.verify(message, { resolver: dns });
 | `resolver` | required | Looks up the keys. `Dns.create()` from [@portable/dns](https://portablejs.com/packages/dns), `node:dns/promises`, or any object with `resolveTxt`. |
 | `now` | `new Date()` | The time to check `x=` against, as a `Date` or a `Temporal.Instant`. |
 | `minKeyBits` | `1024` | RSA keys shorter than this give `policy` (RFC 8301 section 3.2). |
+| `maxSignatures` | `10` | The most DKIM-Signature fields to check. Each one can need its own body hash and key lookup, so fields after this many give `neutral` with the reason `too many signatures`. |
 | `hasher` | WebCrypto | Creates the body hash. See [Crypto](#crypto). |
 | `signal` | none | Stops reading the message and the key lookups, and `verify` rejects with `signal.reason`. |
 

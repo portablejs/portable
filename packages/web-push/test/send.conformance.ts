@@ -142,6 +142,23 @@ describe('send', () => {
     expect((error as WebPush.ResponseError).response.headers).toBeInstanceOf(Headers);
   });
 
+  test('asks fetch not to follow redirects', async () => {
+    const { request } = await sent('hello');
+    expect(request.redirect).toBe('manual');
+  });
+
+  test.for([301, 302, 303, 307, 308])('throws ResponseError for a %i redirect', async (status) => {
+    const service = pushService(status, '');
+    const error = await WebPush.send({
+      subscription: agent.subscription,
+      payload: 'hello',
+      vapid,
+      fetch: service.fetch,
+    }).catch((error: unknown) => error);
+    expect(error).toBeInstanceOf(WebPush.ResponseError);
+    expect(error).toMatchObject({ status });
+  });
+
   test('rejects with the fetch error when the push service is unreachable', async () => {
     const failure = new TypeError('fetch failed');
     await expect(
