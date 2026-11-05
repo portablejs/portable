@@ -16,7 +16,7 @@ const { width, height, type } = await ImageSize.parseStream(response.body!);
 // { width: 1600, height: 1200, type: 'jpg', orientation: 1 }
 ```
 
-`parseStream` stops reading and cancels the stream once it has the bytes that hold the dimensions. For a JPEG that means the segments up to its frame header (5 KB of the 730 KB `large.jpg` fixture), and for a PNG the first 24 bytes.
+`parseStream` stops reading and cancels the stream once it has the bytes that hold the dimensions. For a JPEG that means the segments up to its frame header (5 KB of the 730 KB `large.jpg` fixture), and for a PNG the first 24 bytes. If the stream arrives in small chunks, `parseStream` waits until it holds twice as many bytes before it parses the buffer again, so it may read up to twice what the header needs, and the time it takes stays linear in the bytes it reads.
 
 ## API
 
