@@ -11,11 +11,15 @@ export type Context = {
   fetch: Fetch;
   signal: AbortSignal | undefined;
   now: Instant | undefined;
+  redirect?: RequestRedirect | undefined;
 };
 
-export async function request(url: string, { fetch, signal }: Context): Promise<Json> {
+export async function request(
+  url: string,
+  { fetch, signal, redirect = 'follow' }: Context,
+): Promise<Json> {
   const response = await fetch(
-    new Request(url, { headers: { accept }, ...(signal && { signal }) }),
+    new Request(url, { headers: { accept }, redirect, ...(signal && { signal }) }),
   );
   if (response.status === 404) {
     await response.body?.cancel();

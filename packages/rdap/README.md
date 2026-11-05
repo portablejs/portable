@@ -78,7 +78,7 @@ For a timeout, pass `signal: AbortSignal.timeout(5000)`.
 
 gTLD registries such as Verisign and PIR return the registrar, the dates, and the nameservers, and link to the registrar's own RDAP response with a `related` link. The registrar's response has the registrant and the other contacts. With `follow` on, `Rdap.domain` fetches that response too. `entities` then lists the registrar's entities, plus registry entities in roles the registrar has no entity for. `status`, `events`, and `nameservers` stay the registry's, because the registry is the authority for them.
 
-`referral` is `{ url, raw }` with the registrar's JSON, or `{ url, error }` when that request failed. A failed referral doesn't fail the lookup, because registrar servers are less reliable than registries and the registry's data is still correct. A link is followed only if its type is `application/rdap+json` or missing and it points to another URL ending in `/domain/<name>`.
+`referral` is `{ url, raw }` with the registrar's JSON, or `{ url, error }` when that request failed. A failed referral doesn't fail the lookup, because registrar servers are less reliable than registries and the registry's data is still correct. A link is followed only if its type is `application/rdap+json` or missing and it points to another `https` URL ending in `/domain/<name>` whose host is a domain name, not an IP address or `localhost`. The registrar's server can't redirect the request, because a redirect could point to a host that these checks reject.
 
 ### Bootstrap files
 

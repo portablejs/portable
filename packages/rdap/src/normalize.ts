@@ -277,7 +277,7 @@ export function relatedLink(json: Json, self: string): string | undefined {
     } catch {
       continue;
     }
-    if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    if (url.protocol !== 'https:' || !isDomainHost(url.hostname)) {
       continue;
     }
     if (!/\/domain\/[^/]+$/i.test(url.pathname) || url.href === new URL(self).href) {
@@ -286,6 +286,20 @@ export function relatedLink(json: Json, self: string): string | undefined {
     return url.href;
   }
   return undefined;
+}
+
+/**
+ * A host with at least two labels that isn't an IP address or under `localhost`. A URL parser has
+ * already turned numeric IPv4 forms such as `0x7f.1` into dotted decimal, and IPv6 into brackets.
+ */
+function isDomainHost(host: string): boolean {
+  return (
+    host.includes('.') &&
+    !host.startsWith('[') &&
+    !/^[\d.]+$/.test(host) &&
+    host !== 'localhost' &&
+    !host.endsWith('.localhost')
+  );
 }
 
 /**

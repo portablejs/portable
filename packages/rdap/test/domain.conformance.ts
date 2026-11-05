@@ -296,6 +296,31 @@ describe('referrals', () => {
     expect(result.referral).toBeUndefined();
   });
 
+  test('ignores related links over http, to IP addresses, and to localhost', async () => {
+    const { fetch, urls } = server(
+      registry([
+        { rel: 'related', href: 'http://registrar.example/domain/example.com' },
+        { rel: 'related', href: 'https://169.254.169.254/domain/example.com' },
+        { rel: 'related', href: 'https://[::1]/domain/example.com' },
+        { rel: 'related', href: 'https://localhost/domain/example.com' },
+        { rel: 'related', href: 'https://admin.localhost/domain/example.com' },
+        { rel: 'related', href: 'https://intranet/domain/example.com' },
+      ]),
+    );
+    const result = await Rdap.domain('example.com', { fetch });
+    expect(urls).toEqual([iana, self]);
+    expect(result.referral).toBeUndefined();
+  });
+
+  test('does not follow redirects from the registrar', async () => {
+    const { fetch, requests } = server(
+      registry([{ rel: 'related', href: 'https://registrar.example/domain/example.com' }]),
+    );
+    await Rdap.domain('example.com', { fetch });
+    expect(requests[2]!.redirect).toBe('error');
+    expect(requests[1]!.redirect).toBe('follow');
+  });
+
   test('reports a referral that is not JSON in referral.error', async () => {
     const { fetch } = server({
       ...registry([{ rel: 'related', href: 'https://registrar.example/domain/example.com' }]),
