@@ -1,12 +1,12 @@
-const special = /[\s/\\?#%@:[\]]/;
+const special = /[\0-\x20/\\?#%@:[\]]/;
 
 /**
  * Converts a domain to lower-case ASCII. A domain of printable ASCII is only lowercased, and any
  * other domain goes through the URL host parser, which applies UTS #46 with the runtime's own
- * tables, so this function adds none of this package's tables to a bundle. The parser also cuts a
- * host at `/`, `?`, or `#` and percent-decodes it, so `hostToAscii` returns `undefined` if the
- * domain contains one of those or another character with a special meaning in a URL authority,
- * or if the parser rejects the domain.
+ * tables. The parser also cuts a host at `/`, `?`, or `#`, percent-decodes it, and removes tabs and
+ * newlines. So `hostToAscii` returns `undefined` if the parser rejects the domain, or if the domain
+ * contains a character with a special meaning in a URL authority, a space, or a control character. It doesn't check `xn--` labels or apply the bidi rule, which
+ * `toAscii` does.
  */
 export function hostToAscii(domain: string): string | undefined {
   if (special.test(domain)) {

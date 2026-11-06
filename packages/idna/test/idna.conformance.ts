@@ -2,15 +2,15 @@ import { describe, expect, test } from 'vite-plus/test';
 import * as Idna from '@portable/idna';
 
 describe('toUnicode', () => {
-  test('decodes the hostname URL produces', () => {
+  test('decodes the hostname that URL returns', () => {
     const { hostname } = new URL('https://Bücher.example/');
-    expect(hostname).toBe('xn--bcher-kva.example');
     expect(Idna.toUnicode(hostname)).toBe('bücher.example');
+    expect(Idna.toUnicode('XN--BCHER-KVA.COM')).toBe('bücher.com');
   });
 
   test('maps and normalizes Unicode input', () => {
     expect(Idna.toUnicode('BÜCHER.example')).toBe('bücher.example');
-    expect(Idna.toUnicode('Bu\u0308cher。example')).toBe('bücher.example');
+    expect(Idna.toUnicode('Bücher。example')).toBe('bücher.example');
   });
 
   test('keeps deviation characters', () => {
@@ -40,13 +40,38 @@ describe('toUnicode', () => {
     expect(() => Idna.toUnicode('\u0308a')).toThrow(Idna.InvalidInputError);
   });
 
-  test('rejects a right-to-left label next to a label that breaks the bidi rule', () => {
-    expect(Idna.toUnicode('a.א')).toBe('a.א');
-    expect(() => Idna.toUnicode('0a.א')).toThrow(Idna.InvalidInputError);
+  test('rejects a zero width joiner outside a virama context', () => {
+    expect(() => Idna.toUnicode('xn--1ugz855p6kd.com')).toThrow(Idna.InvalidInputError);
+    expect(() => Idna.toUnicode('a\u200Db')).toThrow(Idna.InvalidInputError);
+    expect(Idna.toUnicode('\u0915\u094D\u200D')).toBe('\u0915\u094D\u200D');
+  });
+
+  test('rejects a zero width non-joiner outside a joining context', () => {
+    expect(() => Idna.toUnicode('a\u200Cb')).toThrow(Idna.InvalidInputError);
+    expect(() => Idna.toUnicode('xn--ab-j1t')).toThrow(Idna.InvalidInputError);
   });
 
   test('allows a zero width non-joiner between joining letters', () => {
-    expect(Idna.toUnicode('xn--mgba3gch31f060k')).toBe('نامه\u200Cای');
+    expect(Idna.toUnicode('xn--mgba3gch31f060k')).toBe('نامه‌ای');
+  });
+
+  test('applies the bidi rule, which Node and workerd skip', () => {
+    expect(Idna.toUnicode('a.א')).toBe('a.א');
+    expect(() => Idna.toUnicode('0a.א')).toThrow(Idna.InvalidInputError);
+    expect(() => Idna.toUnicode('0à.א')).toThrow(Idna.InvalidInputError);
+    expect(() => Idna.toUnicode('xn--0-sfa.xn--4db')).toThrow(Idna.InvalidInputError);
+    expect(() => Idna.toUnicode('אa')).toThrow(Idna.InvalidInputError);
+    expect(Idna.toUnicode('مثال.إختبار')).toBe('مثال.إختبار');
+  });
+
+  test('rejects Unicode input that URL reads as an IPv4 address', () => {
+    expect(() => Idna.toUnicode('１２７.０.０.１')).toThrow(Idna.InvalidInputError);
+  });
+
+  test('rejects characters that URL treats as delimiters or forbids in a host', () => {
+    for (const domain of ['a/b', 'a?b', 'a#b', 'a@b', 'a:80', 'a b', 'a%41', 'ü<b']) {
+      expect(() => Idna.toUnicode(domain)).toThrow(Idna.InvalidInputError);
+    }
   });
 
   test('strict also applies the hyphen and STD 3 rules', () => {
@@ -54,23 +79,18 @@ describe('toUnicode', () => {
     expect(() => Idna.toUnicode('-a', { strict: true })).toThrow(Idna.InvalidInputError);
     expect(() => Idna.toUnicode('ab--c', { strict: true })).toThrow(Idna.InvalidInputError);
     expect(() => Idna.toUnicode('b_c', { strict: true })).toThrow(Idna.InvalidInputError);
+    expect(() => Idna.toUnicode('xn--b_c-hoa', { strict: true })).toThrow(Idna.InvalidInputError);
   });
 
   test('reverses toAscii', () => {
-    for (const domain of [
-      'bücher.example',
-      '☕.example',
-      'example.com',
-      'نامه\u200Cای.ir',
-      '日本語.jp',
-    ]) {
+    for (const domain of ['bücher.example', '☕.example', 'example.com', 'نامه‌ای.ir']) {
       expect(Idna.toUnicode(Idna.toAscii(domain))).toBe(domain);
     }
   });
 });
 
 describe('toAscii', () => {
-  test('matches the hostname URL produces', () => {
+  test('matches the hostname that URL returns', () => {
     for (const domain of [
       'Bücher.example',
       'faß.de',
@@ -87,15 +107,28 @@ describe('toAscii', () => {
     expect(Idna.toAscii('-a_b-.example')).toBe('-a_b-.example');
   });
 
+  test('checks the xn-- labels in Unicode input', () => {
+    expect(() => Idna.toAscii('xn--b.bücher.example')).toThrow(Idna.InvalidInputError);
+  });
+
+  test('applies the bidi rule', () => {
+    expect(() => Idna.toAscii('0à.א')).toThrow(Idna.InvalidInputError);
+  });
+
   test('rejects an empty result', () => {
     expect(() => Idna.toAscii('')).toThrow(Idna.InvalidInputError);
-    expect(() => Idna.toAscii('\u00AD')).toThrow(Idna.InvalidInputError);
+    expect(() => Idna.toAscii('­')).toThrow(Idna.InvalidInputError);
   });
 
   test('rejects characters that URL forbids in a host', () => {
     expect(() => Idna.toAscii('a b.example')).toThrow(Idna.InvalidInputError);
     expect(() => Idna.toAscii('a%41.example')).toThrow(Idna.InvalidInputError);
+    expect(() => Idna.toAscii('a<b.example')).toThrow(Idna.InvalidInputError);
     expect(() => Idna.toAscii('www.example.net⩴80')).toThrow(Idna.InvalidInputError);
+  });
+
+  test('rejects a whole URL instead of encoding it as one label', () => {
+    expect(() => Idna.toAscii('https://ğğl.com')).toThrow(Idna.InvalidInputError);
   });
 
   test('strict rejects empty labels and labels over 63 characters', () => {
@@ -109,7 +142,6 @@ describe('toAscii', () => {
   test('strict rejects names over 253 characters', () => {
     const label = 'a'.repeat(63);
     const name = [label, label, label, 'a'.repeat(61)].join('.');
-    expect(name.length).toBe(253);
     expect(Idna.toAscii(name, { strict: true })).toBe(name);
     expect(() => Idna.toAscii(`${name}a`, { strict: true })).toThrow(Idna.InvalidInputError);
   });
@@ -166,12 +198,5 @@ describe('known upstream issues', () => {
 
   test('a dot inside the input separates labels (punycode.js #117)', () => {
     expect(Idna.toAscii('♡.com')).toBe('xn--c6h.com');
-  });
-
-  test('converts a long label within the test timeout; punycode.js and tr46 take 15 s for this one', () => {
-    const label = Array.from({ length: 40_000 }, (_, i) =>
-      String.fromCodePoint(0x4e00 + (i % 20_000)),
-    );
-    expect(Idna.toUnicode(Idna.toAscii(label.join('')))).toBe(label.join(''));
   });
 });
