@@ -109,6 +109,20 @@ Sse.connect(request, {
 | `Sse.Delay` | The `delay` option, `Timers.Delay` from [@portable/timers](https://portablejs.com/packages/timers). |
 | `Sse.Backoff` | `{ initial, max, factor?, jitter? }`, exponential backoff for `delay`. |
 
+## Why use this over `EventSource`
+
+Browsers have `EventSource` built in, but it only sends GET requests and gives you little control over how events are read or how it reconnects. `Sse.connect` reads the same streams through `fetch`, so you control both the request and the reading.
+
+- `EventSource` sends only GET requests, and its only option is `withCredentials`, so you can't send an `Authorization` header. `connect` sends your `Request` with any method, headers, and body, and sends the body again on each reconnect. To send a fresh token on each attempt, pass a `fetch` option that sets the header.
+- `EventSource` dispatches each event as soon as it arrives, however slow your handler is. `connect` returns a `ReadableStream` that reads the response only when you read from it, so if you read slowly, `connect` reads the response slowly too, and events don't pile up in memory.
+- `EventSource` has no `pause()`, so the only way to stop its events is to close it. If you stop reading from `connect`'s stream, the connection stays open until you read again.
+- `EventSource` gives you event listeners. `connect` gives you a stream that you can pipe, loop over with `for await`, or cancel. Cancelling the stream aborts the request, and so does aborting the `signal` you pass to `connect`.
+- `onerror` gets an `Event` with no status or body. `connect` fails the stream with `Sse.ResponseError`, which keeps the `Response` unread so you can read the error body.
+- `EventSource` waits a delay the browser picks, or the server's `retry`, before each reconnect, with no backoff or limit. `connect` takes `delay`, which can be exponential backoff with jitter; `attempts`, which limits how many attempts in a row can fail; and `reconnectIf`, which decides which errors lead to a reconnect. If the server sends nothing for `idleTimeout` ms, `connect` drops the connection and reconnects.
+- You can't set `Last-Event-ID` on the first request of an `EventSource`, so you can't resume from an ID you saved. `connect` sends the `Last-Event-ID` header from your `Request` until the server sends an `id`.
+- `DecoderStream` reads any response body, such as the streamed response to a POST request to an LLM API. If a line or an event's `data` is longer than `maxLength`, it fails the stream with `Sse.MaxLengthError` instead of buffering more.
+- Cloudflare Workers has no `EventSource`, but it has `fetch` and web streams, which are all this package needs.
+
 ## Why use this over eventsource-parser, eventsource, and fetch-event-source
 
 eventsource-parser only reads. The eventsource polyfill and fetch-event-source only connect, through callbacks, and neither returns a stream you can pipe or cancel. better-sse and hono only write. This package does all three with web streams and no dependencies outside `@portable/*`.

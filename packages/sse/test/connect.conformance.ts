@@ -542,6 +542,49 @@ describe('idleTimeout', () => {
   });
 });
 
+describe('backpressure', () => {
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
+
+  test('reads the response body only as fast as events are read', async () => {
+    let pulls = 0;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        controller.enqueue(new TextEncoder().encode(`data: ${pulls++}\n\n`));
+      },
+    });
+    const fetch = async () =>
+      new Response(body, { headers: { 'content-type': 'text/event-stream' } });
+    const reader = Sse.connect(url, { fetch }).getReader();
+    await reader.read();
+    await settle();
+    const before = pulls;
+    await settle();
+    expect(pulls).toBe(before);
+    for (let i = 0; i < 10; i++) {
+      await reader.read();
+    }
+    await settle();
+    expect(pulls).toBe(before + 10);
+    await reader.cancel();
+  });
+
+  test('sends the next request only after more events are read', async () => {
+    const mock = mockFetch(Array.from({ length: 10 }, (_, i) => ({ chunks: [`data: ${i}\n\n`] })));
+    const reader = Sse.connect(url, { fetch: mock.fetch, delay: 0 }).getReader();
+    await reader.read();
+    await settle();
+    const before = mock.requests.length;
+    await settle();
+    expect(mock.requests.length).toBe(before);
+    expect(before).toBeLessThanOrEqual(2);
+    await reader.read();
+    await reader.read();
+    await settle();
+    expect(mock.requests.length).toBe(before + 2);
+    await reader.cancel();
+  });
+});
+
 describe('cancelling', () => {
   test('cancelling the stream aborts the response in flight', async () => {
     const mock = mockFetch([{ chunks: ['data: a\n\n'], end: 'hang' }]);
