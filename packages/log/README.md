@@ -26,7 +26,11 @@ Turn namespaces on in the browser console with `localStorage.debug = 'app:*'`, i
 
 ## API
 
-### `Log.create(namespace)`
+### Loggers
+
+`Log.create`, `extend`, `with`, and `withContext` don't change any global setting, so you can call them anywhere, such as once per request.
+
+#### `Log.create(namespace)`
 
 Returns a logger. `debug` and `info` calls print only when a pattern enables the namespace. `warn` and `error` calls print unless a pattern turns the namespace off.
 
@@ -34,11 +38,52 @@ Returns a logger. `debug` and `info` calls print only when a pattern enables the
 | --- | --- |
 | `debug(...args)`, `info(...args)`, `warn(...args)`, `error(...args)` | Logs at that level. The arguments are the same as `console.log`'s, and a string first argument can hold `%s`, `%d`, `%o`, and the other format specifiers. The methods don't use `this`, so `const { debug } = log` works. |
 | `extend(suffix)` | Returns a logger for `namespace:suffix` with the same properties. |
-| `with(properties)` | Returns a logger with the same namespace whose records also include `properties`. |
+| `with(properties)` | Returns a logger with the same namespace whose records also include `properties`. See [Properties](#properties). |
 | `isEnabled(level)` | Whether a call at `level` would log with the current patterns. Use it to skip expensive work: `if (log.isEnabled('debug')) { log.debug(dump(state)); }`. |
 | `namespace` | The namespace string. |
 
-### Patterns
+#### Properties
+
+`log.with(properties)` returns a new logger that adds `properties` to every record it logs. `log` itself doesn't change. Loggers made from the new one with `extend` or `with` keep the properties. A later `with` adds to them and replaces a key that is already set.
+
+The console output prints the properties as one object after the arguments:
+
+```ts
+const log = Log.create('app:db').with({ requestId: 'r1' });
+
+log.info('connected to %s', 'db1');
+// app:db connected to db1 { requestId: 'r1' }
+
+log.extend('query').with({ userId: 7 }).warn('slow query', { ms: 812 });
+// app:db:query slow query { ms: 812 } { requestId: 'r1', userId: 7 }
+```
+
+A subscriber receives them as `record.properties`. Records also include the properties from the current `Log.withContext` call, and where both set a key, the value from `with` is used.
+
+#### `Log.withContext(properties, fn)`
+
+Runs `fn` and adds `properties` to every record logged during the call, including records from loggers created elsewhere. It needs a `context` storage passed to `configure`, because only the platform can follow a call through `await`. Without one it just calls `fn`.
+
+```ts
+import { AsyncLocalStorage } from 'node:async_hooks';
+
+Log.configure({ context: new AsyncLocalStorage() });
+
+export default {
+  fetch: (request: Request) =>
+    Log.withContext({ requestId: crypto.randomUUID() }, () => handle(request)),
+};
+```
+
+`withContext` doesn't change global state. The storage keeps the properties of each `withContext` call separate as the call runs through `await`, so two requests handled at the same time each log their own `requestId`. Only the storage passed to `configure` is global, so pass it once at startup.
+
+`AsyncLocalStorage` exists in Cloudflare Workers with `nodejs_compat`, Node, Bun, and Deno. If your request handler passes its logger down to the code it calls, `log.with({ requestId })` does the same without a storage.
+
+### Global settings
+
+These functions change settings that every logger reads: the patterns, the console output, the context storage, and the subscribers. A change applies at once to every logger, including loggers created before the call and loggers from another installed copy of this package, because the settings are stored on `globalThis`. Call them at startup, in a test, or from the browser console, not once per request.
+
+#### Patterns
 
 Patterns use debug's syntax: names separated by commas or spaces, `*` matches any text, and `-name` turns a namespace off at every level, including warnings and errors. Add `=level` to set a minimum level for the namespaces a pattern matches:
 
@@ -56,7 +101,7 @@ Patterns are read the first time `create`, `enable`, or `disable` is called, fro
 
 In a browser, a change to `localStorage.debug` in another tab applies at once through the `storage` event, and a change in the same tab, such as typing `localStorage.debug = 'app:*'` in the console, applies within a second. An invalid value is ignored and the previous patterns stay until it is fixed.
 
-### `Log.enable(patterns, options?)`
+#### `Log.enable(patterns, options?)`
 
 Replaces the patterns. Throws a `RangeError` when a pattern has an unknown level, and keeps the previous patterns.
 
@@ -64,7 +109,7 @@ Replaces the patterns. Throws a `RangeError` when a pattern has an unknown level
 | --- | --- | --- |
 | `persist` | `false` | Also writes the patterns to `localStorage.debug`, so they apply after a reload. |
 
-### `Log.configure(options)`
+#### `Log.configure(options)`
 
 Sets how enabled calls are written. It changes only the options you pass.
 
@@ -74,11 +119,11 @@ Sets how enabled calls are written. It changes only the options you pass.
 | `time` | `false` | Prefixes console output with an ISO 8601 timestamp, which Node's console doesn't show. |
 | `context` | | Storage for `withContext`, such as `new AsyncLocalStorage()` from `node:async_hooks`. |
 
-### `Log.disable()`
+#### `Log.disable()`
 
 Turns off every namespace at every level and returns the patterns that were in effect, so `Log.enable(Log.disable())` restores them.
 
-### `Log.subscribe(subscriber, options?)`
+#### `Log.subscribe(subscriber, options?)`
 
 Calls `subscriber(record)` with every enabled call, after the console output. Use it to send logs somewhere else, or to replace the console output with `Log.configure({ console: false })`. Pass `signal` to remove the subscriber.
 
@@ -92,28 +137,15 @@ Log.subscribe((record) => {
 });
 ```
 
-### `Log.withContext(properties, fn)`
+### Output
 
-Runs `fn` and adds `properties` to every record logged during the call, including records from loggers created elsewhere. It needs a `context` storage passed to `configure`, because only the platform can follow a call through `await`. Without one it just calls `fn`.
+These functions turn a record into text or console output without changing any setting, so you can call them from a subscriber.
 
-```ts
-import { AsyncLocalStorage } from 'node:async_hooks';
-
-Log.configure({ context: new AsyncLocalStorage() });
-
-export default {
-  fetch: (request: Request) =>
-    Log.withContext({ requestId: crypto.randomUUID() }, () => handle(request)),
-};
-```
-
-`AsyncLocalStorage` exists in Cloudflare Workers with `nodejs_compat`, Node, Bun, and Deno. If your request handler passes its logger down to the code it calls, `log.with({ requestId })` does the same without a storage.
-
-### `Log.format(record)`
+#### `Log.format(record)`
 
 Returns a record's arguments as one line of text, replacing format specifiers as Node's `util.format` does, except that objects are written with `JSON.stringify` instead of `util.inspect`. Errors are written as their stack. It doesn't include the namespace, level, time, or properties, so add the ones you need in your subscriber.
 
-### `Log.console(record)`
+#### `Log.console(record)`
 
 Writes a record as the default output does: the namespace in a color picked from its name, then the arguments, then the properties. `debug` records go to `console.log`, because Chrome hides `console.debug` unless its Verbose level is on, and the other levels go to `console.info`, `console.warn`, and `console.error`. In Node that puts `debug` and `info` on stdout and `warn` and `error` on stderr.
 
