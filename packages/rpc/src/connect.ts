@@ -21,7 +21,7 @@ const decoder = new TextDecoder();
  * Rpc.connect(transport, { codec: { encode: cbor.encode, decode: cbor.decode } });
  * ```
  */
-export const json: Codec<string | Uint8Array> = {
+export const json: Codec<string, string | Uint8Array> = {
   encode: (message) => JSON.stringify(message),
   decode: (data) => JSON.parse(typeof data === 'string' ? data : decoder.decode(data)),
 };

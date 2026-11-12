@@ -1,6 +1,9 @@
+export { answer } from '../answer.js';
 export { connect, json, provide } from '../connect.js';
 export { RemoteError, TransportError } from '../errors.js';
 export { handler, http } from '../http.js';
+export { notifier } from '../notifier.js';
+export type { Notifier } from '../notifier.js';
 export { port } from '../port.js';
 export { call, notify } from '../remote.js';
 export { withContext } from '../server.js';

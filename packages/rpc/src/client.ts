@@ -222,5 +222,5 @@ function errorObject(value: unknown): ErrorObject {
   };
 }
 
-const isEmpty = (params: Params | undefined): params is undefined | readonly [] =>
+export const isEmpty = (params: Params | undefined): params is undefined | readonly [] =>
   params === undefined || (Array.isArray(params) && params.length === 0);
