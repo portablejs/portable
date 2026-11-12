@@ -1,5 +1,11 @@
 # @portable/web-push
 
+## 0.2.0
+
+### Minor Changes
+
+- [#61](https://github.com/portablejs/portable/pull/61) [`c437905`](https://github.com/portablejs/portable/commit/c4379052f1e97d8c64fce323a5529799824b5a4f) - `send` no longer follows redirects. A push service that answers with a 3xx status now throws `ResponseError`, so a redirect can't send the payload and the VAPID token to another host.
+
 ## 0.1.0
 
 ### Minor Changes
