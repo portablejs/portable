@@ -131,7 +131,11 @@ const ambient = `
 declare module 'cloudflare:sockets'
 declare module 'cloudflare:workers' {
   export class DurableObject<env = any> {
-    ctx: { storage: { kv: { get<value>(key: string): value | undefined; put(key: string, value: unknown): void } } }
+    ctx: {
+      storage: { kv: { get<value>(key: string): value | undefined; put(key: string, value: unknown): void } }
+      acceptWebSocket(socket: WebSocket, tags?: string[]): void
+      getWebSockets(tag?: string): WebSocket[]
+    }
     env: env
     constructor(ctx: any, env: env)
   }
@@ -143,6 +147,11 @@ interface RequestInit {
 }
 interface ResponseInit {
   webSocket?: unknown
+}
+// Workers' WebSocket keeps an attachment that survives hibernation.
+interface WebSocket {
+  serializeAttachment(value: unknown): void
+  deserializeAttachment(): any
 }
 // Deno has no types package on npm.
 declare namespace Deno {

@@ -42,6 +42,8 @@ export function withContext<args extends unknown[], result>(
   return wrapper;
 }
 
+const streamsUnsupported = 'The method returned a stream, which this server cannot send.';
+
 export const error = (id: Id, code: number, message: string): ResponseMessage => ({
   jsonrpc: '2.0',
   id,
@@ -56,9 +58,9 @@ export type Server = {
 export function createServer(
   api: object,
   send: Send,
-  options: { flow: boolean; request?: Request | undefined },
+  options: { flow: boolean; streams?: boolean | undefined; request?: Request | undefined },
 ): Server {
-  const { flow, request } = options;
+  const { flow, streams = true, request } = options;
   const calls = new Map<Id, Call>();
   const notifications = new Set<Call>();
 
@@ -134,6 +136,11 @@ export function createServer(
         : fn.apply(holder, args);
       if (isThenable(result)) {
         result = await result;
+      }
+      if (isStream(result) && !streams) {
+        open(result).cancel();
+        calls.delete(id);
+        return notification || call.done ? undefined : error(id, -32603, streamsUnsupported);
       }
       if (isStream(result)) {
         if (notification || call.done) {

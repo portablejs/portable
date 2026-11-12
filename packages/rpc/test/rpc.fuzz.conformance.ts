@@ -1,4 +1,5 @@
 import { fc, fuzz } from '@portable/fuzz';
+import * as Rpc from '@portable/rpc';
 import { expect, test } from 'vite-plus/test';
 import { pair, raw } from './utils.js';
 
@@ -49,5 +50,28 @@ test('the server answers any message or batch with JSON-RPC responses or nothing
       },
     ),
     { scale: 0.3 },
+  );
+});
+
+test('answer resolves with JSON-RPC responses or nothing for any message or batch', async () => {
+  const methods = { echo: (value: unknown) => value };
+  await fuzz(
+    fc.asyncProperty(
+      fc.oneof(
+        message.map((value) => JSON.stringify(value)),
+        fc.string({ maxLength: 20 }),
+      ),
+      async (text) => {
+        const reply = await Rpc.answer({ methods, message: text });
+        if (reply === undefined) {
+          return;
+        }
+        const parsed = JSON.parse(reply) as unknown;
+        for (const single of [parsed].flat() as Record<string, unknown>[]) {
+          expect(single.jsonrpc).toBe('2.0');
+          expect('result' in single !== 'error' in single).toBe(true);
+        }
+      },
+    ),
   );
 });

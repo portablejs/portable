@@ -234,6 +234,86 @@ const transport = {
 };
 ```
 
+### Servers that are evicted between messages
+
+`connect` and `provide` read the transport in a loop and keep each call in memory until it ends. A Durable Object that accepts WebSockets with hibernation can't run that loop or keep calls in memory. Cloudflare calls its `webSocketMessage` method once per message and can evict the object from memory between calls while the socket stays open. On such a server, answer each message with `Rpc.answer`, and send notifications to the client with `Rpc.notifier`:
+
+```ts
+// room.ts
+import { DurableObject } from 'cloudflare:workers';
+import * as Rpc from '@portable/rpc';
+import type { ClientApi } from './client.ts';
+
+const methods = (socket: WebSocket) => ({
+  follow(circles: string[]) {
+    socket.serializeAttachment({ circles });
+  },
+});
+export type RoomApi = ReturnType<typeof methods>;
+
+export class Room extends DurableObject {
+  async fetch(request: Request) {
+    if (new URL(request.url).pathname === '/publish') {
+      const { circle, text } = await request.json();
+      const followers = this.ctx
+        .getWebSockets()
+        .filter((socket) => socket.deserializeAttachment()?.circles.includes(circle));
+      const clients = Rpc.notifier<ClientApi>((data) => {
+        for (const socket of followers) {
+          socket.send(data);
+        }
+      });
+      await clients.notice({ circle, text });
+      return new Response(null, { status: 204 });
+    }
+    const [client, server] = Object.values(new WebSocketPair());
+    this.ctx.acceptWebSocket(server);
+    return new Response(null, { status: 101, webSocket: client });
+  }
+
+  async webSocketMessage(socket: WebSocket, message: string | ArrayBuffer) {
+    const reply = await Rpc.answer({
+      methods: methods(socket),
+      message: typeof message === 'string' ? message : new Uint8Array(message),
+    });
+    if (reply !== undefined) {
+      socket.send(reply);
+    }
+  }
+}
+```
+
+```ts
+// client.ts
+import * as Rpc from '@portable/rpc';
+import * as WebSockets from '@portable/websockets';
+import type { RoomApi } from './room.ts';
+
+const methods = {
+  notice({ circle, text }: { circle: string; text: string }) {
+    console.log(circle, text);
+  },
+};
+export type ClientApi = typeof methods;
+
+const room = Rpc.connect<RoomApi>(WebSockets.connect('wss://example.com/room'), { methods });
+await room.follow(['friends']);
+```
+
+`Rpc.answer({ methods, message, codec, signal })` decodes one message or batch, calls the methods, and resolves with the encoded reply, or with `undefined` if the message has only notifications. `answer` replies to a batch with one batch of responses, so there is at most one reply to send. Build the methods for each message, as `methods(socket)` does above, to give them the socket that sent the message. If the message doesn't decode, `answer` resolves with a parse error (code `-32700`). If `signal` aborts, `answer` aborts the context signal of each method wrapped with `withContext` and rejects with `signal.reason`.
+
+`Rpc.notifier<Api>(send, { codec })` returns a proxy with the methods of `Api`. Calling one encodes a notification, passes it to `send`, and resolves once `send` returns or its promise resolves. The arguments are type-checked against `Api`. To send params by name, pass a method of the proxy to `Rpc.notify`. When `send` writes to several sockets, as above, each notification is encoded once.
+
+`answer` and `notifier` take the same `codec` option as `connect`. If you use another codec, such as CBOR, pass the same one to `answer`, `notifier`, and the client's `connect`.
+
+The object isn't evicted while `webSocketMessage` runs, so a method can await storage or `fetch`. `answer` keeps nothing in memory after `webSocketMessage` returns, so it has these limits:
+
+- A method that returns a stream is answered with error code `-32603`. To send a series of values, record the client's interest in storage or in the socket's attachment, and send notifications as `follow` and `notice` do above.
+- `answer` ignores `$/cancel` and `$/stream/credit` messages, because it keeps no record of earlier calls.
+- The server can't make requests to the client, because the client's response would arrive in a later `webSocketMessage` call, after the request that waited for it is gone. Send notifications instead.
+
+On the client, if the WebSocket from [@portable/websockets](https://portablejs.com/packages/websockets) reconnects, a call whose request went out on the dropped connection is never answered. Requests written while the socket was disconnected are queued and answered as usual. To limit the wait, pass a signal with `Rpc.call(room.follow, [['friends']], { signal: AbortSignal.timeout(10_000) })`.
+
 ## Protocol
 
 Every message is a JSON-RPC 2.0 request, notification, or response, or a batch of them, so `Rpc.provide` answers any JSON-RPC client and `Rpc.connect` calls any JSON-RPC server. Streams and cancellation are notifications with reserved names, as in LSP:
@@ -260,6 +340,7 @@ Validation is left to the methods. Parse the arguments with your schema library 
 | Type | Description |
 | --- | --- |
 | `Rpc.Remote` | The client type `connect` and `http` return for an API type. |
+| `Rpc.Notifier` | The type `notifier` returns for an API type. |
 | `Rpc.Result` | What a remote method returns for a result of a given type. |
 | `Rpc.Transport` | A pair of streams that carry encoded messages. |
 | `Rpc.Codec` | Turns messages into what a transport carries, and back. |
