@@ -148,7 +148,14 @@ const { tools } = await Rpc.call(mcp['tools/list'], {});
 
 ## Transports
 
-A transport is any `{ readable, writable }` pair of streams that carries encoded messages.
+A transport is any `{ readable, writable }` pair of streams that carries encoded messages. Which functions to use depends on how the server receives messages:
+
+| Server | Use |
+| --- | --- |
+| A worker, iframe, popup, or `MessagePort` | `Rpc.port` or `Rpc.window` with `connect` and `provide` |
+| A process that keeps a WebSocket or another stream open | `connect` and `provide` |
+| An HTTP endpoint | `Rpc.handler` and `Rpc.http` |
+| A server that gets one message per callback and can be evicted between them, such as a Durable Object with WebSocket hibernation | `Rpc.answer` and `Rpc.notifier`, described in [Servers that are evicted between messages](#servers-that-are-evicted-between-messages) |
 
 ### `Rpc.port(target, { signal })`
 
@@ -234,9 +241,11 @@ const transport = {
 };
 ```
 
-### Servers that are evicted between messages
+## Servers that are evicted between messages
 
-`connect` and `provide` read the transport in a loop and keep each call in memory until it ends. A Durable Object that accepts WebSockets with hibernation can't run that loop or keep calls in memory. Cloudflare calls its `webSocketMessage` method once per message and can evict the object from memory between calls while the socket stays open. On such a server, answer each message with `Rpc.answer`, and send notifications to the client with `Rpc.notifier`:
+`connect` and `provide` read the transport in a loop and keep each call in memory until it ends. A Durable Object that accepts WebSockets with hibernation can't run that loop or keep calls in memory. Cloudflare calls its `webSocketMessage` method once per message and can evict the object from memory between calls while the socket stays open. On such a server, answer each message with `Rpc.answer`, and send notifications to the client with `Rpc.notifier`. The same functions work in any callback that receives one message at a time, such as the `message` handler of Bun's `ServerWebSocket`.
+
+This Durable Object lets each socket follow circles, and sends a `notice` to the sockets that follow a circle when a request to `/publish` arrives:
 
 ```ts
 // room.ts
@@ -300,19 +309,27 @@ const room = Rpc.connect<RoomApi>(WebSockets.connect('wss://example.com/room'), 
 await room.follow(['friends']);
 ```
 
-`Rpc.answer({ methods, message, codec, signal })` decodes one message or batch, calls the methods, and resolves with the encoded reply, or with `undefined` if the message has only notifications. `answer` replies to a batch with one batch of responses, so there is at most one reply to send. Build the methods for each message, as `methods(socket)` does above, to give them the socket that sent the message. If the message doesn't decode, `answer` resolves with a parse error (code `-32700`). If `signal` aborts, `answer` aborts the context signal of each method wrapped with `withContext` and rejects with `signal.reason`.
+### `Rpc.answer({ methods, message, codec, signal })`
 
-`Rpc.notifier<Api>(send, { codec })` returns a proxy with the methods of `Api`. Calling one encodes a notification, passes it to `send`, and resolves once `send` returns or its promise resolves. The arguments are type-checked against `Api`. To send params by name, pass a method of the proxy to `Rpc.notify`. When `send` writes to several sockets, as above, each notification is encoded once.
+Decodes one message or batch, calls the methods, and resolves with the encoded reply, or with `undefined` if the message has only notifications. `answer` replies to a batch with one batch of responses, so there is at most one reply to send. Build the methods for each message, as `methods(socket)` does above, to give them the socket that sent the message. If the message doesn't decode, `answer` resolves with a parse error (code `-32700`). If `signal` aborts, `answer` aborts the context signal of each method wrapped with `withContext` and rejects with `signal.reason`.
 
-`answer` and `notifier` take the same `codec` option as `connect`. If you use another codec, such as CBOR, pass the same one to `answer`, `notifier`, and the client's `connect`.
+### `Rpc.notifier<Api>(send, { codec })`
 
-The object isn't evicted while `webSocketMessage` runs, so a method can await storage or `fetch`. `answer` keeps nothing in memory after `webSocketMessage` returns, so it has these limits:
+Returns a proxy with the methods of `Api`. Calling one encodes a notification, passes it to `send`, and resolves once `send` returns or its promise resolves. The arguments are type-checked against `Api`. To send params by name, pass a method of the proxy to `Rpc.notify`. When `send` writes to several sockets, as above, each notification is encoded once.
+
+Both `answer` and `notifier` take the same `codec` option as `connect`. If you use another codec, such as CBOR, pass the same one to `answer`, `notifier`, and the client's `connect`.
+
+### Limits
+
+Cloudflare doesn't evict the object while `webSocketMessage` runs, so a method can await storage or `fetch`. `answer` keeps nothing in memory after `webSocketMessage` returns, so it has these limits:
 
 - `answer` can't stream a result. Streaming sends each value in its own message and waits for the client's `$/stream/credit`, so the server has to keep the stream in memory between messages. If a method returns an async iterable or a `ReadableStream`, `answer` cancels it and replies with error code `-32603`. To send a series of values, record the client's interest in storage or in the socket's attachment, and send notifications as `follow` and `notice` do above.
 - `answer` ignores `$/cancel` and `$/stream/credit` messages, because it keeps no record of earlier calls.
 - The server can't make requests to the client, because the client's response would arrive in a later `webSocketMessage` call, after the request that waited for it is gone. Send notifications instead.
 
-On the client, if the WebSocket from [@portable/websockets](https://portablejs.com/packages/websockets) reconnects, a call whose request went out on the dropped connection is never answered. Requests written while the socket was disconnected are queued and answered as usual. To limit the wait, pass a signal with `Rpc.call(room.follow, [['friends']], { signal: AbortSignal.timeout(10_000) })`.
+### Reconnecting clients
+
+If the WebSocket from [@portable/websockets](https://portablejs.com/packages/websockets) reconnects, a call whose request went out on the dropped connection is never answered. Requests written while the socket was disconnected are queued and answered as usual. To limit the wait, pass a signal with `Rpc.call(room.follow, [['friends']], { signal: AbortSignal.timeout(10_000) })`.
 
 ## Protocol
 
@@ -404,6 +421,7 @@ Structured-cloning a nested object costs more in Node than cloning one JSON stri
 - One package covers workers, iframes, popups, WebSockets, and HTTP, with the same API on each. comlink and post-me cover `postMessage`; penpal covers windows and workers; birpc takes callbacks for any channel; and json-rpc-2.0 has no transport.
 - The wire format is JSON-RPC 2.0, so the server also answers clients written in other languages, and the client can call LSP and MCP servers.
 - Async generators and `ReadableStream` results stream back with backpressure and cancellation. comlink needs a proxied callback per value, and birpc and penpal have no streams.
+- `Rpc.answer` and `Rpc.notifier` work on a server that is evicted from memory between messages, such as a Durable Object with WebSocket hibernation. comlink, penpal, and birpc keep each call in memory and need a connection that stays open.
 - Cancellation is an `AbortSignal` that reaches the method on the server. birpc and json-rpc-2.0 have timeouts but can't stop the remote work.
 - json-rpc-2.0 answers a batch of one request with a bare object and an all-notification batch with `null`, and treats a non-string method as unknown. `Rpc.provide` follows the specification in each case.
 - Methods are looked up only as own properties or class methods, never `Object.prototype` names, so `constructor` and `__proto__` can't be called remotely.
