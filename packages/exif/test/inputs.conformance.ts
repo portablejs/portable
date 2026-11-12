@@ -30,6 +30,23 @@ describe('byte inputs', () => {
   }
 });
 
+describe('HEIF byte inputs', () => {
+  for (const form of byteForms) {
+    test(`strips a ${form}`, async () => {
+      const bytes = await fixture('Irvine_CA.avif');
+      const stripped = Exif.strip(bytes);
+      expect(Exif.strip(toByteForm(bytes, form))).toEqual(stripped);
+      const chunks = [
+        toByteForm(bytes.subarray(0, 100), form),
+        toByteForm(bytes.subarray(100), form),
+      ];
+      expect(await readBytes(streamOf(chunks).pipeThrough(new Exif.StripStream()))).toEqual(
+        stripped,
+      );
+    });
+  }
+});
+
 describe('rejected byte inputs', () => {
   for (const [name, value] of Object.entries(rejectedByteForms)) {
     test(`throws a TypeError for ${name}`, async () => {

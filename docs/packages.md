@@ -126,7 +126,7 @@ await Streams.toText(Streams.fromIterable(rows()).pipeThrough(upper)); // 'AB'
 | @portable/mime-headers | Email header values: fold/unfold (RFC 5322), encoded-words (RFC 2047), parameter encoding (RFC 2231), address list parse/format. Other charsets come from a `charset` option, which accepts the @portable/charset encoders. | base64, bytes | libmime 37M, addressparser, email-addresses |
 | @portable/mime-stream | Walk a MIME message as a stream of parts (headers + body chunks) and write it back out, for in-flight transforms such as stripping attachments or hashing bodies. Full parsing to objects stays with postal-mime. | bytes, mime-headers, streams | mailsplit 2.7M |
 | @portable/image-size | Image type and dimensions from header bytes or a stream, reading only what it needs. | bytes | image-size 133M |
-| @portable/exif | EXIF/TIFF metadata from JPEG, TIFF, PNG, WebP, HEIC, and AVIF, and stripping it from JPEG, PNG, and WebP. | bytes, streams | exif-parser 17M |
+| @portable/exif | EXIF/TIFF metadata from JPEG, TIFF, PNG, WebP, HEIC, and AVIF, and stripping it from JPEG, PNG, WebP, HEIC, and AVIF. | bytes, streams | exif-parser 17M |
 | @portable/png | PNG decode/encode to RGBA, deflate via `CompressionStream` by default or a passed-in `{ inflate, deflate }` for sync use. | bytes | pngjs 283M |
 | @portable/dns-packet | DNS wire format encode/decode with dns-packet's record coverage. | bytes, ip | dns-packet 79M |
 | @portable/rate-limit | Rate limiting with a pluggable async store (in-memory store included; recipes for KV, Durable Objects, and Upstash), plus the `RateLimit`, `RateLimit-Policy`, and `Retry-After` header fields. | timers | rate-limiter-flexible, limiter, bottleneck's reservoir options |

@@ -1,6 +1,7 @@
 import * as Errors from '@portable/errors';
 /**
- * Thrown when TIFF or raw EXIF input ends before its 8-byte header.
+ * Thrown when TIFF or raw EXIF input ends before its 8-byte header, or when `strip` gets a HEIF
+ * file that ends inside its `ftyp` or `meta` box.
  *
  * @example
  * ```ts
@@ -23,7 +24,8 @@ export class TruncatedError extends Errors.TruncatedError {
 }
 
 /**
- * Thrown when EXIF data has a malformed TIFF header, or `strip` finds a malformed JPEG.
+ * Thrown when EXIF data has a malformed TIFF header, or `strip` finds a malformed JPEG or HEIF
+ * file.
  *
  * @example
  * ```ts
@@ -43,8 +45,8 @@ export class InvalidInputError extends Errors.InvalidInputError {
 }
 
 /**
- * Thrown when the input is not JPEG, TIFF, PNG, WebP, HEIF, or raw EXIF data, or when `strip` gets
- * a format other than JPEG, PNG, or WebP.
+ * Thrown when the input is not JPEG, TIFF, PNG, WebP, HEIF, or raw EXIF data. `strip` also throws
+ * it for TIFF or raw EXIF data, and when it can't remove an `Exif` or XMP item from a HEIF file.
  *
  * @example
  * ```ts

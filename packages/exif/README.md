@@ -1,6 +1,6 @@
 # @portable/exif
 
-Reads EXIF metadata from JPEG, TIFF, PNG, WebP, HEIC, and AVIF files, and removes EXIF and XMP metadata from JPEG, PNG, and WebP files. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Reads EXIF metadata from JPEG, TIFF, PNG, WebP, HEIC, and AVIF files, and removes EXIF and XMP metadata from JPEG, PNG, WebP, HEIC, and AVIF files. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [exif-parser](https://www.npmjs.com/package/exif-parser).
 
@@ -89,7 +89,7 @@ Besides the errors `parse` throws, `parseStream` rejects with `Exif.MaxBytesErro
 
 ## `Exif.strip(bytes, options?)` and `Exif.StripStream`
 
-Remove the EXIF and XMP metadata from a JPEG, PNG, or WebP file without re-encoding it. The image data is copied byte for byte. `strip` takes and returns a `Uint8Array`. `StripStream` is a `TransformStream` that does the same to a stream, so you can store a stripped upload and read its EXIF from the same body:
+Remove the EXIF and XMP metadata from a JPEG, PNG, WebP, HEIC, or AVIF file without re-encoding it. The image data is copied byte for byte. `strip` takes and returns a `Uint8Array`. `StripStream` is a `TransformStream` that does the same to a stream, so you can store a stripped upload and read its EXIF from the same body:
 
 ```ts
 const [stored, inspected] = request.body!.tee();
@@ -106,18 +106,21 @@ What is removed:
 | JPEG | APP1 `Exif` and XMP segments (including extended XMP), and the APP13 Photoshop segment that holds IPTC. | APP2 `ICC_PROFILE` segments, and every other segment. |
 | PNG | `eXIf`, and `tEXt`, `zTXt`, and `iTXt` chunks with the keyword `XML:com.adobe.xmp` or ImageMagick's `Raw profile type exif`, `APP1`, `xmp`, and `iptc`. | `iCCP`, and every other text chunk. |
 | WebP | `EXIF` and `XMP ` chunks. The RIFF size and the `VP8X` flags are updated to match. | `ICCP`. |
+| HEIC, AVIF | `Exif` items, and `mime` items of type `application/rdf+xml` (XMP), from `iinf`, `iloc`, `iref`, and `ipma`. Their data in `mdat` or `idat` is overwritten with zeros. | Every item property, including `colr` and `irot`. |
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `keepOrientation` | `true` | If the original has an `Orientation` from 2 to 8, write an EXIF block with only that tag in place of the original block, so that viewers and resizers still rotate the image. |
-| `keepColorProfile` | `true` | Keep the ICC profile. |
+| `keepOrientation` | `true` | If the original has an `Orientation` from 2 to 8, write an EXIF block with only that tag in place of the original block, so that viewers and resizers still rotate the image. HEIC and AVIF files store their rotation in an `irot` property, which `strip` always keeps. |
+| `keepColorProfile` | `true` | Keep the ICC profile. `strip` keeps the `colr` property of a HEIC or AVIF file either way. |
 | `signal` | none | `StripStream` only. Aborting errors the stream with `signal.reason`. |
 
-`StripStream` writes a JPEG or PNG as it arrives and holds at most one metadata segment or chunk. It holds a whole WebP file before writing it, because the RIFF size and the `VP8X` flags at the start of the file depend on the `EXIF` chunk, which usually comes last.
+`StripStream` writes a JPEG or PNG as it arrives and holds at most one metadata segment or chunk. It holds a whole WebP file before writing it, because the RIFF size and the `VP8X` flags at the start of the file depend on the `EXIF` chunk, which usually comes last. It holds a HEIC or AVIF file up to the end of its `meta` box. In a photo from an iPhone, `meta` ends within the first few kilobytes. If `mdat` comes before `meta`, `StripStream` holds the whole `mdat` too.
+
+A stripped HEIC or AVIF file has the same length as the original. `iloc` stores the byte offset of every item, so `strip` keeps every byte outside `meta` at its offset. It writes the smaller `meta` box and fills the bytes `meta` no longer uses with a `free` box. Then it overwrites the data of the removed items with zeros.
 
 In a JPEG, everything from the first start-of-scan marker on is copied unchanged, including any segments after the scan. A truncated file is stripped as far as it goes.
 
-`strip` throws `Exif.UnsupportedError` for TIFF, HEIC, and AVIF files and raw EXIF data. In HEIF files the `Exif` and XMP items are listed in `iinf` and located by byte offset in `iloc`, so removing them means rewriting those boxes and the offsets of every other item. `Exif.InvalidInputError` is thrown when a JPEG has bytes other than a marker between its segments, or a segment length below 2.
+`strip` throws `Exif.UnsupportedError` for TIFF files and raw EXIF data. It also throws it for a HEIC or AVIF file if an `Exif` or XMP item shares bytes with another item, is inside the `meta` box, has an extent of length 0, or is built from other items (construction method 2). In each of those cases, overwriting the item's data would also change another item or the `meta` box. `strip` throws `Exif.InvalidInputError` when a JPEG has bytes other than a marker between its segments or has a segment length below 2. It also throws it when a HEIC or AVIF file has no `meta` box, or when a box in `meta` is too short for its fields. `Exif.TruncatedError` is thrown when a HEIC or AVIF file ends inside its `ftyp` or `meta` box.
 
 ## `Exif.parseDate(value, options?)`
 
