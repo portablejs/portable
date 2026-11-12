@@ -308,7 +308,7 @@ await room.follow(['friends']);
 
 The object isn't evicted while `webSocketMessage` runs, so a method can await storage or `fetch`. `answer` keeps nothing in memory after `webSocketMessage` returns, so it has these limits:
 
-- A method that returns a stream is answered with error code `-32603`. To send a series of values, record the client's interest in storage or in the socket's attachment, and send notifications as `follow` and `notice` do above.
+- `answer` can't stream a result. Streaming sends each value in its own message and waits for the client's `$/stream/credit`, so the server has to keep the stream in memory between messages. If a method returns an async iterable or a `ReadableStream`, `answer` cancels it and replies with error code `-32603`. To send a series of values, record the client's interest in storage or in the socket's attachment, and send notifications as `follow` and `notice` do above.
 - `answer` ignores `$/cancel` and `$/stream/credit` messages, because it keeps no record of earlier calls.
 - The server can't make requests to the client, because the client's response would arrive in a later `webSocketMessage` call, after the request that waited for it is gone. Send notifications instead.
 

@@ -23,8 +23,10 @@ export declare namespace answer {
  * the message requests, and resolves with the encoded reply to send back, or `undefined` when there
  * is nothing to send. It keeps no state between messages, so it works on a server that can be
  * evicted from memory between messages, such as a Durable Object that accepts WebSockets with
- * hibernation. A method that returns a stream is answered with error code `-32603`, because a
- * stream needs a server that stays in memory.
+ * hibernation. It can't stream a result: streaming sends each value in its own message and waits
+ * for the client's `$/stream/credit`, so the server has to keep the stream in memory between
+ * messages. If a method returns an async iterable or a `ReadableStream`, `answer` cancels it and
+ * replies with error code `-32603`.
  *
  * @example
  * ```ts
