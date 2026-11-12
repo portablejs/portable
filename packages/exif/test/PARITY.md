@@ -6,7 +6,7 @@ Fixtures:
 
 - `starfish.jpg`, `test.jpg`: exif-parser (MIT, Bruno Windels, and Daniel Leinich).
 - `*.exif`: exif-reader (MIT, Devon Govett, and others).
-- Everything else: exifr's `test/fixtures` (MIT, Mike Kovařík). `orientation-f*t.jpg` were `orientation/f*t.jpg`. `heic-iphone7-head.heic` and `heic-single-head.heic` are the first 32768 and 2048 bytes of `heic-iphone7.heic` and `heic-single.heic`. The short copies keep the repo small and test reading only the start of a file.
+- Everything else: exifr's `test/fixtures` (MIT, Mike Kovařík). `orientation-f*t.jpg` were `orientation/f*t.jpg`. `heic-iphone7-head.heic` and `heic-single-head.heic` are the first 32768 and 2048 bytes of `heic-iphone7.heic` and `heic-single.heic`. The short copies keep the repo small and test reading only the start of a file. `heic-iphone7-thumbnail.heic` is a 15 KB HEIC built from `heic-iphone7.heic`: its primary image is the 320×240 thumbnail item, with the original `colr`, `hvcC`, `ispe`, `irot`, and `pixi` properties and `Exif` item. `strip.oracle.test.ts` decodes it with libheif-js before and after `strip`.
 
 Test names below are `describe > test` in `parse.conformance.ts`, `parseDate.conformance.ts`, or `exif.fuzz.conformance.ts`.
 

@@ -18,3 +18,16 @@ declare module 'exif-parser' {
   const ExifParser: { create(buffer: Uint8Array): Parser };
   export default ExifParser;
 }
+
+declare module 'libheif-js/wasm-bundle' {
+  type Image = {
+    get_width(): number;
+    get_height(): number;
+    display(
+      target: { data: Uint8ClampedArray; width: number; height: number },
+      callback: (result: unknown) => void,
+    ): void;
+  };
+  const libheif: { HeifDecoder: new () => { decode(bytes: Uint8Array): Image[] } };
+  export default libheif;
+}
