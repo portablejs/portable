@@ -32,6 +32,10 @@ describe('libheif', () => {
     expect(Exif.parse(stripped)).toMatchObject({ ifd0: {}, exif: {}, gps: {} });
     const original = await decode(bytes);
     expect(original).toMatchObject({ width: 320, height: 240 });
-    expect(await decode(stripped)).toEqual(original);
+    const after = await decode(stripped);
+    expect({ width: after.width, height: after.height }).toEqual({ width: 320, height: 240 });
+    // Counting the differing bytes keeps a failure fast. Vitest's diff of 300 KB of pixels takes
+    // minutes.
+    expect(after.data.filter((value, i) => value !== original.data[i]).length).toBe(0);
   });
 });
