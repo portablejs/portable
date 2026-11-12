@@ -5,7 +5,7 @@
   },
   "[!start-pkg]": "",
   "name": "@portable/exif",
-  "description": "Read EXIF metadata from JPEG, TIFF, PNG, WebP, HEIC, and AVIF bytes or streams, and strip it from JPEG, PNG, and WebP, in any JavaScript runtime.",
+  "description": "Read EXIF metadata from JPEG, TIFF, PNG, WebP, HEIC, and AVIF bytes or streams, and strip it from JPEG, PNG, WebP, HEIC, and AVIF, in any JavaScript runtime.",
   "version": "0.1.0",
   "type": "module",
   "sideEffects": false,

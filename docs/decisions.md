@@ -703,11 +703,11 @@ Vitest's default `forceRerunTriggers` includes `**/package.json`, so `vp test ru
 - **Trade-offs:** AGENTS.md keeps lowercase factories for generic operators that take a function or a number, such as `Streams.map(fn)`. Stripping is a fixed transform named for what it does, like `TextDecoderStream` and `CompressionStream`.
 - **Chosen:** `Exif.StripStream`, a `TransformStream` subclass.
 
-## `Exif.strip` doesn't handle HEIC, AVIF, or TIFF
+## `Exif.strip` keeps HEIF offsets and doesn't handle TIFF
 
-- **Options:** rewrite HEIF `iinf`, `iloc`, and `iref` to remove the `Exif` and XMP items; overwrite those items in place; throw `UnsupportedError`.
-- **Trade-offs:** Removing an item shifts the byte offsets that `iloc` stores for every later item, and `mdat` may come before or after `meta`, so a stream would have to hold the file. Overwriting in place keeps the offsets but leaves an `Exif` item that readers try to parse. A TIFF file stores its EXIF IFD beside the image IFDs, so it needs a TIFF writer.
-- **Chosen:** `UnsupportedError`, documented in the README. JPEG, PNG, and WebP cover most uploads.
+- **Options:** rewrite HEIF `iinf`, `iloc`, and `iref` to remove the `Exif` and XMP items and their data, and shift every offset after them; remove the items from `meta`, pad `meta` with a `free` box, and overwrite the items' data with zeros; overwrite the data only; throw `UnsupportedError`.
+- **Trade-offs:** Shifting offsets saves the size of the metadata, which is a few kilobytes in a photo from an iPhone. Because `mdat` may come before or after `meta`, a stream would have to hold the whole file before it could rewrite the offsets. A HEIF image sequence also stores offsets in `stco` boxes under `moov`, and those would have to change too. Padding keeps every byte outside `meta` at its offset, so the stream holds only the file up to the end of `meta` and doesn't need to read `moov`. Every removed `infe` box is at least 20 bytes, so the padding always has room for the `free` box header. Overwriting the data alone leaves an `Exif` item that readers try to parse. The first version of `strip` threw `UnsupportedError` for HEIC. iPhones save photos as HEIC by default, so `strip` couldn't remove metadata from photos uploaded from an iPhone. A TIFF file stores its EXIF IFD beside the image IFDs, so it needs a TIFF writer.
+- **Chosen:** remove the items, pad `meta`, and overwrite the data with zeros, so a stripped file has the same length as the original. libheif reads the same images, thumbnails, and ICC profile from a stripped file as from the original, and it finds no metadata blocks in the stripped file. `keepOrientation` and `keepColorProfile` don't apply to HEIF, because `strip` keeps every item property. That includes `irot`, which readers use to rotate the image, and `colr`, which holds the ICC profile. TIFF still throws `UnsupportedError`.
 
 ## `Exif.StripStream` holds a whole WebP file
 
