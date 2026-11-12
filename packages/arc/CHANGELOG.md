@@ -1,5 +1,12 @@
 # @portable/arc
 
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies [[`c437905`](https://github.com/portablejs/portable/commit/c4379052f1e97d8c64fce323a5529799824b5a4f)]:
+  - @portable/dkim@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes
