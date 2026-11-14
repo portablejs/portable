@@ -3,7 +3,9 @@ import type { AsyncDisposeMethod } from '@portable/errors/internal';
 import { TransportError } from './errors.js';
 import { remote } from './remote.js';
 import { direct } from './port.js';
-import { createServer, deferred, error, noop, type Send, type Server } from './server.js';
+import { error } from './dispatch.js';
+import { createServer, type Send, type Server } from './server.js';
+import { deferred, noop } from './util.js';
 import type { Codec, Id, Message, Remote, Transport } from './types.js';
 
 const decoder = new TextDecoder();

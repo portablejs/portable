@@ -4,7 +4,9 @@ import { createClient } from './client.js';
 import type { AsyncDisposeMethod } from '@portable/errors/internal';
 import { RemoteError, TransportError } from './errors.js';
 import { remote } from './remote.js';
-import { createServer, error, noop } from './server.js';
+import { error } from './dispatch.js';
+import { createServer } from './server.js';
+import { noop } from './util.js';
 import type { Id, Message, Remote } from './types.js';
 
 const ndjson = 'application/x-ndjson';
