@@ -1,5 +1,16 @@
-import { RemoteError } from './errors.js';
-import type { Context, ErrorObject, Id, Message, ResponseMessage } from './types.js';
+import {
+  error,
+  failure,
+  idOf,
+  invoke,
+  lookup,
+  parse,
+  respond,
+  success,
+  type Source,
+} from './dispatch.js';
+import type { Id, Message, ResponseMessage } from './types.js';
+import { noop } from './util.js';
 
 export type Send = (message: Message) => Promise<void> | void;
 
@@ -11,73 +22,28 @@ type Call = {
   cancel: (() => void) | undefined;
 };
 
-type Source = { next: () => Promise<IteratorResult<unknown>>; cancel: () => void };
-
-const contextKey = Symbol.for('portable.rpc.context');
-
-/**
- * Wraps a method so that it receives a `Context` as its first argument when it is called
- * remotely. The context's `signal` aborts when the caller cancels the call or the connection
- * closes. The remote's type has the method without the context argument.
- *
- * @example
- * ```ts
- * import * as Rpc from '@portable/rpc';
- *
- * const api = {
- *   search: Rpc.withContext(async ({ signal }, query: string) => {
- *     const response = await fetch(`https://example.com/search?q=${query}`, { signal });
- *     return response.json();
- *   }),
- * };
- * ```
- */
-export function withContext<args extends unknown[], result>(
-  fn: (context: Context, ...args: args) => result,
-): (...args: args) => result {
-  const wrapper = function (this: unknown, ...args: args) {
-    return fn.call(this, { signal: new AbortController().signal }, ...args);
-  };
-  Object.defineProperty(wrapper, contextKey, { value: fn });
-  return wrapper;
-}
-
-const streamsUnsupported = 'The method returned a stream, which this server cannot send.';
-
-export const error = (id: Id, code: number, message: string): ResponseMessage => ({
-  jsonrpc: '2.0',
-  id,
-  error: { code, message },
-});
-
 export type Server = {
   handle(message: unknown): Promise<void>;
   close(reason?: unknown): void;
 };
 
+/**
+ * A server that keeps each call in memory until the call ends, so it can stream results, apply credit,
+ * and cancel calls. `answer` uses the functions in dispatch.ts without this state.
+ */
 export function createServer(
   api: object,
   send: Send,
-  options: { flow: boolean; streams?: boolean | undefined; request?: Request | undefined },
+  options: { flow: boolean; request?: Request | undefined },
 ): Server {
-  const { flow, streams = true, request } = options;
+  const { flow, request } = options;
   const calls = new Map<Id, Call>();
   const notifications = new Set<Call>();
 
   async function handle(message: unknown): Promise<void> {
-    if (!Array.isArray(message)) {
-      const response = await run(message);
-      if (response) {
-        await reply(response);
-      }
-      return;
-    }
-    if (message.length === 0) {
-      return reply(error(null, -32600, 'Invalid Request'));
-    }
-    const responses = (await Promise.all(message.map(run))).filter((r) => r !== undefined);
-    if (responses.length > 0) {
-      await reply(responses);
+    const response = await respond(message, run);
+    if (response) {
+      await reply(response);
     }
   }
 
@@ -90,32 +56,27 @@ export function createServer(
           await reply(single);
         }
       } else if (!('error' in response)) {
-        await Promise.resolve(
-          send({ jsonrpc: '2.0', id: response.id, error: toErrorObject(e) }),
-        ).catch(noop);
+        await Promise.resolve(send(failure(response.id, e))).catch(noop);
       }
     }
   }
 
   async function run(message: unknown): Promise<ResponseMessage | undefined> {
-    if (!isRequest(message)) {
+    const parsed = parse(message);
+    if (!parsed) {
       return error(null, -32600, 'Invalid Request');
     }
-    const { method, params } = message;
-    const notification = !('id' in message);
-    const id = notification ? null : (message.id as Id);
+    const { id, notification, method, params } = parsed;
     if (notification && method === '$/cancel') {
       return cancel(idOf(params));
     }
     if (notification && method === '$/stream/credit') {
       return addCredit(params);
     }
-
     const target = lookup(api, method);
     if (!target) {
       return notification ? undefined : error(id, -32601, 'Method not found');
     }
-    const [holder, fn] = target;
     const call = {
       controller: new AbortController(),
       credit: flow ? 0 : Infinity,
@@ -128,47 +89,26 @@ export function createServer(
     } else {
       calls.set(id, call);
     }
-    try {
-      const args = params === undefined ? [] : Array.isArray(params) ? params : [params];
-      const original = (fn as { [contextKey]?: Function | undefined })[contextKey];
-      let result: unknown = original
-        ? original.call(holder, { signal: call.controller.signal, request }, ...args)
-        : fn.apply(holder, args);
-      if (isThenable(result)) {
-        result = await result;
+    const outcome = await invoke(target, params, { signal: call.controller.signal, request });
+    if (notification) {
+      notifications.delete(call);
+      if (outcome.kind === 'stream') {
+        outcome.source.cancel();
       }
-      if (isStream(result) && !streams) {
-        open(result).cancel();
-        calls.delete(id);
-        return notification || call.done ? undefined : error(id, -32603, streamsUnsupported);
-      }
-      if (isStream(result)) {
-        if (notification || call.done) {
-          open(result).cancel();
-        } else {
-          void pump(id, call, open(result));
-        }
-        return;
-      }
-      if (call.done) {
-        return;
-      }
-      calls.delete(id);
-      if (notification) {
-        return;
-      }
-      return { jsonrpc: '2.0', id, result: result === undefined ? null : result };
-    } catch (e) {
-      if (call.done || notification) {
-        return;
-      }
-      calls.delete(id);
-      return { jsonrpc: '2.0', id, error: toErrorObject(e) };
-    } finally {
-      if (notification) {
-        notifications.delete(call);
-      }
+      return;
     }
+    if (call.done) {
+      if (outcome.kind === 'stream') {
+        outcome.source.cancel();
+      }
+      return;
+    }
+    if (outcome.kind === 'stream') {
+      void pump(id, call, outcome.source);
+      return;
+    }
+    calls.delete(id);
+    return outcome.kind === 'value' ? success(id, outcome.value) : failure(id, outcome.error);
   }
 
   async function pump(id: Id, call: Call, source: Source) {
@@ -203,7 +143,7 @@ export function createServer(
       }
       finish(id, call);
       source.cancel();
-      await Promise.resolve(send({ jsonrpc: '2.0', id, error: toErrorObject(e) })).catch(noop);
+      await Promise.resolve(send(failure(id, e))).catch(noop);
     }
   }
 
@@ -248,110 +188,4 @@ export function createServer(
   }
 
   return { handle, close };
-}
-
-function lookup(api: object, method: string): [object, Function] | undefined {
-  if (method.startsWith('rpc.')) {
-    return;
-  }
-  let holder: unknown = api;
-  let value = property(api, method);
-  if (value === undefined && method.includes('.')) {
-    value = api;
-    for (const key of method.split('.')) {
-      holder = value;
-      value = property(value, key);
-      if (value === undefined) {
-        return;
-      }
-    }
-  }
-  return typeof value === 'function' ? [holder as object, value] : undefined;
-}
-
-function property(object: unknown, key: string): unknown {
-  if (object === null || typeof object !== 'object') {
-    return;
-  }
-  if (!Object.hasOwn(object, key) && key in Object.prototype) {
-    return;
-  }
-  return (object as Record<string, unknown>)[key];
-}
-
-function isRequest(
-  message: unknown,
-): message is { method: string; params?: unknown; id?: unknown } & object {
-  if (message === null || typeof message !== 'object') {
-    return false;
-  }
-  const { jsonrpc, method, params, id } = message as Record<string, unknown>;
-  return (
-    jsonrpc === '2.0' &&
-    typeof method === 'string' &&
-    (params === undefined || (params !== null && typeof params === 'object')) &&
-    (id === undefined || id === null || typeof id === 'string' || typeof id === 'number')
-  );
-}
-
-function idOf(params: unknown): Id | undefined {
-  if (params === null || typeof params !== 'object') {
-    return;
-  }
-  const { id } = params as { id?: unknown };
-  return typeof id === 'string' || typeof id === 'number' ? id : undefined;
-}
-
-export function toErrorObject(e: unknown): ErrorObject {
-  if (e instanceof RemoteError) {
-    return e.data === undefined
-      ? { code: e.code, message: e.message }
-      : { code: e.code, message: e.message, data: e.data };
-  }
-  const message = (e as { message?: unknown } | null)?.message;
-  return { code: -32603, message: typeof message === 'string' ? message : String(e) };
-}
-
-export function isStream(value: unknown): value is ReadableStream | AsyncIterable<unknown> {
-  return (
-    value instanceof ReadableStream ||
-    (value !== null &&
-      typeof value === 'object' &&
-      typeof (value as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function')
-  );
-}
-
-function open(source: ReadableStream | AsyncIterable<unknown>): Source {
-  if (source instanceof ReadableStream) {
-    const reader = source.getReader();
-    return { next: () => reader.read(), cancel: () => void reader.cancel().catch(noop) };
-  }
-  const iterator = source[Symbol.asyncIterator]();
-  return {
-    next: () => iterator.next(),
-    cancel: () => void Promise.resolve(iterator.return?.()).catch(noop),
-  };
-}
-
-const isThenable = (value: unknown): value is PromiseLike<unknown> =>
-  value !== null &&
-  (typeof value === 'object' || typeof value === 'function') &&
-  typeof (value as PromiseLike<unknown>).then === 'function';
-
-export const noop = (): void => {};
-
-export type Deferred<value> = {
-  promise: Promise<value>;
-  resolve: (value: value) => void;
-  reject: (reason: unknown) => void;
-};
-
-export function deferred<value>(): Deferred<value> {
-  let resolve!: (value: value) => void;
-  let reject!: (reason: unknown) => void;
-  const promise = new Promise<value>((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
-  return { promise, resolve, reject };
 }

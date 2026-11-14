@@ -3,8 +3,10 @@ import type { AsyncDisposeMethod } from '@portable/errors/internal';
 import { TransportError } from './errors.js';
 import { remote } from './remote.js';
 import { direct } from './port.js';
-import { createServer, error, noop, type Send } from './server.js';
-import type { Codec, Message, Remote, Transport } from './types.js';
+import { error } from './dispatch.js';
+import { createServer, type Send } from './server.js';
+import { noop } from './util.js';
+import type { Codec, Id, Message, Remote, Transport } from './types.js';
 
 const decoder = new TextDecoder();
 
@@ -22,6 +24,7 @@ const decoder = new TextDecoder();
  * ```
  */
 export const json: Codec<string, string | Uint8Array> = {
+  contentType: 'application/json',
   encode: (message) => JSON.stringify(message),
   decode: (data) => JSON.parse(typeof data === 'string' ? data : decoder.decode(data)),
 };
@@ -69,16 +72,41 @@ export function connect<api>(
   let unlisten: (() => void) | undefined;
   const reader = port?.listen ? undefined : transport.readable.getReader();
   const writer = port ? undefined : transport.writable.getWriter();
+  const reconnects = !port && typeof transport.addEventListener === 'function';
+  const written = new Map<Id, number>();
+  let writes = 0;
   const send = (
     port
       ? (message: Message) => port.post(codec.encode(message))
-      : (message: Message) => writer!.write(codec.encode(message))
+      : (message: Message) => {
+          const data = codec.encode(message);
+          writes++;
+          if (reconnects && !Array.isArray(message) && 'id' in message && 'method' in message) {
+            written.set(message.id, writes);
+          }
+          return writer!.write(data);
+        }
   ) satisfies Send;
   const client = createClient(send, true);
   const server = createServer(methods, send, { flow: true });
 
+  function onDrop(event: { readonly sent: number }) {
+    const reason = new TransportError('The connection closed before the call was answered.');
+    for (const [id, write] of written) {
+      if (write <= event.sent) {
+        written.delete(id);
+        client.fail(id, reason);
+      }
+    }
+    server.close(reason);
+  }
+  if (reconnects) {
+    transport.addEventListener('close', onDrop);
+  }
+
   function close(reason: unknown) {
     signal?.removeEventListener('abort', onAbort);
+    transport.removeEventListener?.('close', onDrop);
     unlisten?.();
     client.close(reason);
     server.close(reason);
@@ -108,14 +136,21 @@ export function connect<api>(
       return;
     }
     if (isResponse(message)) {
-      client.receive(message);
+      receive(message);
     } else if (Array.isArray(message) && message.length > 0 && message.every(isResponse)) {
       for (const response of message) {
-        client.receive(response);
+        receive(response);
       }
     } else {
       void server.handle(message).catch(noop);
     }
+  }
+
+  function receive(message: Record<string, unknown>) {
+    if (reconnects && !('method' in message)) {
+      written.delete(message.id as Id);
+    }
+    client.receive(message);
   }
 
   if (reader) {

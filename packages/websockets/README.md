@@ -84,6 +84,19 @@ How the streams end:
 - In a runtime without `Symbol.asyncDispose` (such as Safari 26), pass a `signal` and abort it to tear the connection down. It does what `[Symbol.asyncDispose]()` does and also works while a reader or writer holds a lock, which `writable.close()` doesn't.
 - A final close with 1000, 1001, or 1005 ends `readable`. Any other final close fails it with a `CloseError` that stores `code` and `reason`. `writable` fails with the `CloseError` in both cases.
 
+### Connection events
+
+The object `connect` returns also has `addEventListener` and `removeEventListener`, like a `WebSocket`, for two events. The `open` event is dispatched when a connection is ready, after the `open` option's function finishes and queued writes are sent. The `close` event is dispatched when a connection that opened ends, before `connect` waits `delay` and reconnects.
+
+```ts
+const socket = WebSockets.connect('wss://example.com/feed');
+socket.addEventListener('close', ({ code, sent }) => {
+  console.log(`Connection closed with ${code} after ${sent} writes were sent`);
+});
+```
+
+Each event has `sent`, the number of chunks written to `writable` that have been passed to a socket, counted from the first write. On `close`, the first `sent` writes went out on the dropped connection and may be lost. Later writes are queued for the next connection. [@portable/rpc](https://portablejs.com/packages/rpc) reads `sent` on `close` to reject only the calls whose request went out on the dropped connection. `close` also has the close `code` and `reason`, with code 1006 when the connection failed without a close frame.
+
 ### Messages can be lost during a drop
 
 A WebSocket has no acknowledgements. When a connection drops, messages the server sent after the last one you received are gone, and so are writes the old socket accepted (`send()` returned) but never delivered. A write made while the socket is closing or closed is queued for the next connection, but the browser can take seconds to notice a dead connection. If your app can't lose messages, number them and resend or replay after `open`, which is where a resubscribe or a "since sequence N" request goes.
@@ -112,7 +125,9 @@ Returns `{ readable, writable }` for a socket you already have. It never reconne
 
 | Type | Description |
 | --- | --- |
-| `WebSockets.Duplex` | `{ readable, writable }`, what `connect`, and `fromSocket` return, with `[Symbol.asyncDispose]` where the runtime has it. |
+| `WebSockets.Duplex` | `{ readable, writable }`, what `fromSocket` returns, with `[Symbol.asyncDispose]` where the runtime has it. |
+| `WebSockets.connect.ReturnType` | What `connect` returns: a `Duplex` with `addEventListener` and `removeEventListener` for `open` and `close`. |
+| `WebSockets.connect.ConnectionEvent` | The `open` and `close` events, with `sent`, `code`, and `reason`. |
 | `WebSockets.Message` | A received message: text as a `string`, binary data as a `Uint8Array`. |
 | `WebSockets.Socket` | The part of the platform `WebSocket` this package uses. Any object with this shape works. |
 | `WebSockets.Delay` | The `delay` option, `Timers.Delay` from [@portable/timers](https://portablejs.com/packages/timers). |

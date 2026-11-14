@@ -658,3 +658,59 @@ describe.skipIf(asyncDispose === undefined)('Symbol.asyncDispose', () => {
     expect(server.sockets).toHaveLength(1);
   });
 });
+
+describe('connection events', () => {
+  test('dispatch open when a connection is ready and close when it ends', async () => {
+    const { server, writable, addEventListener } = setup();
+    const events: { type: string; sent: number; code: number; reason: string }[] = [];
+    const record = ({ type, sent, code, reason }: WebSockets.connect.ConnectionEvent) =>
+      void events.push({ type, sent, code, reason });
+    addEventListener('open', record);
+    addEventListener('close', record);
+    const writer = writable.getWriter();
+    const first = await server.accept(0);
+    await writer.write('a');
+    first.drop(4000, 'restart');
+    await server.accept(1);
+    expect(events).toEqual([
+      { type: 'open', sent: 0, code: 1000, reason: '' },
+      { type: 'close', sent: 1, code: 4000, reason: 'restart' },
+      { type: 'open', sent: 1, code: 1000, reason: '' },
+    ]);
+  });
+
+  test('count writes queued while disconnected only once they are sent', async () => {
+    const { server, writable, addEventListener } = setup();
+    const sent: number[] = [];
+    addEventListener('close', (event) => void sent.push(event.sent));
+    const writer = writable.getWriter();
+    await writer.write('queued');
+    const first = await server.accept(0);
+    await writer.write('direct');
+    first.drop();
+    await writer.write('later');
+    const second = await server.accept(1);
+    second.drop();
+    await until(() => sent.length === 2);
+    expect(sent).toEqual([2, 3]);
+  });
+
+  test('dispatch close with code 1006 when a connection drops without a code', async () => {
+    const { server, addEventListener } = setup();
+    let code: number | undefined;
+    addEventListener('close', (event) => void (code = event.code));
+    (await server.accept(0)).drop();
+    await until(() => code !== undefined);
+    expect(code).toBe(1006);
+  });
+
+  test('do not reach a removed listener', async () => {
+    const { server, addEventListener, removeEventListener } = setup();
+    let calls = 0;
+    const listener = () => void calls++;
+    addEventListener('open', listener);
+    removeEventListener('open', listener);
+    await server.accept(0);
+    expect(calls).toBe(0);
+  });
+});

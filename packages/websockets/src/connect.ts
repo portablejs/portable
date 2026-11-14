@@ -99,6 +99,31 @@ export declare namespace connect {
     timeout?: number | undefined;
   };
 
+  /**
+   * What `connect` returns: the two streams, and `open` and `close` events for each connection.
+   * The `open` event is dispatched when a connection is ready, after the `open` option's
+   * function finishes and queued writes are sent. The `close` event is dispatched when a
+   * connection that opened ends, before `connect` reconnects.
+   */
+  type ReturnType = Duplex & {
+    addEventListener(type: 'open' | 'close', listener: (event: ConnectionEvent) => void): void;
+    removeEventListener(type: 'open' | 'close', listener: (event: ConnectionEvent) => void): void;
+  };
+
+  /** The `open` and `close` events. */
+  type ConnectionEvent = Event & {
+    /**
+     * How many chunks written to `writable` have been passed to a socket so far, counted from the
+     * first write. On `close`, the writes up to this count went out on the closed socket,
+     * so any of them may be lost. Later writes are queued for the next connection.
+     */
+    readonly sent: number;
+    /** On `close`, the close code, or 1006 if the connection failed without one. 1000 on `open`. */
+    readonly code: number;
+    /** On `close`, the close reason. Empty on `open`. */
+    readonly reason: string;
+  };
+
   type Constructor = new (url: string, protocols?: string | string[]) => Socket;
 
   type Url = string | URL | (() => string | URL | PromiseLike<string | URL>);
@@ -137,7 +162,7 @@ const defaultReconnectIf = (event: connect.Close) => !finalCodes.has(event.code)
  * }
  * ```
  */
-export function connect(url: connect.Url, options: connect.Options = {}): Duplex {
+export function connect(url: connect.Url, options: connect.Options = {}): connect.ReturnType {
   const {
     protocols,
     signal,
@@ -175,6 +200,10 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
   let closing = false;
   let current: Socket | undefined;
   const queue: (string | Uint8Array<ArrayBuffer>)[] = [];
+  const events = new EventTarget();
+  let sentCount = 0;
+  const dispatch = (type: 'open' | 'close', code = 1000, reason = '') =>
+    events.dispatchEvent(Object.assign(new Event(type), { sent: sentCount, code, reason }));
   let waiters: (() => void)[] = [];
 
   const notify = () => {
@@ -234,6 +263,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
 
     const attempt = new AbortController();
     let ready = false;
+    let live = false;
     let outcome: Outcome | undefined;
     let ended!: (outcome: Outcome) => void;
     const result = new Promise<Outcome>((resolve) => (ended = resolve));
@@ -277,6 +307,10 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
       release();
       attempt.abort();
       notify();
+      if (live) {
+        const { code, reason } = next.kind === 'close' ? next.close : { code: 1006, reason: '' };
+        dispatch('close', code, reason);
+      }
       ended(next);
     };
 
@@ -329,6 +363,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     if (!opened) {
       return result;
     }
+    live = true;
 
     if (open) {
       const messages = new ReadableStream<Message>(
@@ -372,6 +407,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     let sent = 0;
     while (sent < queue.length && socket.readyState === OPEN) {
       socket.send(queue[sent++]!);
+      sentCount++;
     }
     queue.splice(0, sent);
     if (socket.readyState !== OPEN) {
@@ -380,6 +416,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     ready = true;
     current = socket;
     notify();
+    dispatch('open');
 
     if (heartbeat) {
       const { interval, timeout: wait = interval } = heartbeat;
@@ -453,6 +490,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
         return drained(current, highWaterMark).then(() => write(chunk));
       }
       current.send(chunk);
+      sentCount++;
       return;
     }
     if (queue.length < maxQueued) {
@@ -506,5 +544,12 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     signal?.addEventListener('abort', onAbort);
     void run();
   }
-  return withAsyncDispose({ readable, writable }, async () => finish(disposedError(), false));
+  const listen = (type: 'open' | 'close', listener: (event: connect.ConnectionEvent) => void) =>
+    events.addEventListener(type, listener as (event: Event) => void);
+  const unlisten = (type: 'open' | 'close', listener: (event: connect.ConnectionEvent) => void) =>
+    events.removeEventListener(type, listener as (event: Event) => void);
+  return withAsyncDispose(
+    { readable, writable, addEventListener: listen, removeEventListener: unlisten },
+    async () => finish(disposedError(), false),
+  );
 }

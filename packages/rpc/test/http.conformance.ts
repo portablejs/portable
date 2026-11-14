@@ -283,3 +283,101 @@ describe.skipIf(asyncDispose === undefined)('Symbol.asyncDispose', () => {
     await expect(sent).rejects.toMatchObject({ name: 'AbortError' });
   });
 });
+
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder();
+
+/** A binary codec: JSON text as UTF-8 bytes, under its own media type. */
+const binary = {
+  contentType: 'application/x-test',
+  encode: (message: Rpc.Message) => textEncoder.encode(JSON.stringify(message)),
+  decode: (data: string | Uint8Array) =>
+    JSON.parse(typeof data === 'string' ? data : textDecoder.decode(data)) as unknown,
+};
+
+/** A JSON codec that revives `Date` values, which `Rpc.json` receives as strings. */
+const dates = {
+  contentType: 'application/json',
+  encode: (message: Rpc.Message) =>
+    JSON.stringify(message, function (key, value) {
+      const raw = (this as Record<string, unknown>)[key];
+      return raw instanceof Date ? { $date: raw.toISOString() } : (value as unknown);
+    }),
+  decode: (data: string | Uint8Array) =>
+    JSON.parse(typeof data === 'string' ? data : textDecoder.decode(data), (_, value) =>
+      value !== null && typeof value === 'object' && '$date' in value
+        ? new Date((value as { $date: string }).$date)
+        : (value as unknown),
+    ) as unknown,
+};
+
+describe('codec', () => {
+  test('handler decodes the body and encodes the response with the codec', async () => {
+    const response = await Rpc.handler(api, { codec: binary })(
+      new Request(url, {
+        method: 'POST',
+        body: textEncoder.encode('{"jsonrpc":"2.0","id":1,"method":"add","params":[1,2]}'),
+      }),
+    );
+    expect(response.headers.get('content-type')).toBe('application/x-test');
+    expect(textDecoder.decode(await response.arrayBuffer())).toBe(
+      '{"jsonrpc":"2.0","id":1,"result":3}',
+    );
+  });
+
+  test('handler encodes a parse error with the codec', async () => {
+    const response = await Rpc.handler(api, { codec: binary })(post('{'));
+    expect(response.headers.get('content-type')).toBe('application/x-test');
+    expect(binary.decode(new Uint8Array(await response.arrayBuffer()))).toEqual({
+      jsonrpc: '2.0',
+      id: null,
+      error: { code: -32700, message: 'Parse error' },
+    });
+  });
+
+  test('handler answers a stream with -32603 when the codec is not JSON', async () => {
+    const response = await Rpc.handler(api, { codec: binary })(
+      post('{"jsonrpc":"2.0","id":1,"method":"count","params":[2]}'),
+    );
+    expect(binary.decode(new Uint8Array(await response.arrayBuffer()))).toMatchObject({
+      id: 1,
+      error: { code: -32603 },
+    });
+  });
+
+  test('http and handler make calls and batches with a binary codec', async () => {
+    const handle = Rpc.handler(api, { codec: binary });
+    const bodies: string[] = [];
+    const remote = Rpc.http<typeof api>(url, {
+      codec: binary,
+      fetch: async (request) => {
+        expect(request.headers.get('content-type')).toBe('application/x-test');
+        bodies.push(textDecoder.decode(await request.clone().arrayBuffer()));
+        return handle(request);
+      },
+    });
+    expect(await remote.add(1, 2)).toBe(3);
+    expect(await Promise.all([remote.add(1, 2), remote.add(3, 4)])).toEqual([3, 7]);
+    await expect(remote.count(2)).rejects.toMatchObject({ code: -32603 });
+    expect(JSON.parse(bodies[1]!)).toHaveLength(2);
+  });
+
+  test('http and handler stream results with a JSON codec of your own', async () => {
+    const day = new Date('2026-11-14T00:00:00.000Z');
+    const methods = {
+      day: () => day,
+      async *days() {
+        yield day;
+        yield day;
+      },
+    };
+    const handle = Rpc.handler(methods, { codec: dates });
+    const remote = Rpc.http<typeof methods>(url, { codec: dates, fetch: handle });
+    expect(await remote.day()).toEqual(day);
+    const received: unknown[] = [];
+    for await (const value of remote.days()) {
+      received.push(value);
+    }
+    expect(received).toEqual([day, day]);
+  });
+});

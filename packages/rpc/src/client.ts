@@ -1,5 +1,6 @@
 import { RemoteError } from './errors.js';
-import { deferred, noop, type Send } from './server.js';
+import type { Send } from './server.js';
+import { deferred, noop } from './util.js';
 import type { ErrorObject, Id, Params } from './types.js';
 
 const streamWindow = 256;

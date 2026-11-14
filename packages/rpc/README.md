@@ -185,7 +185,7 @@ Both sides post a hello every 100 ms until the other answers, so either can load
 
 The handshake has no timeout of its own. Aborting the connection's `signal` closes the whole connection, so to give up on a window that never answers, pass a signal to each call instead: `Rpc.call(..., { signal: AbortSignal.timeout(10_000) })`. When the other window reloads, its new page sends a hello again and the same remote keeps working. A call the old page didn't answer stays pending until its signal aborts.
 
-### `Rpc.handler(api)` and `Rpc.http(url, { fetch, signal })`
+### `Rpc.handler(api, { codec })` and `Rpc.http(url, { fetch, codec, signal })`
 
 `Rpc.handler` returns a `(request: Request) => Promise<Response>` for JSON-RPC over HTTP POST, which works with Workers, Node, Bun, Deno, and any framework that takes a fetch handler:
 
@@ -205,11 +205,23 @@ const api = Rpc.http<Api>('https://example.com/rpc', {
 });
 ```
 
-A response is JSON, or, when a method returns a stream, `application/x-ndjson` with one message per line as the values are produced. Breaking out of a streamed result aborts the request. A request with only notifications gets `204 No Content`, and other HTTP methods get `405`. Methods wrapped with `withContext` receive the `Request`, and their `signal` aborts when the client disconnects. HTTP always uses JSON.
+A response is JSON, or, when a method returns a stream, `application/x-ndjson` with one message per line as the values are produced. Breaking out of a streamed result aborts the request. A request with only notifications gets `204 No Content`, and other HTTP methods get `405`. Methods wrapped with `withContext` receive the `Request`, and their `signal` aborts when the client disconnects.
+
+Both take a `codec`, which defaults to `Rpc.json`. Pass the same codec to both. The codec's `contentType` is sent as the `content-type` of requests and responses, and defaults to `application/octet-stream`:
+
+```ts
+import * as cbor from 'cborg';
+
+const codec = { encode: cbor.encode, decode: cbor.decode, contentType: 'application/cbor' };
+const rpc = Rpc.handler(api, { codec });
+const remote = Rpc.http<Api>('https://example.com/rpc', { codec });
+```
+
+`handler` sends streamed results as one message per line. `JSON.stringify` writes a message without line breaks, but a binary encoding can contain the newline byte, so `handler` streams only when the codec's `contentType` is `application/json`. With any other codec, a method that returns a stream is answered with error code `-32603`, as with `Rpc.answer`.
 
 ### WebSocket and server-sent events
 
-A WebSocket wrapped as `readable` and `writable` streams of strings, such as the one [@portable/websockets](https://portablejs.com/packages/websockets) returns, can be passed as a transport unchanged. Without that package, you can wrap a socket in a few lines:
+A WebSocket wrapped as `readable` and `writable` streams of strings, such as the one [@portable/websockets](https://portablejs.com/packages/websockets) returns, can be passed as a transport unchanged. When that WebSocket reconnects, `connect` rejects the calls whose requests were lost, as described in [Reconnecting clients](#reconnecting-clients). Without that package, you can wrap a socket in a few lines:
 
 ```ts
 const socket = new WebSocket('wss://example.com/rpc');
@@ -329,7 +341,7 @@ Cloudflare doesn't evict the object while `webSocketMessage` runs, so a method c
 
 ### Reconnecting clients
 
-If the WebSocket from [@portable/websockets](https://portablejs.com/packages/websockets) reconnects, a call whose request went out on the dropped connection is never answered. Requests written while the socket was disconnected are queued and answered as usual. To limit the wait, pass a signal with `Rpc.call(room.follow, [['friends']], { signal: AbortSignal.timeout(10_000) })`.
+When the WebSocket from [@portable/websockets](https://portablejs.com/packages/websockets) reconnects, `connect` rejects each call whose request went out on the dropped connection with `Rpc.TransportError`, because no answer will arrive for it. Requests written while the socket was disconnected are queued, sent on the next connection, and answered as usual. Retry a rejected call only if the method is safe to run twice, because the server may have run it before the connection dropped.
 
 ## Protocol
 
