@@ -171,6 +171,18 @@ describe('answer', () => {
     expect(JSON.parse(reply as string)).toMatchObject({ id: 1, error: { code: -32603 } });
   });
 
+  test('answers only the results the codec cannot encode with errors in a batch', async () => {
+    const reply = await Rpc.answer({
+      methods: { big: () => 1n, add: (a: number, b: number) => a + b },
+      message:
+        '[{"jsonrpc":"2.0","id":1,"method":"big"},{"jsonrpc":"2.0","id":2,"method":"add","params":[1,2]}]',
+    });
+    expect(JSON.parse(reply as string)).toMatchObject([
+      { id: 1, error: { code: -32603 } },
+      { id: 2, result: 3 },
+    ]);
+  });
+
   test('answers requests from a connect client', async () => {
     let input!: ReadableStreamDefaultController<unknown>;
     const remote = Rpc.connect<typeof methods>({

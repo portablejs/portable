@@ -1,6 +1,6 @@
 import { json } from './connect.js';
-import { createServer, error } from './server.js';
-import type { Codec, Message } from './types.js';
+import { error, failure, invoke, lookup, parse, respond, success } from './dispatch.js';
+import type { Codec, ResponseMessage } from './types.js';
 
 export declare namespace answer {
   type Options<encoded, received> = {
@@ -56,21 +56,62 @@ export async function answer<encoded = string, received = string | Uint8Array>(
   } catch {
     return codec.encode(error(null, -32700, 'Parse error'));
   }
-  let reply: encoded | undefined;
-  const server = createServer(
-    methods,
-    (response: Message) => {
-      reply = codec.encode(response);
-    },
-    { flow: false, streams: false },
-  );
-  const onAbort = () => server.close(signal!.reason);
-  signal?.addEventListener('abort', onAbort);
-  try {
-    await server.handle(decoded);
-  } finally {
-    signal?.removeEventListener('abort', onAbort);
-  }
+  const context = { signal: signal ?? new AbortController().signal };
+  const run = async (message: unknown): Promise<ResponseMessage | undefined> => {
+    const parsed = parse(message);
+    if (!parsed) {
+      return error(null, -32600, 'Invalid Request');
+    }
+    const { id, notification, method, params } = parsed;
+    if (notification && (method === '$/cancel' || method === '$/stream/credit')) {
+      return;
+    }
+    const target = lookup(methods, method);
+    if (!target) {
+      return notification ? undefined : error(id, -32601, 'Method not found');
+    }
+    const outcome = await invoke(target, params, context);
+    if (outcome.kind === 'stream') {
+      outcome.source.cancel();
+      return notification ? undefined : error(id, -32603, streamsUnsupported);
+    }
+    if (notification) {
+      return;
+    }
+    return outcome.kind === 'value' ? success(id, outcome.value) : failure(id, outcome.error);
+  };
+  const response = await respond(decoded, run);
   signal?.throwIfAborted();
-  return reply;
+  return response === undefined ? undefined : encode(codec, response);
+}
+
+const streamsUnsupported = 'The method returned a stream, which this server cannot send.';
+
+/**
+ * Encodes `response`. If the codec can't encode a result, that response becomes an error
+ * response, as `provide` sends when its transport can't write a result.
+ */
+function encode<encoded>(
+  codec: Codec<encoded, any>,
+  response: ResponseMessage | ResponseMessage[],
+): encoded {
+  try {
+    return codec.encode(response);
+  } catch (e) {
+    const fallback = (single: ResponseMessage, reason: unknown): ResponseMessage =>
+      'error' in single ? single : failure(single.id, reason);
+    if (!Array.isArray(response)) {
+      return codec.encode(fallback(response, e));
+    }
+    return codec.encode(
+      response.map((single) => {
+        try {
+          codec.encode(single);
+          return single;
+        } catch (reason) {
+          return fallback(single, reason);
+        }
+      }),
+    );
+  }
 }
