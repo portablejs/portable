@@ -43,7 +43,7 @@ export type Codec<encoded = unknown, received = encoded> = {
   decode(data: received): unknown;
   /**
    * The media type of encoded messages, which `handler` and `http` send as `content-type`.
-   * `handler` streams results only when it is `application/json`. @default 'application/octet-stream'
+   * @default 'application/octet-stream'
    */
   readonly contentType?: string | undefined;
 };

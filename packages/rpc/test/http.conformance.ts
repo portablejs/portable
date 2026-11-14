@@ -297,7 +297,7 @@ const binary = {
 
 /** A JSON codec that revives `Date` values, which `Rpc.json` receives as strings. */
 const dates = {
-  contentType: 'application/json',
+  contentType: 'application/vnd.example.dates+json',
   encode: (message: Rpc.Message) =>
     JSON.stringify(message, function (key, value) {
       const raw = (this as Record<string, unknown>)[key];
@@ -335,14 +335,25 @@ describe('codec', () => {
     });
   });
 
-  test('handler answers a stream with -32603 when the codec is not JSON', async () => {
+  test('handler streams each message in a 5-byte envelope when encode returns bytes', async () => {
     const response = await Rpc.handler(api, { codec: binary })(
       post('{"jsonrpc":"2.0","id":1,"method":"count","params":[2]}'),
     );
-    expect(binary.decode(new Uint8Array(await response.arrayBuffer()))).toMatchObject({
-      id: 1,
-      error: { code: -32603 },
-    });
+    expect(response.headers.get('content-type')).toBe('application/x-rpc-envelope');
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    const messages: unknown[] = [];
+    for (let offset = 0; offset < bytes.length;) {
+      expect(bytes[offset]).toBe(0);
+      const length = new DataView(bytes.buffer, bytes.byteOffset + offset + 1, 4).getUint32(0);
+      messages.push(binary.decode(bytes.subarray(offset + 5, offset + 5 + length)));
+      offset += 5 + length;
+    }
+    expect(messages).toEqual([
+      { jsonrpc: '2.0', method: '$/stream', params: { id: 1 } },
+      { jsonrpc: '2.0', method: '$/stream/next', params: { id: 1, value: 0 } },
+      { jsonrpc: '2.0', method: '$/stream/next', params: { id: 1, value: 1 } },
+      { jsonrpc: '2.0', id: 1, result: null },
+    ]);
   });
 
   test('http and handler make calls and batches with a binary codec', async () => {
@@ -358,11 +369,43 @@ describe('codec', () => {
     });
     expect(await remote.add(1, 2)).toBe(3);
     expect(await Promise.all([remote.add(1, 2), remote.add(3, 4)])).toEqual([3, 7]);
-    await expect(remote.count(2)).rejects.toMatchObject({ code: -32603 });
+    expect(await Streams.toArray(await remote.count(3))).toEqual([0, 1, 2]);
     expect(JSON.parse(bodies[1]!)).toHaveLength(2);
   });
 
-  test('http and handler stream results with a JSON codec of your own', async () => {
+  test('http reads enveloped messages split across chunks', async () => {
+    const handle = Rpc.handler(api, { codec: binary });
+    const remote = Rpc.http<typeof api>(url, {
+      codec: binary,
+      fetch: async (request) => {
+        const response = await handle(request);
+        const bytes = new Uint8Array(await response.arrayBuffer());
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            for (const byte of bytes) {
+              controller.enqueue(new Uint8Array([byte]));
+            }
+            controller.close();
+          },
+        });
+        return new Response(body, { headers: response.headers });
+      },
+    });
+    expect(await Streams.toArray(await remote.count(3))).toEqual([0, 1, 2]);
+  });
+
+  test('http rejects a call when an enveloped response ends inside a message', async () => {
+    const remote = Rpc.http<typeof api>(url, {
+      codec: binary,
+      fetch: async () =>
+        new Response(new Uint8Array([0, 0, 0, 0, 9, 1]), {
+          headers: { 'content-type': 'application/x-rpc-envelope' },
+        }),
+    });
+    await expect(remote.add(1, 2)).rejects.toBeInstanceOf(Rpc.TransportError);
+  });
+
+  test('http and handler stream results when encode returns a string', async () => {
     const day = new Date('2026-11-14T00:00:00.000Z');
     const methods = {
       day: () => day,

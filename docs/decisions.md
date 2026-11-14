@@ -2,6 +2,12 @@
 
 Decisions made while building the packages, with the options considered and the reason for each choice. Newest first. Change any of them by editing this file.
 
+## HTTP picks a stream's framing from the type the codec's `encode` returns
+
+- **Options:** stream only when the codec's `contentType` is `application/json`; stream newline-delimited messages for a codec that returns strings and answer a stream with `-32603` for one that returns bytes; frame bytes with a length prefix; a `framing` option on `handler` and `http` that takes an encoder and a decoder `TransformStream`.
+- **Trade-offs:** if streaming depended on an exact `contentType` match, a header value would decide whether results stream. A custom JSON codec with another media type couldn't stream at all. Newlines can't frame bytes, because CBOR and protobuf can write byte 10 inside a message. Every other rpc transport streams results with any codec, so without byte framing HTTP would be the only transport where a method can't return a stream when the codec returns bytes. A length prefix works for any bytes. Connect and gRPC already use a 5-byte envelope of a flags byte and a 32-bit big-endian length. No current use needs a `framing` option. We can add it later without changing the defaults.
+- **Chosen:** if the codec returns strings, a stream is sent as `application/x-ndjson`, with one message per line. If it returns bytes, a stream is sent as `application/x-rpc-envelope`, with each message after Connect's 5-byte header and flags set to 0. `handler` encodes one probe message to find out whether the codec returns strings or bytes. There is no `framing` option yet. We can add one when a format needs another framing.
+
 ## `Rpc.connect` takes a stream of connections to detect dropped ones
 
 - **Options:** `open` and `close` events on the object `WebSockets.connect` returns, with a count of the writes passed to each socket, which `Rpc.connect` compares with the number of writes it made; a marker message in `readable`; an `onClose` callback that you wire to `Rpc.reset(remote)`; a stream of connections, each with its own `readable` and `writable`, that `Rpc.connect` accepts in place of one transport.

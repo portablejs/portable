@@ -1,9 +1,10 @@
 import { toBufferSource } from '@portable/bytes/internal';
 import * as Errors from '@portable/errors';
 import * as Lines from '@portable/lines';
-import { encode, respondStateless } from './answer.js';
+import { encode } from './answer.js';
 import { createClient } from './client.js';
 import { json } from './connect.js';
+import { envelope, unwrapStream, wrap } from './envelope.js';
 import type { AsyncDisposeMethod } from '@portable/errors/internal';
 import { RemoteError, TransportError } from './errors.js';
 import { remote } from './remote.js';
@@ -16,11 +17,20 @@ const ndjson = 'application/x-ndjson';
 const textEncoder = new TextEncoder();
 const newline = new Uint8Array([10]);
 
-/** A codec for HTTP: `decode` receives the body as bytes, or one line of a streamed response as text. */
+/**
+ * A codec for HTTP. Its `decode` receives a whole response body as bytes, one line of a
+ * newline-delimited stream as text, or the bytes of one enveloped message.
+ */
 type HttpCodec = Codec<string | Uint8Array, string | Uint8Array>;
 
 const mediaType = (codec: HttpCodec) => codec.contentType ?? 'application/octet-stream';
-const isJson = (codec: HttpCodec) => mediaType(codec) === 'application/json';
+const writesText = (codec: HttpCodec) => {
+  try {
+    return typeof codec.encode({ jsonrpc: '2.0', id: null, result: null }) === 'string';
+  } catch {
+    return false;
+  }
+};
 const body = (data: string | Uint8Array) =>
   typeof data === 'string' ? data : toBufferSource(data);
 
@@ -28,7 +38,7 @@ export declare namespace handler {
   type Options = {
     /**
      * Decodes request bodies and encodes responses. Its `contentType` is sent as `content-type`.
-     * Results stream only when it is `application/json`. @default Rpc.json
+     * @default Rpc.json
      */
     codec?: Codec<any, any> | undefined;
   };
@@ -36,10 +46,10 @@ export declare namespace handler {
 
 /**
  * Answers calls to `methods` over HTTP. The returned function answers a POST of a JSON-RPC request
- * or batch, encoded with `codec`. With the default JSON codec, a method that returns a stream sends
- * its values as newline-delimited messages as they are produced. With any other codec, a method
- * that returns a stream is answered with error code `-32603`, because the response has no framing
- * for separate messages. Methods wrapped with `withContext` get the `Request`, and their `signal`
+ * or batch, encoded with `codec`. When a method returns a stream, the returned function sends each
+ * value as a separate message as the method produces it. If the codec's `encode` returns a string,
+ * as `Rpc.json` does, it sends one message per line. If `encode` returns bytes, it sends each
+ * message after a 5-byte length header, as the Connect protocol does. Methods wrapped with `withContext` get the `Request`, and their `signal`
  * aborts when the client disconnects.
  *
  * @example
@@ -56,6 +66,7 @@ export function handler(
 ): (request: Request) => Promise<Response> {
   const codec = (options.codec ?? json) satisfies HttpCodec;
   const headers = { 'content-type': mediaType(codec) };
+  const text = writesText(codec);
   const respondWith = (response: Message) =>
     new Response(body(encode(codec, response as Parameters<typeof encode>[1])), { headers });
   return async (request) => {
@@ -67,13 +78,6 @@ export function handler(
       message = codec.decode(new Uint8Array(await request.arrayBuffer()));
     } catch {
       return respondWith(error(null, -32700, 'Parse error'));
-    }
-    if (!isJson(codec)) {
-      const response = await respondStateless(methods, message, {
-        signal: request.signal,
-        request,
-      });
-      return response ? respondWith(response) : new Response(null, { status: 204 });
     }
 
     const buffered: Message[] = [];
@@ -108,10 +112,13 @@ export function handler(
     const encoder = new TransformStream<Message, Uint8Array>({
       transform(message, controller) {
         const data = codec.encode(message);
-        controller.enqueue(typeof data === 'string' ? textEncoder.encode(`${data}\n`) : data);
-        if (typeof data !== 'string') {
-          controller.enqueue(newline);
+        const bytes = typeof data === 'string' ? textEncoder.encode(data) : data;
+        if (!text) {
+          controller.enqueue(wrap(bytes));
+          return;
         }
+        controller.enqueue(bytes);
+        controller.enqueue(newline);
       },
     });
     writer = encoder.writable.getWriter();
@@ -131,7 +138,7 @@ export function handler(
       void writer.close().catch(noop);
     }
     return new Response(encoder.readable, {
-      headers: { 'content-type': ndjson },
+      headers: { 'content-type': text ? ndjson : envelope },
     });
   };
 }
@@ -256,11 +263,14 @@ export function http<api>(
       const response = await fetch(
         new Request(url, {
           method: 'POST',
-          headers: { 'content-type': contentType, accept: `${contentType}, ${ndjson}` },
+          headers: {
+            'content-type': contentType,
+            accept: `${contentType}, ${ndjson}, ${envelope}`,
+          },
           body: body(
             encoded.length === 1
               ? encoded[0]!
-              : isJson(codec) && encoded.every((part) => typeof part === 'string')
+              : codec === json
                 ? `[${encoded.join(',')}]`
                 : codec.encode(messages as Message),
           ),
@@ -273,9 +283,12 @@ export function http<api>(
           cause: new Errors.ResponseError({ response }),
         });
       }
-      if (response.body && response.headers.get('content-type')?.startsWith(ndjson)) {
+      const type = response.headers.get('content-type') ?? '';
+      if (response.body && (type.startsWith(ndjson) || type.startsWith(envelope))) {
         const reader = response.body
-          .pipeThrough(new Lines.DecoderStream({ skipEmpty: true }))
+          .pipeThrough<string | Uint8Array>(
+            type.startsWith(ndjson) ? new Lines.DecoderStream({ skipEmpty: true }) : unwrapStream(),
+          )
           .getReader();
         for (let r = await reader.read(); !r.done; r = await reader.read()) {
           receive(batch, codec.decode(r.value));

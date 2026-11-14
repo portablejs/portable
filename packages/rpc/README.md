@@ -205,7 +205,7 @@ const api = Rpc.http<Api>('https://example.com/rpc', {
 });
 ```
 
-A response is JSON, or, when a method returns a stream, `application/x-ndjson` with one message per line as the values are produced. Breaking out of a streamed result aborts the request. A request with only notifications gets `204 No Content`, and other HTTP methods get `405`. Methods wrapped with `withContext` receive the `Request`, and their `signal` aborts when the client disconnects.
+A response is one encoded message or batch. When a method returns a stream, `handler` writes each value to the response as the method produces it, using the framing in the table below. Breaking out of a streamed result aborts the request. A request with only notifications gets `204 No Content`, and other HTTP methods get `405`. Methods wrapped with `withContext` receive the `Request`, and their `signal` aborts when the client disconnects.
 
 Both take a `codec`, which defaults to `Rpc.json`. Pass the same codec to both. The codec's `contentType` is sent as the `content-type` of requests and responses, and defaults to `application/octet-stream`:
 
@@ -217,7 +217,14 @@ const rpc = Rpc.handler(api, { codec });
 const remote = Rpc.http<Api>('https://example.com/rpc', { codec });
 ```
 
-`handler` sends streamed results as one message per line. `JSON.stringify` writes a message without line breaks, but a binary encoding can contain the newline byte, so `handler` streams only when the codec's `contentType` is `application/json`. With any other codec, a method that returns a stream is answered with error code `-32603`, as with `Rpc.answer`.
+`handler` picks the framing of a streamed response from the type that the codec's `encode` returns:
+
+| `encode` returns             | Streamed `content-type`      | Framing                                                                                                                                               |
+| ---------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A string, as `Rpc.json` does | `application/x-ndjson`       | One message per line. Write each message without line breaks, as `JSON.stringify` does.                                                               |
+| Bytes, as a CBOR codec does  | `application/x-rpc-envelope` | Each message follows a 5-byte header: a flags byte of 0 and the message length as a 32-bit big-endian integer, as in the Connect protocol's envelope. |
+
+`http` reads either framing, chosen by the response's `content-type`.
 
 ### WebSocket and server-sent events
 

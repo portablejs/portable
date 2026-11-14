@@ -63,12 +63,7 @@ export async function answer<encoded = string, received = string | Uint8Array>(
   return response === undefined ? undefined : encode(codec, response);
 }
 
-/**
- * Answers a decoded message without keeping state between messages, as `answer` does. `handler`
- * uses it when its codec's `contentType` isn't `application/json`, because it can't stream
- * results with that codec.
- */
-export function respondStateless(
+function respondStateless(
   methods: object,
   decoded: unknown,
   context: Context,
