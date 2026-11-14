@@ -1281,12 +1281,15 @@ importers:
 
   packages/rpc:
     dependencies:
+      '@portable/bytes':
+        specifier: workspace:*
+        version: link:../bytes
       '@portable/errors':
         specifier: workspace:*
         version: link:../errors
-      '@portable/jsonl':
+      '@portable/lines':
         specifier: workspace:*
-        version: link:../jsonl
+        version: link:../lines
 
   packages/rpc/test:
     devDependencies:

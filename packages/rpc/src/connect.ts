@@ -24,6 +24,7 @@ const decoder = new TextDecoder();
  * ```
  */
 export const json: Codec<string, string | Uint8Array> = {
+  contentType: 'application/json',
   encode: (message) => JSON.stringify(message),
   decode: (data) => JSON.parse(typeof data === 'string' ? data : decoder.decode(data)),
 };

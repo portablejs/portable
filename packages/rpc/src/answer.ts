@@ -1,6 +1,6 @@
 import { json } from './connect.js';
 import { error, failure, invoke, lookup, parse, respond, success } from './dispatch.js';
-import type { Codec, ResponseMessage } from './types.js';
+import type { Codec, Context, ResponseMessage } from './types.js';
 
 export declare namespace answer {
   type Options<encoded, received> = {
@@ -56,7 +56,22 @@ export async function answer<encoded = string, received = string | Uint8Array>(
   } catch {
     return codec.encode(error(null, -32700, 'Parse error'));
   }
-  const context = { signal: signal ?? new AbortController().signal };
+  const response = await respondStateless(methods, decoded, {
+    signal: signal ?? new AbortController().signal,
+  });
+  signal?.throwIfAborted();
+  return response === undefined ? undefined : encode(codec, response);
+}
+
+/**
+ * Answers a decoded message without keeping state between messages, as `answer` does. `handler`
+ * uses it when its codec can't stream.
+ */
+export function respondStateless(
+  methods: object,
+  decoded: unknown,
+  context: Context,
+): Promise<ResponseMessage | ResponseMessage[] | undefined> {
   const run = async (message: unknown): Promise<ResponseMessage | undefined> => {
     const parsed = parse(message);
     if (!parsed) {
@@ -80,9 +95,7 @@ export async function answer<encoded = string, received = string | Uint8Array>(
     }
     return outcome.kind === 'value' ? success(id, outcome.value) : failure(id, outcome.error);
   };
-  const response = await respond(decoded, run);
-  signal?.throwIfAborted();
-  return response === undefined ? undefined : encode(codec, response);
+  return respond(decoded, run);
 }
 
 const streamsUnsupported = 'The method returned a stream, which this server cannot send.';
@@ -91,7 +104,7 @@ const streamsUnsupported = 'The method returned a stream, which this server cann
  * Encodes `response`. If the codec can't encode a result, that response becomes an error
  * response, as `provide` sends when its transport can't write a result.
  */
-function encode<encoded>(
+export function encode<encoded>(
   codec: Codec<encoded, any>,
   response: ResponseMessage | ResponseMessage[],
 ): encoded {

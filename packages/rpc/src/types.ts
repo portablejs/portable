@@ -41,6 +41,11 @@ export type Message =
 export type Codec<encoded = unknown, received = encoded> = {
   encode(message: Message): encoded;
   decode(data: received): unknown;
+  /**
+   * The media type of encoded messages, which `handler` and `http` send as `content-type`. HTTP
+   * streams results only when it is `application/json`. @default 'application/octet-stream'
+   */
+  readonly contentType?: string | undefined;
 };
 
 /** A pair of streams that carry encoded messages, such as a WebSocket wrapped in streams. */
