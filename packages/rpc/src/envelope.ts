@@ -1,8 +1,11 @@
 import * as Bytes from '@portable/bytes';
 import { TransportError } from './errors.js';
 
-/** The media type of a streamed response whose messages are enveloped bytes. */
-export const envelope = 'application/x-rpc-envelope';
+/**
+ * The media type of a streamed response whose messages are enveloped bytes. `handler` adds a `codec`
+ * parameter with the codec's `contentType`.
+ */
+export const rpcStream = 'application/vnd.portable.rpc-stream';
 
 const headerSize = 5;
 

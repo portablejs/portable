@@ -339,7 +339,9 @@ describe('codec', () => {
     const response = await Rpc.handler(api, { codec: binary })(
       post('{"jsonrpc":"2.0","id":1,"method":"count","params":[2]}'),
     );
-    expect(response.headers.get('content-type')).toBe('application/x-rpc-envelope');
+    expect(response.headers.get('content-type')).toBe(
+      'application/vnd.portable.rpc-stream; codec="application/x-test"',
+    );
     const bytes = new Uint8Array(await response.arrayBuffer());
     const messages: unknown[] = [];
     for (let offset = 0; offset < bytes.length;) {
@@ -399,7 +401,7 @@ describe('codec', () => {
       codec: binary,
       fetch: async () =>
         new Response(new Uint8Array([0, 0, 0, 0, 9, 1]), {
-          headers: { 'content-type': 'application/x-rpc-envelope' },
+          headers: { 'content-type': 'application/vnd.portable.rpc-stream' },
         }),
     });
     await expect(remote.add(1, 2)).rejects.toBeInstanceOf(Rpc.TransportError);

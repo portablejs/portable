@@ -4,7 +4,7 @@ import * as Lines from '@portable/lines';
 import { encode } from './answer.js';
 import { createClient } from './client.js';
 import { json } from './connect.js';
-import { envelope, unwrapStream, wrap } from './envelope.js';
+import { rpcStream, unwrapStream, wrap } from './envelope.js';
 import type { AsyncDisposeMethod } from '@portable/errors/internal';
 import { RemoteError, TransportError } from './errors.js';
 import { remote } from './remote.js';
@@ -138,7 +138,7 @@ export function handler(
       void writer.close().catch(noop);
     }
     return new Response(encoder.readable, {
-      headers: { 'content-type': text ? ndjson : envelope },
+      headers: { 'content-type': text ? ndjson : `${rpcStream}; codec="${mediaType(codec)}"` },
     });
   };
 }
@@ -265,7 +265,7 @@ export function http<api>(
           method: 'POST',
           headers: {
             'content-type': contentType,
-            accept: `${contentType}, ${ndjson}, ${envelope}`,
+            accept: `${contentType}, ${ndjson}, ${rpcStream}`,
           },
           body: body(
             encoded.length === 1
@@ -284,7 +284,7 @@ export function http<api>(
         });
       }
       const type = response.headers.get('content-type') ?? '';
-      if (response.body && (type.startsWith(ndjson) || type.startsWith(envelope))) {
+      if (response.body && (type.startsWith(ndjson) || type.startsWith(rpcStream))) {
         const reader = response.body
           .pipeThrough<string | Uint8Array>(
             type.startsWith(ndjson) ? new Lines.DecoderStream({ skipEmpty: true }) : unwrapStream(),

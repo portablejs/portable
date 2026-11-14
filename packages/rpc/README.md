@@ -219,10 +219,10 @@ const remote = Rpc.http<Api>('https://example.com/rpc', { codec });
 
 `handler` picks the framing of a streamed response from the type that the codec's `encode` returns:
 
-| `encode` returns             | Streamed `content-type`      | Framing                                                                                                                                               |
-| ---------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A string, as `Rpc.json` does | `application/x-ndjson`       | One message per line. Write each message without line breaks, as `JSON.stringify` does.                                                               |
-| Bytes, as a CBOR codec does  | `application/x-rpc-envelope` | Each message follows a 5-byte header: a flags byte of 0 and the message length as a 32-bit big-endian integer, as in the Connect protocol's envelope. |
+| `encode` returns             | Streamed `content-type`                                                                         | Framing                                                                                                                                               |
+| ---------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A string, as `Rpc.json` does | `application/x-ndjson`                                                                          | One message per line. Write each message without line breaks, as `JSON.stringify` does.                                                               |
+| Bytes, as a CBOR codec does  | `application/vnd.portable.rpc-stream; codec="application/cbor"`, with the codec's `contentType` | Each message follows a 5-byte header: a flags byte of 0 and the message length as a 32-bit big-endian integer, as in the Connect protocol's envelope. |
 
 `http` reads either framing, chosen by the response's `content-type`.
 
