@@ -28,8 +28,8 @@ export type Server = {
 };
 
 /**
- * A server that keeps each call in memory until it ends, so it can stream results, apply credit,
- * and cancel calls. `answer` uses the same dispatch without this state.
+ * A server that keeps each call in memory until the call ends, so it can stream results, apply credit,
+ * and cancel calls. `answer` uses the functions in dispatch.ts without this state.
  */
 export function createServer(
   api: object,

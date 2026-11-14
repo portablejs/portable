@@ -680,3 +680,106 @@ describe.skipIf(asyncDispose === undefined)('Symbol.asyncDispose', () => {
     expect((remote.math as unknown as Record<symbol, unknown>)[asyncDispose!]).toBeUndefined();
   });
 });
+
+/**
+ * A transport that reports dropped connections as WebSockets.connect does. `drop(sent)` dispatches
+ * `close` as if the first `sent` writes went out on the dropped connection.
+ */
+function reconnecting() {
+  const events = new EventTarget();
+  const written: Record<string, unknown>[] = [];
+  let input!: ReadableStreamDefaultController<unknown>;
+  const controller = new AbortController();
+  const transport = {
+    readable: new ReadableStream<unknown>({ start: (c) => void (input = c) }),
+    writable: new WritableStream<unknown>({
+      write: (text) => void written.push(JSON.parse(text as string)),
+    }),
+    addEventListener: (type: 'close', listener: (event: { sent: number }) => void) =>
+      events.addEventListener(type, listener as unknown as EventListener),
+    removeEventListener: (type: 'close', listener: (event: { sent: number }) => void) =>
+      events.removeEventListener(type, listener as unknown as EventListener),
+  };
+  return {
+    transport,
+    written,
+    signal: controller.signal,
+    close: () => controller.abort(),
+    receive: (message: object) => input.enqueue(JSON.stringify(message)),
+    drop: (sent = written.length) =>
+      events.dispatchEvent(Object.assign(new Event('close'), { sent })),
+  };
+}
+
+describe('a transport that reconnects', () => {
+  test('rejects calls sent on a dropped connection with TransportError', async () => {
+    const t = reconnecting();
+    const remote = Rpc.connect<{ add(a: number, b: number): number }>(t.transport, {
+      signal: t.signal,
+    });
+    const call = remote.add(1, 2);
+    await settle();
+    t.drop();
+    const error = await call.catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(Rpc.TransportError);
+    t.close();
+  });
+
+  test('keeps calls written after the dropped connection, and they get their answer', async () => {
+    const t = reconnecting();
+    const remote = Rpc.connect<{ add(a: number, b: number): number }>(t.transport, {
+      signal: t.signal,
+    });
+    const lost = remote.add(1, 2);
+    const queued = remote.add(3, 4);
+    await settle();
+    t.drop(1);
+    await expect(lost).rejects.toBeInstanceOf(Rpc.TransportError);
+    t.receive({ jsonrpc: '2.0', id: t.written[1]!.id as number, result: 7 });
+    expect(await queued).toBe(7);
+    t.close();
+  });
+
+  test('leaves answered calls alone and keeps working after a drop', async () => {
+    const t = reconnecting();
+    const remote = Rpc.connect<{ add(a: number, b: number): number }>(t.transport, {
+      signal: t.signal,
+    });
+    const first = remote.add(1, 2);
+    await settle();
+    t.receive({ jsonrpc: '2.0', id: t.written[0]!.id as number, result: 3 });
+    expect(await first).toBe(3);
+    t.drop();
+    const second = remote.add(2, 2);
+    await settle();
+    t.receive({ jsonrpc: '2.0', id: t.written[1]!.id as number, result: 4 });
+    expect(await second).toBe(4);
+    t.close();
+  });
+
+  test('aborts the methods it was running for the dropped connection', async () => {
+    const t = reconnecting();
+    let reason: unknown;
+    Rpc.provide(
+      t.transport,
+      {
+        wait: Rpc.withContext(
+          ({ signal }) =>
+            new Promise<void>((resolve) =>
+              signal.addEventListener('abort', () => {
+                reason = signal.reason;
+                resolve();
+              }),
+            ),
+        ),
+      },
+      { signal: t.signal },
+    );
+    t.receive({ jsonrpc: '2.0', id: 1, method: 'wait' });
+    await settle();
+    t.drop();
+    await settle();
+    expect(reason).toBeInstanceOf(Rpc.TransportError);
+    t.close();
+  });
+});

@@ -42,8 +42,8 @@ export type Codec<encoded = unknown, received = encoded> = {
   encode(message: Message): encoded;
   decode(data: received): unknown;
   /**
-   * The media type of encoded messages, which `handler` and `http` send as `content-type`. HTTP
-   * streams results only when it is `application/json`. @default 'application/octet-stream'
+   * The media type of encoded messages, which `handler` and `http` send as `content-type`.
+   * `handler` streams results only when it is `application/json`. @default 'application/octet-stream'
    */
   readonly contentType?: string | undefined;
 };
@@ -52,6 +52,18 @@ export type Codec<encoded = unknown, received = encoded> = {
 export type Transport = {
   readonly readable: ReadableStream<unknown>;
   readonly writable: WritableStream<unknown>;
+  /**
+   * Present on a transport that reconnects, such as the one `WebSockets.connect` returns. On each
+   * `close` event, `connect` rejects every call whose request was among the first `event.sent`
+   * chunks written, because those requests went out on the closed connection. It also aborts the
+   * `signal` of each method it was running for that connection.
+   */
+  readonly addEventListener?:
+    | ((type: 'close', listener: (event: { readonly sent: number }) => void) => void)
+    | undefined;
+  readonly removeEventListener?:
+    | ((type: 'close', listener: (event: { readonly sent: number }) => void) => void)
+    | undefined;
 };
 
 /** What a method wrapped with `withContext` receives as its first argument. */

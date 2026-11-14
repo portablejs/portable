@@ -2,6 +2,12 @@
 
 Decisions made while building the packages, with the options considered and the reason for each choice. Newest first. Change any of them by editing this file.
 
+## A transport tells rpc about dropped connections with `close` events
+
+- **Options:** `open` and `close` events on the object `WebSockets.connect` returns, with `Rpc.connect` listening for `close` when the transport has `addEventListener`; an `onClose` option on websockets, whose callback you write to call `Rpc.reset(remote)`; leaving calls whose connection closed pending until a per-call signal aborts.
+- **Trade-offs:** rpc can't tell a request that went out on the dropped socket from one queued for the next connection, because a write to the websockets `writable` resolves in both cases. Rejecting every waiting call on reconnect would reject calls the server still answers. With events, `Rpc.connect` learns of a dropped connection without any extra code from you. They copy the `open` and `close` events of `WebSocket` and add only optional members to `Rpc.Transport`. An `onClose` option and `Rpc.reset` work only if you remember to connect them. AGENTS.md asks for streams instead of events for results you loop over, but these events report the connection's state, not data.
+- **Chosen:** events. Each event has `sent`, the number of writes passed to a socket so far. On `close`, `Rpc.connect` counts its own writes. It rejects a call with `TransportError` only if the call's request was among the first `sent` writes. It also aborts the `signal` of each method it was running for the dropped connection.
+
 ## npm releases publish when the "Version packages" pull request is merged
 
 - **Options:** keep publishing from a maintainer's machine; publish from a workflow started by hand on `main`, after the version bumps are merged; run changesets/action on every push to `main`, which opens a "Version packages" pull request and publishes when it is merged, as the wevm repos do.
