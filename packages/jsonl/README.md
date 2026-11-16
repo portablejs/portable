@@ -24,8 +24,7 @@ for await (const event of Streams.toAsyncIterable(events)) {
 `EncoderStream` is a `TransformStream<unknown, Uint8Array>` that writes each value as `JSON.stringify(value)` followed by `\n`, in UTF-8. A value that `JSON.stringify` can't encode (`undefined`, a function, a symbol, a `BigInt`, or a circular structure) fails the stream with a `TypeError`. Its output can be a `Response` body as it is:
 
 ```ts
-const body = Streams.fromIterable(rows)
-  .pipeThrough(new Jsonl.EncoderStream());
+const body = Streams.fromIterable(rows).pipeThrough(new Jsonl.EncoderStream());
 return new Response(body, { headers: { 'content-type': 'application/x-ndjson' } });
 ```
 
@@ -33,11 +32,11 @@ return new Response(body, { headers: { 'content-type': 'application/x-ndjson' } 
 
 `DecoderStream` takes `invalid`, `maxLength`, and `signal`. `EncoderStream` takes `signal`.
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `invalid` | `'error'` | A line that isn't valid JSON: `'error'` fails the stream with `InvalidInputError`, whose message gives the line number, and `'skip'` drops the line. |
+| Option      | Default    | Description                                                                                                                                                                                                                                  |
+| ----------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `invalid`   | `'error'`  | A line that isn't valid JSON: `'error'` fails the stream with `InvalidInputError`, whose message gives the line number, and `'skip'` drops the line.                                                                                         |
 | `maxLength` | `Infinity` | Longest line, in UTF-16 code units, line ending excluded. As soon as a line grows past the limit, the stream fails with `Jsonl.MaxLengthError`, which stores the limit in `maxLength`. Set it when the input comes from outside the program. |
-| `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
+| `signal`    | none       | Aborting errors the stream with `signal.reason` and cancels the source piped into it.                                                                                                                                                        |
 
 ## Why use this over ndjson and stream-json
 
@@ -70,12 +69,12 @@ ndjson is a pair of Node object streams. `DecoderStream` and `EncoderStream` are
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/jsonl, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/jsonl | – | 1.2 kB | 3 | none | included |
-| ndjson | 2.0.0 | 13 kB | 9 | `buffer`, `events`, `os`, `string_decoder`, `util` | @types/ndjson |
-| stream-json | 3.7.0 | 3.5 kB | 1 | `stream`, `string_decoder` | included |
-| `JSON.parse` or `JSON.stringify` | – | built in | – | none | – |
+| Library                          | Version | Minified and gzipped | Runtime dependencies | Node built-ins                                     | TypeScript types |
+| -------------------------------- | ------- | -------------------: | -------------------: | -------------------------------------------------- | ---------------- |
+| @portable/jsonl                  | –       |               1.2 kB |                    3 | none                                               | included         |
+| ndjson                           | 2.0.0   |                13 kB |                    9 | `buffer`, `events`, `os`, `string_decoder`, `util` | @types/ndjson    |
+| stream-json                      | 3.7.0   |               3.5 kB |                    1 | `stream`, `string_decoder`                         | included         |
+| `JSON.parse` or `JSON.stringify` | –       |             built in |                    – | none                                               | –                |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

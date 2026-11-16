@@ -37,16 +37,16 @@ error instanceof Compress.MaxBytesError; // only compress's, from any copy of co
 
 ## API
 
-| Export | Does |
-| --- | --- |
-| `is(error, kind)` | Whether `error` is a `@portable/*` error of `kind`, and narrows its type. `kind` is `'InvalidInput'`, `'Truncated'`, `'Unsupported'`, `'MaxBytes'`, `'MaxLength'`, or `'Response'`. |
-| `BaseError` | The base class. A subclass sets `static override readonly kind`, and the constructor copies it to `name`. Constructed as `new BaseError(message?, { cause })`, like `Error`. |
-| `InvalidInputError` | The main input of a function is malformed, such as bytes that don't decode or a header that doesn't parse. `new InvalidInputError(message?, { offset, cause })`. |
-| `TruncatedError` | Input ended before a value was complete. `new TruncatedError(message?, { offset, cause })`. |
-| `UnsupportedError` | The input is valid, but the package doesn't handle it. `new UnsupportedError(message?, { cause })`. |
-| `MaxBytesError` | Input or output exceeded a `maxBytes` option. `new MaxBytesError({ maxBytes, message, cause })`. |
-| `MaxLengthError` | Text exceeded a `maxLength` option. `new MaxLengthError({ maxLength, message, cause })`. |
-| `ResponseError` | The package can't use the status or body of a server's response. `new ResponseError({ response, body, message, cause })`. `status` reads `response.status`. |
+| Export              | Does                                                                                                                                                                                |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `is(error, kind)`   | Whether `error` is a `@portable/*` error of `kind`, and narrows its type. `kind` is `'InvalidInput'`, `'Truncated'`, `'Unsupported'`, `'MaxBytes'`, `'MaxLength'`, or `'Response'`. |
+| `BaseError`         | The base class. A subclass sets `static override readonly kind`, and the constructor copies it to `name`. Constructed as `new BaseError(message?, { cause })`, like `Error`.        |
+| `InvalidInputError` | The main input of a function is malformed, such as bytes that don't decode or a header that doesn't parse. `new InvalidInputError(message?, { offset, cause })`.                    |
+| `TruncatedError`    | Input ended before a value was complete. `new TruncatedError(message?, { offset, cause })`.                                                                                         |
+| `UnsupportedError`  | The input is valid, but the package doesn't handle it. `new UnsupportedError(message?, { cause })`.                                                                                 |
+| `MaxBytesError`     | Input or output exceeded a `maxBytes` option. `new MaxBytesError({ maxBytes, message, cause })`.                                                                                    |
+| `MaxLengthError`    | Text exceeded a `maxLength` option. `new MaxLengthError({ maxLength, message, cause })`.                                                                                            |
+| `ResponseError`     | The package can't use the status or body of a server's response. `new ResponseError({ response, body, message, cause })`. `status` reads `response.status`.                         |
 
 An error with only a message takes `(message?, options?)`, as `Error` does. An error with other fields takes one object.
 
@@ -60,10 +60,10 @@ export class MaxBytesError extends Errors.MaxBytesError {
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `Kinds` | Maps each kind accepted by `is` to its class. |
-| `InvalidInputError.Options`, `TruncatedError.Options`, `MaxBytesError.Options`, `MaxLengthError.Options`, `ResponseError.Options` | The constructor options. |
+| Type                                                                                                                              | Description                                   |
+| --------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `Kinds`                                                                                                                           | Maps each kind accepted by `is` to its class. |
+| `InvalidInputError.Options`, `TruncatedError.Options`, `MaxBytesError.Options`, `MaxLengthError.Options`, `ResponseError.Options` | The constructor options.                      |
 
 ## Why use this over a hand-written error class
 

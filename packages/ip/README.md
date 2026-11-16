@@ -34,20 +34,20 @@ type Cidr = { address: Address; prefix: number };
 
 `bytes` is the address in network order: 4 bytes for IPv4, 16 for IPv6. `zone` is the part after `%` in `fe80::1%eth0`.
 
-| Function | Returns |
-| --- | --- |
-| `parse(text)` | An `Address`. Throws `InvalidInputError` for anything else. |
-| `canParse(text, { version })` | Whether `parse` accepts `text`, optionally only for IPv4 or IPv6. Returns `false` for a non-string. |
-| `format(address)` | Text: dotted decimal for IPv4, RFC 5952 for IPv6, with `%zone` if present. |
-| `fromBytes(bytes)` | An `Address` built from a copy of 4 or 16 bytes. Throws `InvalidInputError` for any other length. |
-| `compare(a, b)` | A negative number, zero, or a positive number: IPv4 before IPv6, then by bytes, then by zone. Pass it to `Array.prototype.sort`. |
-| `unmap(address)` | The IPv4 address inside an IPv4-mapped address (`::ffff:192.0.2.1`), and any other address unchanged. |
-| `toIpv6(address)` | The IPv4-mapped form of an IPv4 address, and an IPv6 address unchanged. |
-| `reverseName(address)` | The PTR lookup name under `in-addr.arpa` or `ip6.arpa`. |
-| `parseCidr(text)` | A `Cidr` with the host bits of its address cleared. Throws `InvalidInputError` for malformed text, a zone, or a prefix out of range. |
-| `formatCidr(cidr)` | `address/prefix` text. |
-| `contains(cidr, address)` | Whether the block contains the address. Throws `RangeError` for a `Cidr` object whose prefix isn't an integer from 0 to 32 or 128. |
-| `range(address)` | The name of the special-purpose block the address is in (below), or `'unicast'`. |
+| Function                      | Returns                                                                                                                              |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `parse(text)`                 | An `Address`. Throws `InvalidInputError` for anything else.                                                                          |
+| `canParse(text, { version })` | Whether `parse` accepts `text`, optionally only for IPv4 or IPv6. Returns `false` for a non-string.                                  |
+| `format(address)`             | Text: dotted decimal for IPv4, RFC 5952 for IPv6, with `%zone` if present.                                                           |
+| `fromBytes(bytes)`            | An `Address` built from a copy of 4 or 16 bytes. Throws `InvalidInputError` for any other length.                                    |
+| `compare(a, b)`               | A negative number, zero, or a positive number: IPv4 before IPv6, then by bytes, then by zone. Pass it to `Array.prototype.sort`.     |
+| `unmap(address)`              | The IPv4 address inside an IPv4-mapped address (`::ffff:192.0.2.1`), and any other address unchanged.                                |
+| `toIpv6(address)`             | The IPv4-mapped form of an IPv4 address, and an IPv6 address unchanged.                                                              |
+| `reverseName(address)`        | The PTR lookup name under `in-addr.arpa` or `ip6.arpa`.                                                                              |
+| `parseCidr(text)`             | A `Cidr` with the host bits of its address cleared. Throws `InvalidInputError` for malformed text, a zone, or a prefix out of range. |
+| `formatCidr(cidr)`            | `address/prefix` text.                                                                                                               |
+| `contains(cidr, address)`     | Whether the block contains the address. Throws `RangeError` for a `Cidr` object whose prefix isn't an integer from 0 to 32 or 128.   |
+| `range(address)`              | The name of the special-purpose block the address is in (below), or `'unicast'`.                                                     |
 
 ### Strict parsing
 
@@ -61,37 +61,37 @@ IPv6 addresses follow RFC 4291: one to four hex digits per group, at most one `:
 
 `range` uses the block names of the IANA IPv4 and IPv6 Special-Purpose Address Registries. Check `unmap(address)` rather than `address` when the address may be IPv4-mapped, because `range('::ffff:127.0.0.1')` returns `'ipv4Mapped'`, not `'loopback'`. To refuse internal destinations, allow only `'unicast'`.
 
-| Range | IPv4 | IPv6 |
-| --- | --- | --- |
-| `thisNetwork` | `0.0.0.0/8` | |
-| `unspecified` | | `::/128` |
-| `loopback` | `127.0.0.0/8` | `::1/128` |
-| `private` | `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16` | |
-| `uniqueLocal` | | `fc00::/7` |
-| `sharedAddressSpace` | `100.64.0.0/10` | |
-| `linkLocal` | `169.254.0.0/16` | `fe80::/10` |
-| `deprecatedSiteLocal` | | `fec0::/10` |
-| `ietfProtocolAssignments` | `192.0.0.0/24` | `2001::/23` |
-| `documentation` | `192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24` | `2001:db8::/32`, `3fff::/20` |
-| `benchmarking` | `198.18.0.0/15` | `2001:2::/48` |
-| `as112` | `192.31.196.0/24`, `192.175.48.0/24` | `2001:4:112::/48`, `2620:4f:8000::/48` |
-| `amt` | `192.52.193.0/24` | `2001:3::/32` |
-| `6to4RelayAnycast` | `192.88.99.0/24` | |
-| `6to4` | | `2002::/16` |
-| `teredo` | | `2001::/32` |
-| `ipv4Mapped` | | `::ffff:0:0/96` |
-| `ipv4Translated` | | `::ffff:0:0:0/96` |
-| `ipv4Ipv6Translation` | | `64:ff9b::/96`, `64:ff9b:1::/48` |
-| `discard` | | `100::/64` |
-| `dummy` | | `100:0:0:1::/64` |
-| `deprecatedOrchid` | | `2001:10::/28` |
-| `orchidV2` | | `2001:20::/28` |
-| `droneRemoteIdProtocolEntityTags` | | `2001:30::/28` |
-| `segmentRouting` | | `5f00::/16` |
-| `multicast` | `224.0.0.0/4` | `ff00::/8` |
-| `broadcast` | `255.255.255.255/32` | |
-| `reserved` | `240.0.0.0/4` | everything outside `2000::/3` not named above |
-| `unicast` | every other address | every other address in `2000::/3` |
+| Range                             | IPv4                                                | IPv6                                          |
+| --------------------------------- | --------------------------------------------------- | --------------------------------------------- |
+| `thisNetwork`                     | `0.0.0.0/8`                                         |                                               |
+| `unspecified`                     |                                                     | `::/128`                                      |
+| `loopback`                        | `127.0.0.0/8`                                       | `::1/128`                                     |
+| `private`                         | `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`     |                                               |
+| `uniqueLocal`                     |                                                     | `fc00::/7`                                    |
+| `sharedAddressSpace`              | `100.64.0.0/10`                                     |                                               |
+| `linkLocal`                       | `169.254.0.0/16`                                    | `fe80::/10`                                   |
+| `deprecatedSiteLocal`             |                                                     | `fec0::/10`                                   |
+| `ietfProtocolAssignments`         | `192.0.0.0/24`                                      | `2001::/23`                                   |
+| `documentation`                   | `192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24` | `2001:db8::/32`, `3fff::/20`                  |
+| `benchmarking`                    | `198.18.0.0/15`                                     | `2001:2::/48`                                 |
+| `as112`                           | `192.31.196.0/24`, `192.175.48.0/24`                | `2001:4:112::/48`, `2620:4f:8000::/48`        |
+| `amt`                             | `192.52.193.0/24`                                   | `2001:3::/32`                                 |
+| `6to4RelayAnycast`                | `192.88.99.0/24`                                    |                                               |
+| `6to4`                            |                                                     | `2002::/16`                                   |
+| `teredo`                          |                                                     | `2001::/32`                                   |
+| `ipv4Mapped`                      |                                                     | `::ffff:0:0/96`                               |
+| `ipv4Translated`                  |                                                     | `::ffff:0:0:0/96`                             |
+| `ipv4Ipv6Translation`             |                                                     | `64:ff9b::/96`, `64:ff9b:1::/48`              |
+| `discard`                         |                                                     | `100::/64`                                    |
+| `dummy`                           |                                                     | `100:0:0:1::/64`                              |
+| `deprecatedOrchid`                |                                                     | `2001:10::/28`                                |
+| `orchidV2`                        |                                                     | `2001:20::/28`                                |
+| `droneRemoteIdProtocolEntityTags` |                                                     | `2001:30::/28`                                |
+| `segmentRouting`                  |                                                     | `5f00::/16`                                   |
+| `multicast`                       | `224.0.0.0/4`                                       | `ff00::/8`                                    |
+| `broadcast`                       | `255.255.255.255/32`                                |                                               |
+| `reserved`                        | `240.0.0.0/4`                                       | everything outside `2000::/3` not named above |
+| `unicast`                         | every other address                                 | every other address in `2000::/3`             |
 
 When blocks overlap, `range` returns the most specific one, so `2001:2::1` is `benchmarking`, not `ietfProtocolAssignments`.
 
@@ -103,11 +103,11 @@ A dual-stack socket reports an IPv4 client as `::ffff:192.0.2.1`. `contains` tre
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `Ip.Address` | `{ version, bytes, zone? }`: an IPv4 or IPv6 address with its bytes in network order. |
-| `Ip.Cidr` | `{ address, prefix }`: a network address and its prefix length. |
-| `Ip.Range` | The name of the special-purpose block an address belongs to, from the IANA registries. |
+| Type         | Description                                                                            |
+| ------------ | -------------------------------------------------------------------------------------- |
+| `Ip.Address` | `{ version, bytes, zone? }`: an IPv4 or IPv6 address with its bytes in network order.  |
+| `Ip.Cidr`    | `{ address, prefix }`: a network address and its prefix length.                        |
+| `Ip.Range`   | The name of the special-purpose block an address belongs to, from the IANA registries. |
 
 ## Why use this over ip or ipaddr.js
 
@@ -147,12 +147,12 @@ ip's `isPublic` and `isPrivate` accepted octal, hex, and short IPv4 spellings an
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/ip, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/ip | – | 2.4 kB | 2 | none | included |
-| ipaddr.js | 2.5.0 | 4.1 kB | 0 | none | included |
-| ip | 2.0.1 | 2.6 kB | 0 | `buffer`, `os` | @types/ip |
-| `node:net` | – | built in | – | Node only | – |
+| Library      | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| ------------ | ------- | -------------------: | -------------------: | -------------- | ---------------- |
+| @portable/ip | –       |               2.4 kB |                    2 | none           | included         |
+| ipaddr.js    | 2.5.0   |               4.1 kB |                    0 | none           | included         |
+| ip           | 2.0.1   |               2.6 kB |                    0 | `buffer`, `os` | @types/ip        |
+| `node:net`   | –       |             built in |                    – | Node only      | –                |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

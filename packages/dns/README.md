@@ -37,18 +37,18 @@ In tests, pass an object whose methods return fixed records.
 
 ## Methods
 
-| Method | Returns |
-| --- | --- |
-| `resolve4(name)`, `resolve6(name)` | `string[]` of addresses. IPv6 is formatted as RFC 5952 recommends. |
-| `resolveTxt(name)` | `string[][]`: one array per record, holding its strings. Join them to read SPF, DKIM, or DMARC. |
-| `resolveMx(name)` | `{ exchange, priority }[]` |
-| `resolveCname(name)`, `resolveNs(name)`, `resolvePtr(name)` | `string[]` |
-| `resolveSrv(name)` | `{ name, port, priority, weight }[]` |
-| `resolveSoa(name)` | `{ nsname, hostmaster, serial, refresh, retry, expire, minttl }` |
-| `resolveCaa(name)` | `{ critical, issue?, issuewild?, iodef?, ... }[]` |
-| `resolveNaptr(name)` | `{ flags, service, regexp, replacement, order, preference }[]` |
-| `reverse(ip)` | `string[]` of host names, from a PTR lookup under `in-addr.arpa` or `ip6.arpa`. |
-| `query(name, type)` | The whole decoded response as a [@portable/dns-packet](https://portablejs.com/packages/dns-packet) `DecodedPacket`, with TTLs, the authority section, and the AD flag. Any record type works. It resolves for NOERROR and NXDOMAIN. |
+| Method                                                      | Returns                                                                                                                                                                                                                             |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `resolve4(name)`, `resolve6(name)`                          | `string[]` of addresses. IPv6 is formatted as RFC 5952 recommends.                                                                                                                                                                  |
+| `resolveTxt(name)`                                          | `string[][]`: one array per record, holding its strings. Join them to read SPF, DKIM, or DMARC.                                                                                                                                     |
+| `resolveMx(name)`                                           | `{ exchange, priority }[]`                                                                                                                                                                                                          |
+| `resolveCname(name)`, `resolveNs(name)`, `resolvePtr(name)` | `string[]`                                                                                                                                                                                                                          |
+| `resolveSrv(name)`                                          | `{ name, port, priority, weight }[]`                                                                                                                                                                                                |
+| `resolveSoa(name)`                                          | `{ nsname, hostmaster, serial, refresh, retry, expire, minttl }`                                                                                                                                                                    |
+| `resolveCaa(name)`                                          | `{ critical, issue?, issuewild?, iodef?, ... }[]`                                                                                                                                                                                   |
+| `resolveNaptr(name)`                                        | `{ flags, service, regexp, replacement, order, preference }[]`                                                                                                                                                                      |
+| `reverse(ip)`                                               | `string[]` of host names, from a PTR lookup under `in-addr.arpa` or `ip6.arpa`.                                                                                                                                                     |
+| `query(name, type)`                                         | The whole decoded response as a [@portable/dns-packet](https://portablejs.com/packages/dns-packet) `DecodedPacket`, with TTLs, the authority section, and the AD flag. Any record type works. It resolves for NOERROR and NXDOMAIN. |
 
 Each method takes `{ signal }` as a last argument. When the signal aborts, the method rejects with `signal.reason`, as `fetch` does.
 
@@ -58,11 +58,11 @@ Names with non-ASCII characters are converted to punycode with the IDNA 2008 rul
 
 ## Options
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `endpoints` | Cloudflare, then Google | DNS-over-HTTPS URLs, tried in order. |
-| `fetch` | `globalThis.fetch` | Called as `fetch(request)` with a `Request`. Pass one to add headers, use a proxy, or mock responses. |
-| `timeout` | `5000` | Milliseconds to wait for each endpoint, including the response body. |
+| Option      | Default                 | Description                                                                                           |
+| ----------- | ----------------------- | ----------------------------------------------------------------------------------------------------- |
+| `endpoints` | Cloudflare, then Google | DNS-over-HTTPS URLs, tried in order.                                                                  |
+| `fetch`     | `globalThis.fetch`      | Called as `fetch(request)` with a `Request`. Pass one to add headers, use a proxy, or mock responses. |
+| `timeout`   | `5000`                  | Milliseconds to wait for each endpoint, including the response body.                                  |
 
 Queries are GET requests with an ID of 0, as RFC 8484 recommends, so HTTP caches can store the responses and browsers send no CORS preflight. They set RD and AD, so the AD flag in `query()` results reports DNSSEC validation (RFC 6840 section 5.7).
 
@@ -72,16 +72,16 @@ The next endpoint is tried after a network error, a timeout, an HTTP error statu
 
 Failed lookups reject with `Dns.QueryError`. Its `code`, `syscall`, `hostname`, and `message` are the ones `node:dns/promises` uses, such as `queryTxt ENOTFOUND example.com`. When the failure came from `fetch`, `cause` holds the original error. When the DoH server answered with an error status, `cause` is an `Errors.ResponseError` whose `response` is the whole `Response`. When every endpoint fails, `code` describes the last endpoint's failure.
 
-| `code` | Meaning |
-| --- | --- |
-| `ENOTFOUND` | The name doesn't exist (NXDOMAIN). `reverse` also uses it when there is no PTR record. |
-| `ENODATA` | The name exists, but has no records of that type. |
-| `ESERVFAIL`, `EREFUSED`, `ENOTIMP`, `EFORMERR` | The endpoint answered with that response code. |
-| `EBADRESP` | The response was malformed, truncated, for another question, not HTTP 2xx, or had another response code. |
-| `ETIMEOUT` | The endpoint didn't answer within `timeout`. |
-| `ECONNREFUSED` | `fetch` rejected. |
-| `EBADNAME` | The name has an empty label (`foo..com`), a label over 63 bytes, or a character other than letters, digits, `-`, `_`, `*`, `/`, `.`, and backslash escapes. Node's resolver (c-ares) accepts the same characters. |
-| `EINVAL` | `reverse` was given something that isn't an IP address. |
+| `code`                                         | Meaning                                                                                                                                                                                                           |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ENOTFOUND`                                    | The name doesn't exist (NXDOMAIN). `reverse` also uses it when there is no PTR record.                                                                                                                            |
+| `ENODATA`                                      | The name exists, but has no records of that type.                                                                                                                                                                 |
+| `ESERVFAIL`, `EREFUSED`, `ENOTIMP`, `EFORMERR` | The endpoint answered with that response code.                                                                                                                                                                    |
+| `EBADRESP`                                     | The response was malformed, truncated, for another question, not HTTP 2xx, or had another response code.                                                                                                          |
+| `ETIMEOUT`                                     | The endpoint didn't answer within `timeout`.                                                                                                                                                                      |
+| `ECONNREFUSED`                                 | `fetch` rejected.                                                                                                                                                                                                 |
+| `EBADNAME`                                     | The name has an empty label (`foo..com`), a label over 63 bytes, or a character other than letters, digits, `-`, `_`, `*`, `/`, `.`, and backslash escapes. Node's resolver (c-ares) accepts the same characters. |
+| `EINVAL`                                       | `reverse` was given something that isn't an IP address.                                                                                                                                                           |
 
 Each method rejects with a `TypeError` for a name that isn't a string.
 
@@ -98,16 +98,16 @@ const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) =>
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `Dns.Resolver` | One method per lookup, with Node's names and result shapes. The resolver from `create` and `node:dns/promises` both match it. |
-| `Dns.Resolver.CallOptions` | The options each lookup takes: `signal`. |
-| `Dns.DohResolver` | The type of the object `create` returns: a `Resolver` with `query`. |
-| `Dns.MxRecord` | `{ exchange, priority }`, from `resolveMx`. |
-| `Dns.SrvRecord` | `{ name, port, priority, weight }`, from `resolveSrv`. |
-| `Dns.SoaRecord` | The object `resolveSoa` returns. |
-| `Dns.CaaRecord` | One record from `resolveCaa`. |
-| `Dns.NaptrRecord` | One record from `resolveNaptr`. |
+| Type                       | Description                                                                                                                   |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `Dns.Resolver`             | One method per lookup, with Node's names and result shapes. The resolver from `create` and `node:dns/promises` both match it. |
+| `Dns.Resolver.CallOptions` | The options each lookup takes: `signal`.                                                                                      |
+| `Dns.DohResolver`          | The type of the object `create` returns: a `Resolver` with `query`.                                                           |
+| `Dns.MxRecord`             | `{ exchange, priority }`, from `resolveMx`.                                                                                   |
+| `Dns.SrvRecord`            | `{ name, port, priority, weight }`, from `resolveSrv`.                                                                        |
+| `Dns.SoaRecord`            | The object `resolveSoa` returns.                                                                                              |
+| `Dns.CaaRecord`            | One record from `resolveCaa`.                                                                                                 |
+| `Dns.NaptrRecord`          | One record from `resolveNaptr`.                                                                                               |
 
 ## Why use this over node:dns/promises, tangerine, and dohjs
 
@@ -139,11 +139,11 @@ const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) =>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/dns, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/dns | – | 10 kB | 7 | none | included |
-| tangerine | 2.1.3 | 556 kB | 87 | `assert`, `async_hooks`, `buffer`, `console`, `crypto`, `diagnostics_channel`, `dns`, `events`, `fs`, `http`, `http2`, `https`, `net`, `os`, `path`, `perf_hooks`, `process`, `querystring`, `sqlite`, `stream`, `string_decoder`, `timers`, `tls`, `url`, `util`, `worker_threads`, `zlib` | included |
-| `node:dns/promises` over local UDP | – | built in | – | Node only | – |
+| Library                            | Version | Minified and gzipped | Runtime dependencies | Node built-ins                                                                                                                                                                                                                                                                              | TypeScript types |
+| ---------------------------------- | ------- | -------------------: | -------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| @portable/dns                      | –       |                10 kB |                    7 | none                                                                                                                                                                                                                                                                                        | included         |
+| tangerine                          | 2.1.3   |               556 kB |                   87 | `assert`, `async_hooks`, `buffer`, `console`, `crypto`, `diagnostics_channel`, `dns`, `events`, `fs`, `http`, `http2`, `https`, `net`, `os`, `path`, `perf_hooks`, `process`, `querystring`, `sqlite`, `stream`, `string_decoder`, `timers`, `tls`, `url`, `util`, `worker_threads`, `zlib` | included         |
+| `node:dns/promises` over local UDP | –       |             built in |                    – | Node only                                                                                                                                                                                                                                                                                   | –                |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

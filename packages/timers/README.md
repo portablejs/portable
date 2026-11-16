@@ -40,8 +40,8 @@ await Timers.sleep(60_000, { signal }); // rejects with signal.reason when abort
 await Timers.sleep(Infinity, { signal }); // waits until aborted
 ```
 
-| Option | Description |
-| --- | --- |
+| Option   | Description                                                                        |
+| -------- | ---------------------------------------------------------------------------------- |
 | `signal` | When it aborts, the promise rejects with `signal.reason` and the timer is cleared. |
 
 A negative `ms` counts as 0, and `NaN` rejects with a `RangeError`. Delays longer than `setTimeout`'s limit of 2³¹ − 1 ms (about 24.8 days) are waited out in steps. A plain `setTimeout` fires at once for those.
@@ -50,14 +50,14 @@ A negative `ms` counts as 0, and `NaN` rejects with a `RangeError`. Delays longe
 
 Calls `fn` until it returns without throwing and resolves with its value. When the last attempt fails, it rejects with that attempt's error, unchanged. `fn` receives `{ attempt, signal }`: the attempt number, starting at 1, and a signal to pass to `fetch` or anything else that takes one.
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `attempts` | `3` | Total number of calls, including the first. `Infinity` retries until success or abort. |
-| `delay` | `{ initial: 200, max: 10_000 }` | Wait before each retry. See [Delays](#delays). |
-| `retryIf` | retry every error | `(error, { attempt }) => boolean \| Promise<boolean>`. Called before each retry, not after the last attempt. Return `false` to stop and reject with `error`. |
-| `onRetry` | | `(error, { attempt, delay }) => void \| Promise<void>`. Called before each wait, once `retryIf` allows the retry, with the error, the attempt number, and the wait in ms. Use it for logging. If it returns a promise, `retry` awaits it before the wait starts, and if it throws, `retry` rejects with that error. |
-| `timeout` | `Infinity` | Time limit for each attempt, in ms. When it passes, the attempt's `signal` aborts with a `TimeoutError` `DOMException` and the attempt fails with it, so it is retried like any other error. |
-| `signal` | | Stops retrying. The call rejects with `signal.reason`, also while an attempt or a delay is running. |
+| Option     | Default                         | Description                                                                                                                                                                                                                                                                                                         |
+| ---------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `attempts` | `3`                             | Total number of calls, including the first. `Infinity` retries until success or abort.                                                                                                                                                                                                                              |
+| `delay`    | `{ initial: 200, max: 10_000 }` | Wait before each retry. See [Delays](#delays).                                                                                                                                                                                                                                                                      |
+| `retryIf`  | retry every error               | `(error, { attempt }) => boolean \| Promise<boolean>`. Called before each retry, not after the last attempt. Return `false` to stop and reject with `error`.                                                                                                                                                        |
+| `onRetry`  |                                 | `(error, { attempt, delay }) => void \| Promise<void>`. Called before each wait, once `retryIf` allows the retry, with the error, the attempt number, and the wait in ms. Use it for logging. If it returns a promise, `retry` awaits it before the wait starts, and if it throws, `retry` rejects with that error. |
+| `timeout`  | `Infinity`                      | Time limit for each attempt, in ms. When it passes, the attempt's `signal` aborts with a `TimeoutError` `DOMException` and the attempt fails with it, so it is retried like any other error.                                                                                                                        |
+| `signal`   |                                 | Stops retrying. The call rejects with `signal.reason`, also while an attempt or a delay is running.                                                                                                                                                                                                                 |
 
 ```ts
 class HttpError extends Error {
@@ -78,7 +78,10 @@ const response = await Timers.retry(
     attempts: 5,
     timeout: 10_000,
     signal: AbortSignal.timeout(60_000), // a limit on the whole call
-    retryIf: (error) => !(error instanceof HttpError) || error.response.status >= 500 || error.response.status === 429,
+    retryIf: (error) =>
+      !(error instanceof HttpError) ||
+      error.response.status >= 500 ||
+      error.response.status === 429,
   },
 );
 ```
@@ -122,10 +125,10 @@ A date in the past gives a negative wait, which retries at once.
 
 Calls `fn` until it returns a value other than `undefined`, and resolves with that value. `null`, `false`, and `0` are values, so they end the poll. `fn` receives `{ attempt, signal }` as in `retry`. If `fn` throws, the poll rejects with that error and doesn't call `fn` again. To retry failed checks, call `retry` inside `fn`.
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `delay` | `1000` | Wait after each check that returns `undefined`. See [Delays](#delays). |
-| `signal` | | Stops polling. Aborting rejects the call with `signal.reason`, even while a check is running, and aborts the `signal` passed to that check. |
+| Option   | Default | Description                                                                                                                                 |
+| -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `delay`  | `1000`  | Wait after each check that returns `undefined`. See [Delays](#delays).                                                                      |
+| `signal` |         | Stops polling. Aborting rejects the call with `signal.reason`, even while a check is running, and aborts the `signal` passed to that check. |
 
 A poll of a slow endpoint needs a deadline for the whole wait, so pass `signal: AbortSignal.timeout(ms)`, which rejects with a `TimeoutError` `DOMException`. `retry` also has a `timeout` option, because a signal for the whole call can't limit each attempt separately. To limit a whole `retry`, pass `signal: AbortSignal.timeout(ms)` there too.
 
@@ -147,33 +150,33 @@ window.addEventListener('beforeunload', () => save.flush());
 const ok = await save(editor.value); // true once the save that includes this text finishes
 ```
 
-| Option | `debounce` default | `throttle` default | Description |
-| --- | --- | --- | --- |
-| `leading` | `false` | `true` | Invoke on the first call of a burst. |
-| `trailing` | `true` | `true` | Invoke `ms` after the last call (`debounce`) or at the end of the window (`throttle`), with the last call's arguments. |
-| `maxWait` | | | `debounce` only. Longest time a call waits, however often calls arrive. `throttle` is `debounce` with `maxWait: ms`. |
-| `signal` | | | When it aborts, waiting calls reject with `signal.reason`, and later calls reject at once without invoking `fn`. |
+| Option     | `debounce` default | `throttle` default | Description                                                                                                            |
+| ---------- | ------------------ | ------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `leading`  | `false`            | `true`             | Invoke on the first call of a burst.                                                                                   |
+| `trailing` | `true`             | `true`             | Invoke `ms` after the last call (`debounce`) or at the end of the window (`throttle`), with the last call's arguments. |
+| `maxWait`  |                    |                    | `debounce` only. Longest time a call waits, however often calls arrive. `throttle` is `debounce` with `maxWait: ms`.   |
+| `signal`   |                    |                    | When it aborts, waiting calls reject with `signal.reason`, and later calls reject at once without invoking `fn`.       |
 
 `leading: false` with `trailing: false` never invokes `fn`, so it throws a `RangeError`. `ms` and `maxWait` above 2³¹ − 1 also throw a `RangeError`, because `setTimeout` would fire at once.
 
 The returned function also has:
 
-| Member | Description |
-| --- | --- |
-| `cancel()` | Drops the waiting invocation. Calls waiting for it reject with an `AbortError` `DOMException`. The rejection counts as handled, so a call whose promise isn't awaited doesn't raise an unhandled rejection. Later calls work as usual. |
-| `flush()` | Runs the waiting invocation now and returns a promise of its result. Resolves with `undefined` when nothing waits. For `throttle`, and for `debounce` with `maxWait`, the window counts from the flushed invocation, as in lodash: a call before the window ends runs when it ends, and `pending` stays `true` until then. |
-| `pending` | `true` while the function waits out `ms` after a call. |
-| `[Symbol.dispose]()` | Calls `cancel()`, so `using save = Timers.debounce(...)` drops the waiting invocation when the scope ends. It exists only where the runtime has `Symbol.dispose`, and TypeScript sees it only when your `lib` includes `esnext.disposable`. |
+| Member               | Description                                                                                                                                                                                                                                                                                                                |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cancel()`           | Drops the waiting invocation. Calls waiting for it reject with an `AbortError` `DOMException`. The rejection counts as handled, so a call whose promise isn't awaited doesn't raise an unhandled rejection. Later calls work as usual.                                                                                     |
+| `flush()`            | Runs the waiting invocation now and returns a promise of its result. Resolves with `undefined` when nothing waits. For `throttle`, and for `debounce` with `maxWait`, the window counts from the flushed invocation, as in lodash: a call before the window ends runs when it ends, and `pending` stays `true` until then. |
+| `pending`            | `true` while the function waits out `ms` after a call.                                                                                                                                                                                                                                                                     |
+| `[Symbol.dispose]()` | Calls `cancel()`, so `using save = Timers.debounce(...)` drops the waiting invocation when the scope ends. It exists only where the runtime has `Symbol.dispose`, and TypeScript sees it only when your `lib` includes `esnext.disposable`.                                                                                |
 
 ## Delays
 
 `retry` and `poll` take the same `delay` option, of type `Timers.Delay`:
 
-| Value | Wait before the next attempt |
-| --- | --- |
-| `2000` | A fixed 2000 ms. |
+| Value                                | Wait before the next attempt                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `2000`                               | A fixed 2000 ms.                                                                                                                                                                                                                                                                                                                                                                                |
 | `{ initial, max, factor?, jitter? }` | Exponential backoff. After attempt `n` the cap is `min(max, initial * factor ** (n - 1))`, with `factor` defaulting to 2. With `jitter` (the default) the wait is a random time between 0 and the cap, which spreads out clients that failed at the same moment ([full jitter](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/)). With `jitter: false` it is the cap. |
-| `({ attempt, error }) => ms` | Whatever the function returns. `attempt` is the number of the attempt that just finished. `error` is what it threw in `retry`, and `undefined` in `poll`. |
+| `({ attempt, error }) => ms`         | Whatever the function returns. `attempt` is the number of the attempt that just finished. `error` is what it threw in `retry`, and `undefined` in `poll`.                                                                                                                                                                                                                                       |
 
 `Timers.backoff(delay)` checks a `Delay` and returns a function that computes the wait after each attempt. `retry` and `poll` use this function, and you can call it yourself to wait the same way. It throws a `RangeError` for a negative wait, `initial`, or `max`, or a `factor` that isn't a positive finite number. [@portable/websockets](https://portablejs.com/packages/websockets) and [@portable/sse](https://portablejs.com/packages/sse) reconnect with it.
 
@@ -187,15 +190,15 @@ next({ attempt: 3 }); // 4000
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `Timers.Delay` | The `delay` option. See [Delays](#delays). |
-| `Timers.Backoff` | `{ initial, max, factor?, jitter? }`, exponential backoff. |
-| `Timers.Attempt` | `{ attempt, error? }`, what a `delay` function receives. |
-| `Timers.Context` | `{ attempt, signal }`, what `retry`, and `poll` pass to `fn`. |
-| `Timers.Debounced` | The function `debounce` and `throttle` return, with `cancel`, `flush`, and `pending`. |
-| `Timers.retry.Retry` | `{ attempt, delay }`, what `onRetry` receives. |
-| `Timers.Instant` | `Date \| { readonly epochMilliseconds: number }`, the type of options such as `now` and `expiresAt` in other `@portable/*` packages. You can pass a `Temporal.Instant` or `Temporal.ZonedDateTime`. |
+| Type                 | Description                                                                                                                                                                                         |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Timers.Delay`       | The `delay` option. See [Delays](#delays).                                                                                                                                                          |
+| `Timers.Backoff`     | `{ initial, max, factor?, jitter? }`, exponential backoff.                                                                                                                                          |
+| `Timers.Attempt`     | `{ attempt, error? }`, what a `delay` function receives.                                                                                                                                            |
+| `Timers.Context`     | `{ attempt, signal }`, what `retry`, and `poll` pass to `fn`.                                                                                                                                       |
+| `Timers.Debounced`   | The function `debounce` and `throttle` return, with `cancel`, `flush`, and `pending`.                                                                                                               |
+| `Timers.retry.Retry` | `{ attempt, delay }`, what `onRetry` receives.                                                                                                                                                      |
+| `Timers.Instant`     | `Date \| { readonly epochMilliseconds: number }`, the type of options such as `now` and `expiresAt` in other `@portable/*` packages. You can pass a `Temporal.Instant` or `Temporal.ZonedDateTime`. |
 
 ## Why use this over p-retry, async-retry, p-wait-for, and delay
 
@@ -241,18 +244,18 @@ Each of these libraries does one job, with its own option names. `retry` and `po
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.2, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/timers, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/timers | – | 1.8 kB | 1 | none | included |
-| p-retry | 8.0.1 | 1.8 kB | 1 | none | included |
-| async-retry | 1.3.3 | 1.7 kB | 1 | none | @types/async-retry |
-| p-wait-for | 7.0.0 | 0.9 kB | 0 | none | included |
-| delay | 7.0.0 | 0.9 kB | 2 | none | included |
-| lodash.debounce | 4.0.8 | 1.1 kB | 0 | none | @types/lodash.debounce |
-| lodash.throttle | 4.1.1 | 1.2 kB | 0 | none | @types/lodash.throttle |
-| throttle-debounce | 5.0.2 | 0.5 kB | 0 | none | @types/throttle-debounce |
-| p-debounce | 6.0.0 | 0.7 kB | 0 | none | included |
-| perfect-debounce | 2.1.0 | 0.4 kB | 0 | none | included |
+| Library           | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types         |
+| ----------------- | ------- | -------------------: | -------------------: | -------------- | ------------------------ |
+| @portable/timers  | –       |               1.8 kB |                    1 | none           | included                 |
+| p-retry           | 8.0.1   |               1.8 kB |                    1 | none           | included                 |
+| async-retry       | 1.3.3   |               1.7 kB |                    1 | none           | @types/async-retry       |
+| p-wait-for        | 7.0.0   |               0.9 kB |                    0 | none           | included                 |
+| delay             | 7.0.0   |               0.9 kB |                    2 | none           | included                 |
+| lodash.debounce   | 4.0.8   |               1.1 kB |                    0 | none           | @types/lodash.debounce   |
+| lodash.throttle   | 4.1.1   |               1.2 kB |                    0 | none           | @types/lodash.throttle   |
+| throttle-debounce | 5.0.2   |               0.5 kB |                    0 | none           | @types/throttle-debounce |
+| p-debounce        | 6.0.0   |               0.7 kB |                    0 | none           | included                 |
+| perfect-debounce  | 2.1.0   |               0.4 kB |                    0 | none           | included                 |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

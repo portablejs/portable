@@ -29,42 +29,42 @@ A limiter allows `limit` requests per `period` for each key. The allowance refil
 
 ## API
 
-| Export | Does |
-| --- | --- |
-| `create(options)` | Returns a limiter with one method, `take(key, options)`. |
-| `limiter.take(key, options)` | Takes `cost` from the key's allowance if that much is left, and resolves to a `Result`. A denied request takes nothing. |
-| `headers(result, options)` | Returns `RateLimit` and `RateLimit-Policy` ([draft-ietf-httpapi-ratelimit-headers-11](https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/)) as a plain object, plus `Retry-After` for a denied request. |
-| `memoryStore()` | A store that keeps keys in a `Map` in this isolate or process. It is the default. |
-| `Store` | The type a store implements. |
+| Export                       | Does                                                                                                                                                                                                                       |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `create(options)`            | Returns a limiter with one method, `take(key, options)`.                                                                                                                                                                   |
+| `limiter.take(key, options)` | Takes `cost` from the key's allowance if that much is left, and resolves to a `Result`. A denied request takes nothing.                                                                                                    |
+| `headers(result, options)`   | Returns `RateLimit` and `RateLimit-Policy` ([draft-ietf-httpapi-ratelimit-headers-11](https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/)) as a plain object, plus `Retry-After` for a denied request. |
+| `memoryStore()`              | A store that keeps keys in a `Map` in this isolate or process. It is the default.                                                                                                                                          |
+| `Store`                      | The type a store implements.                                                                                                                                                                                               |
 
 ### `create` options
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `limit` | required | Requests allowed per `period`, on average. A positive integer. |
-| `period` | required | Length of the period, in milliseconds. |
-| `burst` | `limit` | Requests allowed at once after a time with no requests. `burst: 1` spaces requests `period / limit` apart. |
-| `store` | `memoryStore()` | Where the limiter keeps its state. |
+| Option   | Default         | Description                                                                                                |
+| -------- | --------------- | ---------------------------------------------------------------------------------------------------------- |
+| `limit`  | required        | Requests allowed per `period`, on average. A positive integer.                                             |
+| `period` | required        | Length of the period, in milliseconds.                                                                     |
+| `burst`  | `limit`         | Requests allowed at once after a time with no requests. `burst: 1` spaces requests `period / limit` apart. |
+| `store`  | `memoryStore()` | Where the limiter keeps its state.                                                                         |
 
 `create` throws a `RangeError` for a `limit` or `burst` that isn't a positive integer, or a `period` that isn't a positive finite number.
 
 ### `take` options
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `cost` | `1` | How much of the allowance the request uses, such as its size. `0` reads the state without changing it. A negative cost gives allowance back, up to `burst`. |
-| `now` | `new Date()` | The time of the request, as a `Date` or a `Temporal.Instant`, for tests or for a clock other than the system's. |
-| `signal` | none | Aborting rejects `take` with `signal.reason` before the next store call. The signal is passed to the store. |
+| Option   | Default      | Description                                                                                                                                                 |
+| -------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cost`   | `1`          | How much of the allowance the request uses, such as its size. `0` reads the state without changing it. A negative cost gives allowance back, up to `burst`. |
+| `now`    | `new Date()` | The time of the request, as a `Date` or a `Temporal.Instant`, for tests or for a clock other than the system's.                                             |
+| `signal` | none         | Aborting rejects `take` with `signal.reason` before the next store call. The signal is passed to the store.                                                 |
 
 ### `Result`
 
-| Field | Description |
-| --- | --- |
-| `allowed` | Whether the request was allowed. |
-| `limit`, `period` | The limiter's options, for `headers`. |
-| `remaining` | How many more requests of cost 1 would be allowed right now. |
-| `resetAt` | The `Date` at which `remaining` is back to `burst`. |
-| `retryAfter` | Milliseconds until the same request would be allowed. `0` when allowed, and `Infinity` when `cost` is larger than `burst`. |
+| Field             | Description                                                                                                                |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `allowed`         | Whether the request was allowed.                                                                                           |
+| `limit`, `period` | The limiter's options, for `headers`.                                                                                      |
+| `remaining`       | How many more requests of cost 1 would be allowed right now.                                                               |
+| `resetAt`         | The `Date` at which `remaining` is back to `burst`.                                                                        |
+| `retryAfter`      | Milliseconds until the same request would be allowed. `0` when allowed, and `Infinity` when `cost` is larger than `burst`. |
 
 ### `headers`
 
@@ -161,7 +161,15 @@ function upstash(url: string, token: string): RateLimit.Store {
       return value === null ? undefined : Number(value);
     },
     async set(key, value, { expected, ttl, signal }) {
-      const args = ['EVAL', compareAndSet, 1, key, expected === undefined ? '' : String(expected), String(value), ttl];
+      const args = [
+        'EVAL',
+        compareAndSet,
+        1,
+        key,
+        expected === undefined ? '' : String(expected),
+        String(value),
+        ttl,
+      ];
       return (await command(args, signal)) === 1;
     },
   };
@@ -187,7 +195,9 @@ const store: RateLimit.Store = {
     return value === null ? undefined : Number(value);
   },
   async set(key, value, { ttl }) {
-    await env.RATE_LIMIT.put(key, String(value), { expirationTtl: Math.max(60, Math.ceil(ttl / 1000)) });
+    await env.RATE_LIMIT.put(key, String(value), {
+      expirationTtl: Math.max(60, Math.ceil(ttl / 1000)),
+    });
     return true;
   },
 };
@@ -195,11 +205,11 @@ const store: RateLimit.Store = {
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `RateLimit.Limiter` | What `create` returns, with `take`. |
-| `RateLimit.Result` | What `take` resolves to. Durations are milliseconds. |
-| `RateLimit.Store` | Where a limiter keeps one number per key. See [Stores](#stores). |
+| Type                | Description                                                      |
+| ------------------- | ---------------------------------------------------------------- |
+| `RateLimit.Limiter` | What `create` returns, with `take`.                              |
+| `RateLimit.Result`  | What `take` resolves to. Durations are milliseconds.             |
+| `RateLimit.Store`   | Where a limiter keeps one number per key. See [Stores](#stores). |
 
 ## Why use this over rate-limiter-flexible, limiter, and bottleneck
 
@@ -240,11 +250,11 @@ rate-limiter-flexible ships a store class per database client, all of them Node 
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/rate-limit, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/rate-limit | – | 1.2 kB | 2 | none | included |
-| rate-limiter-flexible | 11.2.3 | 17 kB | 0 | `Buffer`, `cluster`, `crypto` | included |
-| limiter | 4.1.0 | 1.4 kB | 0 | none | included |
+| Library               | Version | Minified and gzipped | Runtime dependencies | Node built-ins                | TypeScript types |
+| --------------------- | ------- | -------------------: | -------------------: | ----------------------------- | ---------------- |
+| @portable/rate-limit  | –       |               1.2 kB |                    2 | none                          | included         |
+| rate-limiter-flexible | 11.2.3  |                17 kB |                    0 | `Buffer`, `cluster`, `crypto` | included         |
+| limiter               | 4.1.0   |               1.4 kB |                    0 | none                          | included         |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

@@ -18,9 +18,9 @@ const response = await fetch('https://api.openai.com/v1/chat/completions', {
   headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
   body: JSON.stringify({ model, messages, stream: true }),
 });
+const events = response.body!.pipeThrough(new Sse.DecoderStream());
 // `transcript` is a WritableStream<Uint8Array> that writes to a file.
-await response.body!
-  .pipeThrough(new Sse.DecoderStream())
+await events
   .pipeThrough(Streams.filter((event) => event.data !== '[DONE]'))
   .pipeThrough(Streams.map((event) => JSON.parse(event.data)))
   .pipeThrough(new Jsonl.EncoderStream())

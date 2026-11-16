@@ -32,22 +32,22 @@ await Spf.check({ ip, sender, helo }, { resolver: dns });
 
 ## Input
 
-| Field | Description |
-| --- | --- |
-| `ip` | The client's IPv4 or IPv6 address. An IPv4-mapped IPv6 address such as `::ffff:192.0.2.1` is checked as IPv4. `check` rejects with a `RangeError` for a string that isn't an IP address, and with a `TypeError` for a value that isn't a string. |
-| `sender` | The MAIL FROM address. When it is empty or missing, as for a bounce, the HELO name is checked instead, with the sender `postmaster@<helo>` (RFC 7208 section 2.4). |
-| `helo` | The HELO or EHLO name, used for `%{h}` and for an empty sender. |
+| Field    | Description                                                                                                                                                                                                                                      |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ip`     | The client's IPv4 or IPv6 address. An IPv4-mapped IPv6 address such as `::ffff:192.0.2.1` is checked as IPv4. `check` rejects with a `RangeError` for a string that isn't an IP address, and with a `TypeError` for a value that isn't a string. |
+| `sender` | The MAIL FROM address. When it is empty or missing, as for a bounce, the HELO name is checked instead, with the sender `postmaster@<helo>` (RFC 7208 section 2.4).                                                                               |
+| `helo`   | The HELO or EHLO name, used for `%{h}` and for an empty sender.                                                                                                                                                                                  |
 
 To check the HELO identity of a message that has a sender, as RFC 7208 section 2.3 recommends, call `check` again with `sender: ''`.
 
 ## Options
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `resolver` | required | Answers the lookups. `Dns.create()` from [@portable/dns](https://portablejs.com/packages/dns), `node:dns/promises`, or any object with `resolve4`, `resolve6`, `resolveMx`, `resolvePtr`, and `resolveTxt`. |
-| `receiver` | `'unknown'` | The checking host's name, for `%{r}` in explanations. |
-| `now` | `new Date()` | The time for `%{t}` in explanations, as a `Date` or a `Temporal.Instant`. |
-| `signal` | none | Aborting rejects `check` with `signal.reason` and cancels the pending lookups. RFC 7208 section 4.6.4 suggests a time limit of at least 20 seconds, after which the result is `temperror`: catch the `TimeoutError` from `AbortSignal.timeout` and report `temperror`. |
+| Option     | Default      | Description                                                                                                                                                                                                                                                            |
+| ---------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `resolver` | required     | Answers the lookups. `Dns.create()` from [@portable/dns](https://portablejs.com/packages/dns), `node:dns/promises`, or any object with `resolve4`, `resolve6`, `resolveMx`, `resolvePtr`, and `resolveTxt`.                                                            |
+| `receiver` | `'unknown'`  | The checking host's name, for `%{r}` in explanations.                                                                                                                                                                                                                  |
+| `now`      | `new Date()` | The time for `%{t}` in explanations, as a `Date` or a `Temporal.Instant`.                                                                                                                                                                                              |
+| `signal`   | none         | Aborting rejects `check` with `signal.reason` and cancels the pending lookups. RFC 7208 section 4.6.4 suggests a time limit of at least 20 seconds, after which the result is `temperror`: catch the `TimeoutError` from `AbortSignal.timeout` and report `temperror`. |
 
 There is no default resolver. `check` sends the client's IP address in DNS queries, for example for `exists:%{i}...`, so the resolver you pass determines which DNS servers see that address. A mail server usually runs its own resolver. Pass `Dns.create()` for DNS-over-HTTPS.
 
@@ -57,18 +57,18 @@ There is no default resolver. `check` sends the client's IP address in DNS queri
 
 `check` resolves to a plain object. It rejects only for an invalid `ip` or a `resolver` that lacks any of the five methods, or with `signal.reason` when `signal` aborts.
 
-| Field | Description |
-| --- | --- |
-| `result` | `'pass'`, `'fail'`, `'softfail'`, `'neutral'`, `'none'`, `'temperror'`, or `'permerror'`. |
-| `domain` | The domain whose policy was checked. A non-ASCII domain is converted to its A-label form. |
-| `identity` | `'mailfrom'`, or `'helo'` when the sender was empty. With `domain`, it gives `smtp.mailfrom` or `smtp.helo` for Authentication-Results. |
-| `mechanism` | The term that matched, as written in the record, such as `include:_spf.example.com` or `-all`. Missing when nothing matched. |
-| `record` | The SPF record that gave the result. After a `redirect=`, it is the record of the redirect target. |
-| `explanation` | The text of the domain's `exp=` modifier, for `fail` only. It comes from the domain owner, so treat it as untrusted text. |
-| `reason` | Why the result is `none`, `temperror`, or `permerror`, such as `More than 10 DNS-querying terms`. |
-| `cause` | The resolver's error behind a `temperror`. |
-| `lookups` | The number of DNS-querying terms evaluated (`include`, `a`, `mx`, `ptr`, `exists`, `redirect=`, and each `%{p}`). |
-| `voidLookups` | The number of lookups that found no records. |
+| Field         | Description                                                                                                                             |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `result`      | `'pass'`, `'fail'`, `'softfail'`, `'neutral'`, `'none'`, `'temperror'`, or `'permerror'`.                                               |
+| `domain`      | The domain whose policy was checked. A non-ASCII domain is converted to its A-label form.                                               |
+| `identity`    | `'mailfrom'`, or `'helo'` when the sender was empty. With `domain`, it gives `smtp.mailfrom` or `smtp.helo` for Authentication-Results. |
+| `mechanism`   | The term that matched, as written in the record, such as `include:_spf.example.com` or `-all`. Missing when nothing matched.            |
+| `record`      | The SPF record that gave the result. After a `redirect=`, it is the record of the redirect target.                                      |
+| `explanation` | The text of the domain's `exp=` modifier, for `fail` only. It comes from the domain owner, so treat it as untrusted text.               |
+| `reason`      | Why the result is `none`, `temperror`, or `permerror`, such as `More than 10 DNS-querying terms`.                                       |
+| `cause`       | The resolver's error behind a `temperror`.                                                                                              |
+| `lookups`     | The number of DNS-querying terms evaluated (`include`, `a`, `mx`, `ptr`, `exists`, `redirect=`, and each `%{p}`).                       |
+| `voidLookups` | The number of lookups that found no records.                                                                                            |
 
 ## Limits
 
@@ -91,10 +91,10 @@ When the local-part of the sender is not ASCII, a term that uses `%{l}` or `%{s}
 
 ## Types
 
-| Type | Description |
-| --- | --- |
+| Type           | Description                                                                                                               |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `Spf.Resolver` | `Pick<Dns.Resolver, 'resolve4' \| 'resolve6' \| 'resolveMx' \| 'resolvePtr' \| 'resolveTxt'>`, the lookups `check` needs. |
-| `Spf.Result` | What `check` resolves to, as above. `Spf.Result.Code` is the type of `result`. |
+| `Spf.Result`   | What `check` resolves to, as above. `Spf.Result.Code` is the type of `result`.                                            |
 
 ## Why use this over mailauth
 
@@ -116,11 +116,11 @@ When the local-part of the sender is not ASCII, a term that uses `%{l}` or `%{s}
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/spf, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/spf | – | 15 kB | 9 | none | included |
-| mailauth | 7.3.0 | 442 kB | 38 | `buffer`, `crypto`, `dns`, `https`, `net`, `os`, `stream`, `string_decoder` | included |
-| mailauth, strict mode | 7.3.0 | 442 kB | 38 | `buffer`, `crypto`, `dns`, `https`, `net`, `os`, `stream`, `string_decoder` | included |
+| Library               | Version | Minified and gzipped | Runtime dependencies | Node built-ins                                                              | TypeScript types |
+| --------------------- | ------- | -------------------: | -------------------: | --------------------------------------------------------------------------- | ---------------- |
+| @portable/spf         | –       |                15 kB |                    9 | none                                                                        | included         |
+| mailauth              | 7.3.0   |               442 kB |                   38 | `buffer`, `crypto`, `dns`, `https`, `net`, `os`, `stream`, `string_decoder` | included         |
+| mailauth, strict mode | 7.3.0   |               442 kB |                   38 | `buffer`, `crypto`, `dns`, `https`, `net`, `os`, `stream`, `string_decoder` | included         |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

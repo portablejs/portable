@@ -76,23 +76,23 @@ Some objects keep a socket, timer, or task running after the call that creates t
 
 Function names use these verbs:
 
-| Verb | What it does | Example |
-| --- | --- | --- |
-| `encode`, `decode` | Converts a value to bytes or text, and back. | `Base64.encode(bytes)` |
-| `parse` | Reads a value out of bytes, with no function for the other direction. | `ImageSize.parse(bytes)` |
-| `parse`, `format` | Reads and writes a text syntax such as an address list. | `MimeHeaders.parseAddresses(text)` |
-| `…Stream` suffix | Reads its input from a stream, or returns its output as one. | `ImageSize.parseStream(stream)` |
-| `…Sync` suffix | Is the sync version of an async function. | |
+| Verb               | What it does                                                          | Example                            |
+| ------------------ | --------------------------------------------------------------------- | ---------------------------------- |
+| `encode`, `decode` | Converts a value to bytes or text, and back.                          | `Base64.encode(bytes)`             |
+| `parse`            | Reads a value out of bytes, with no function for the other direction. | `ImageSize.parse(bytes)`           |
+| `parse`, `format`  | Reads and writes a text syntax such as an address list.               | `MimeHeaders.parseAddresses(text)` |
+| `…Stream` suffix   | Reads its input from a stream, or returns its output as one.          | `ImageSize.parseStream(stream)`    |
+| `…Sync` suffix     | Is the sync version of an async function.                             |                                    |
 
 Functions throw these errors instead of returning them:
 
-| Error | Thrown when |
-| --- | --- |
-| `InvalidInputError` | The data that the function reads, decodes, encodes, or verifies is malformed. Catch it when the input comes from outside your program. |
-| `TruncatedError` | The input ended early. |
-| `UnsupportedError` | The input is valid, but the package doesn't handle it. |
-| `MaxBytesError`, `MaxLengthError` | The input or output exceeded the `maxBytes` or `maxLength` option. The error stores the limit. |
-| `ResponseError` | The server returned a status or body that the package can't use. The error keeps the whole `Response`. |
-| `TypeError`, `RangeError` | An argument or option is missing, has the wrong type, or has a value that the function doesn't accept. Fix the call instead of catching these errors. |
+| Error                             | Thrown when                                                                                                                                           |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `InvalidInputError`               | The data that the function reads, decodes, encodes, or verifies is malformed. Catch it when the input comes from outside your program.                |
+| `TruncatedError`                  | The input ended early.                                                                                                                                |
+| `UnsupportedError`                | The input is valid, but the package doesn't handle it.                                                                                                |
+| `MaxBytesError`, `MaxLengthError` | The input or output exceeded the `maxBytes` or `maxLength` option. The error stores the limit.                                                        |
+| `ResponseError`                   | The server returned a status or body that the package can't use. The error keeps the whole `Response`.                                                |
+| `TypeError`, `RangeError`         | An argument or option is missing, has the wrong type, or has a value that the function doesn't accept. Fix the call instead of catching these errors. |
 
 Each error's `name` starts with the package namespace, such as `Lines.MaxLengthError`. If your app installs two copies of a package, `instanceof` fails for errors from the other copy. Use `Errors.is` from [@portable/errors](/packages/errors) instead: `Errors.is(error, 'MaxBytes')` matches the `MaxBytesError` of any package.

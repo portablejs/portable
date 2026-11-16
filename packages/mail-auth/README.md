@@ -45,35 +45,35 @@ A message is a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which 
 
 ## Options
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `resolver` | required | Answers the DNS lookups: `Dns.create()`, `node:dns/promises`, or any object with `resolveTxt`, `resolve4`, `resolve6`, `resolveMx`, `resolvePtr`, and `resolveCname`. |
-| `authservId` | required | The authserv-id that starts Authentication-Results, usually this server's host name in A-label form (RFC 8601 section 2.5). It must be an RFC 2045 token, so a value such as `mx.example; dkim=pass` throws a `RangeError`. |
-| `ip` | required | The SMTP client's IPv4 or IPv6 address. |
-| `helo` | none | The HELO or EHLO name. |
-| `sender` | none | The MAIL FROM address. For a bounce, it is empty or missing, and SPF checks the HELO name instead. |
-| `seal` | none | `{ domain, selector, privateKey, headers?, now? }`, as `Arc.seal` takes them. `authenticate` fills in the ARC-Authentication-Results payload and `cv=`. |
-| `now` | `new Date()` | The time to check DKIM and ARC signature expiry against and to use for `%{t}` in SPF explanations, as a `Date` or a `Temporal.Instant`. |
-| `minKeyBits` | `1024` | RSA keys shorter than this give DKIM `policy` and fail the ARC chain. |
-| `maxSignatures` | `10` | The most DKIM-Signature fields to check, as in [`Dkim.verify`](https://portablejs.com/packages/dkim#verifying). |
-| `hasher` | WebCrypto | Creates the body hashes. See [Crypto in @portable/dkim](https://portablejs.com/packages/dkim#crypto). |
-| `organizationalDomain` | the DNS tree walk | Finds organizational domains from a public suffix list, as in [`Dmarc.check`](https://portablejs.com/packages/dmarc#options). |
-| `signal` | none | Stops reading the message and every DNS lookup. The promise rejects with `signal.reason`. |
+| Option                 | Default           | Description                                                                                                                                                                                                                 |
+| ---------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `resolver`             | required          | Answers the DNS lookups: `Dns.create()`, `node:dns/promises`, or any object with `resolveTxt`, `resolve4`, `resolve6`, `resolveMx`, `resolvePtr`, and `resolveCname`.                                                       |
+| `authservId`           | required          | The authserv-id that starts Authentication-Results, usually this server's host name in A-label form (RFC 8601 section 2.5). It must be an RFC 2045 token, so a value such as `mx.example; dkim=pass` throws a `RangeError`. |
+| `ip`                   | required          | The SMTP client's IPv4 or IPv6 address.                                                                                                                                                                                     |
+| `helo`                 | none              | The HELO or EHLO name.                                                                                                                                                                                                      |
+| `sender`               | none              | The MAIL FROM address. For a bounce, it is empty or missing, and SPF checks the HELO name instead.                                                                                                                          |
+| `seal`                 | none              | `{ domain, selector, privateKey, headers?, now? }`, as `Arc.seal` takes them. `authenticate` fills in the ARC-Authentication-Results payload and `cv=`.                                                                     |
+| `now`                  | `new Date()`      | The time to check DKIM and ARC signature expiry against and to use for `%{t}` in SPF explanations, as a `Date` or a `Temporal.Instant`.                                                                                     |
+| `minKeyBits`           | `1024`            | RSA keys shorter than this give DKIM `policy` and fail the ARC chain.                                                                                                                                                       |
+| `maxSignatures`        | `10`              | The most DKIM-Signature fields to check, as in [`Dkim.verify`](https://portablejs.com/packages/dkim#verifying).                                                                                                             |
+| `hasher`               | WebCrypto         | Creates the body hashes. See [Crypto in @portable/dkim](https://portablejs.com/packages/dkim#crypto).                                                                                                                       |
+| `organizationalDomain` | the DNS tree walk | Finds organizational domains from a public suffix list, as in [`Dmarc.check`](https://portablejs.com/packages/dmarc#options).                                                                                               |
+| `signal`               | none              | Stops reading the message and every DNS lookup. The promise rejects with `signal.reason`.                                                                                                                                   |
 
 ## Result
 
 `authenticate` resolves to a plain object. It rejects only for invalid options, a failing message stream or an aborted `signal`. A DNS failure gives a result such as `temperror` instead of a rejection.
 
-| Field | Description |
-| --- | --- |
-| `spf` | The [`Spf.check`](https://portablejs.com/packages/spf) result for the MAIL FROM address, or for the HELO name of a bounce. |
-| `dkim` | One [`Dkim.verify`](https://portablejs.com/packages/dkim) result per DKIM-Signature, in header order. Empty for an unsigned message. |
-| `arc` | The [`Arc.verify`](https://portablejs.com/packages/arc) result. |
-| `dmarc` | The [`Dmarc.check`](https://portablejs.com/packages/dmarc) result for the From domain, with the SPF and DKIM results above. Missing when `dmarcSkipReason` is set. |
+| Field             | Description                                                                                                                                                                                                                                                                                                                                         |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `spf`             | The [`Spf.check`](https://portablejs.com/packages/spf) result for the MAIL FROM address, or for the HELO name of a bounce.                                                                                                                                                                                                                          |
+| `dkim`            | One [`Dkim.verify`](https://portablejs.com/packages/dkim) result per DKIM-Signature, in header order. Empty for an unsigned message.                                                                                                                                                                                                                |
+| `arc`             | The [`Arc.verify`](https://portablejs.com/packages/arc) result.                                                                                                                                                                                                                                                                                     |
+| `dmarc`           | The [`Dmarc.check`](https://portablejs.com/packages/dmarc) result for the From domain, with the SPF and DKIM results above. Missing when `dmarcSkipReason` is set.                                                                                                                                                                                  |
 | `dmarcSkipReason` | Why DMARC wasn't checked: `'no-author-domain'` (no From field, or no mailbox in it), `'multiple-author-domains'`, `'multiple-from-fields'`, or `'invalid-author-domain'` (a From field that isn't a valid address list). RFC 9989 section 5.3.1 says DMARC can't be applied to such a message, and section 11.5 suggests treating it as suspicious. |
-| `authResults` | The Authentication-Results value, without the field name. |
-| `headers` | The fields to put above the message, each ending in CRLF: the ARC set when the message was sealed, then Authentication-Results. |
-| `sealSkipReason` | Why the message wasn't sealed: it has no From field, its newest ARC-Seal says `cv=fail`, or it already has 50 ARC sets. The message can be delivered without a seal. |
+| `authResults`     | The Authentication-Results value, without the field name.                                                                                                                                                                                                                                                                                           |
+| `headers`         | The fields to put above the message, each ending in CRLF: the ARC set when the message was sealed, then Authentication-Results.                                                                                                                                                                                                                     |
+| `sealSkipReason`  | Why the message wasn't sealed: it has no From field, its newest ARC-Seal says `cv=fail`, or it already has 50 ARC sets. The message can be delivered without a seal.                                                                                                                                                                                |
 
 ## Authentication-Results
 
@@ -99,12 +99,12 @@ Values that aren't a token or an address are quoted, the parentheses in each com
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `MailAuth.Resolver` | The lookups SPF, DKIM, DMARC, and ARC need together: `Spf.Resolver & Dmarc.Resolver & Dkim.Resolver`. |
-| `MailAuth.Result` | What `authenticate` resolves to, as above. |
-| `MailAuth.Hasher` | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function `(hash: MailAuth.Hash) => MailAuth.Hasher`. Re-exported from [@portable/dkim](https://portablejs.com/packages/dkim). |
-| `MailAuth.Hash` | A hash name such as `'SHA-256'`, passed to `hasher`. Re-exported from [@portable/dkim](https://portablejs.com/packages/dkim). |
+| Type                | Description                                                                                                                                                                                                    |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MailAuth.Resolver` | The lookups SPF, DKIM, DMARC, and ARC need together: `Spf.Resolver & Dmarc.Resolver & Dkim.Resolver`.                                                                                                          |
+| `MailAuth.Result`   | What `authenticate` resolves to, as above.                                                                                                                                                                     |
+| `MailAuth.Hasher`   | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function `(hash: MailAuth.Hash) => MailAuth.Hasher`. Re-exported from [@portable/dkim](https://portablejs.com/packages/dkim). |
+| `MailAuth.Hash`     | A hash name such as `'SHA-256'`, passed to `hasher`. Re-exported from [@portable/dkim](https://portablejs.com/packages/dkim).                                                                                  |
 
 ## Why use this over mailauth
 
@@ -140,10 +140,10 @@ Differences to check when you switch from mailauth:
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/mail-auth, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/mail-auth | – | 32 kB | 15 | none | included |
-| mailauth | 7.3.0 | 775 kB | 38 | `assert`, `async_hooks`, `buffer`, `console`, `crypto`, `diagnostics_channel`, `dns`, `events`, `fs`, `http`, `http2`, `https`, `net`, `os`, `path`, `perf_hooks`, `querystring`, `sqlite`, `stream`, `string_decoder`, `timers`, `tls`, `url`, `util`, `worker_threads`, `zlib` | included |
+| Library             | Version | Minified and gzipped | Runtime dependencies | Node built-ins                                                                                                                                                                                                                                                                   | TypeScript types |
+| ------------------- | ------- | -------------------: | -------------------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| @portable/mail-auth | –       |                32 kB |                   15 | none                                                                                                                                                                                                                                                                             | included         |
+| mailauth            | 7.3.0   |               775 kB |                   38 | `assert`, `async_hooks`, `buffer`, `console`, `crypto`, `diagnostics_channel`, `dns`, `events`, `fs`, `http`, `http2`, `https`, `net`, `os`, `path`, `perf_hooks`, `querystring`, `sqlite`, `stream`, `string_decoder`, `timers`, `tls`, `url`, `util`, `worker_threads`, `zlib` | included         |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
