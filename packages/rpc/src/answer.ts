@@ -65,7 +65,8 @@ export async function answer<encoded = string, received = string | Uint8Array>(
 
 /**
  * Answers a decoded message without keeping state between messages, as `answer` does. `handler`
- * uses it when its codec can't stream.
+ * uses it when its codec's `contentType` isn't `application/json`, because it can't stream
+ * results with that codec.
  */
 export function respondStateless(
   methods: object,
@@ -101,8 +102,8 @@ export function respondStateless(
 const streamsUnsupported = 'The method returned a stream, which this server cannot send.';
 
 /**
- * Encodes `response`. If the codec can't encode a result, that response becomes an error
- * response, as `provide` sends when its transport can't write a result.
+ * Encodes `response`. If the codec throws on a result, this replaces that response with an
+ * error response, as `provide` does when its transport can't write a result.
  */
 export function encode<encoded>(
   codec: Codec<encoded, any>,
