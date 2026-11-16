@@ -46,11 +46,11 @@ The type of the remote comes from the server's code, so there is no schema or co
 
 `Rpc.provide(transport, methods, options)` answers those calls. A method can be sync or async, and is called with the object it is defined on as `this`, so class instances work.
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `codec` | `Rpc.json` | Encodes messages for the transport. Any `{ encode, decode }`. |
-| `methods` | | `connect` only: methods the other side can call over the same transport. |
-| `signal` | | Closes the connection. Waiting calls reject with `signal.reason`, running methods are aborted, and the transport is cancelled. |
+| Option    | Default    | Description                                                                                                                    |
+| --------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `codec`   | `Rpc.json` | Encodes messages for the transport. Any `{ encode, decode }`.                                                                  |
+| `methods` |            | `connect` only: methods the other side can call over the same transport.                                                       |
+| `signal`  |            | Closes the connection. Waiting calls reject with `signal.reason`, running methods are aborted, and the transport is cancelled. |
 
 Where the runtime has `Symbol.asyncDispose`, the remote from `connect` or `http` also closes with `await using`, as if `signal` aborted with an `AbortError` `DOMException`:
 
@@ -150,11 +150,11 @@ const { tools } = await Rpc.call(mcp['tools/list'], {});
 
 A transport is any `{ readable, writable }` pair of streams that carries encoded messages. Which functions to use depends on how the server receives messages:
 
-| Server | Use |
-| --- | --- |
-| A worker, iframe, popup, or `MessagePort` | `Rpc.port` or `Rpc.window` with `connect` and `provide` |
-| A process that keeps a WebSocket or another stream open | `connect` and `provide` |
-| An HTTP endpoint | `Rpc.handler` and `Rpc.http` |
+| Server                                                                                                                           | Use                                                                                                                                   |
+| -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| A worker, iframe, popup, or `MessagePort`                                                                                        | `Rpc.port` or `Rpc.window` with `connect` and `provide`                                                                               |
+| A process that keeps a WebSocket or another stream open                                                                          | `connect` and `provide`                                                                                                               |
+| An HTTP endpoint                                                                                                                 | `Rpc.handler` and `Rpc.http`                                                                                                          |
 | A server that gets one message per callback and can be evicted between them, such as a Durable Object with WebSocket hibernation | `Rpc.answer` and `Rpc.notifier`, described in [Servers that are evicted between messages](#servers-that-are-evicted-between-messages) |
 
 ### `Rpc.port(target, { signal })`
@@ -237,7 +237,9 @@ Server-sent events carry messages one way only. Pair the event stream from [@por
 ```ts
 const transport = {
   readable: events.pipeThrough(new TransformStream({ transform: (e, c) => c.enqueue(e.data) })),
-  writable: new WritableStream({ write: (message) => void fetch(postUrl, { method: 'POST', body: message as string }) }),
+  writable: new WritableStream({
+    write: (message) => void fetch(postUrl, { method: 'POST', body: message as string }),
+  }),
 };
 ```
 
@@ -335,12 +337,12 @@ If the WebSocket from [@portable/websockets](https://portablejs.com/packages/web
 
 Every message is a JSON-RPC 2.0 request, notification, or response, or a batch of them, so `Rpc.provide` answers any JSON-RPC client and `Rpc.connect` calls any JSON-RPC server. Streams and cancellation are notifications with reserved names, as in LSP:
 
-| Message | Sent by | Params |
-| --- | --- | --- |
-| `$/stream` | server | `{ id }`: the result of request `id` is a stream. |
-| `$/stream/next` | server | `{ id, value }`: the next value. The stream ends with the normal response to `id`, or errors with an error response. |
-| `$/stream/credit` | client | `{ id, credit }`: the server may send `credit` more values. |
-| `$/cancel` | client | `{ id }`: stop request `id`. The server aborts the method's signal and answers `-32800`. |
+| Message           | Sent by | Params                                                                                                               |
+| ----------------- | ------- | -------------------------------------------------------------------------------------------------------------------- |
+| `$/stream`        | server  | `{ id }`: the result of request `id` is a stream.                                                                    |
+| `$/stream/next`   | server  | `{ id, value }`: the next value. The stream ends with the normal response to `id`, or errors with an error response. |
+| `$/stream/credit` | client  | `{ id, credit }`: the server may send `credit` more values.                                                          |
+| `$/cancel`        | client  | `{ id }`: stop request `id`. The server aborts the method's signal and answers `-32800`.                             |
 
 A codec turns messages into what the transport carries. `Rpc.json` writes JSON text and reads text or UTF-8 bytes. Pass a binary codec the same way:
 
@@ -354,15 +356,15 @@ Validation is left to the methods. Parse the arguments with your schema library 
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `Rpc.Remote` | The client type `connect` and `http` return for an API type. |
-| `Rpc.Notifier` | The type `notifier` returns for an API type. |
-| `Rpc.Result` | What a remote method returns for a result of a given type. |
-| `Rpc.Transport` | A pair of streams that carry encoded messages. |
-| `Rpc.Codec` | Turns messages into what a transport carries, and back. |
-| `Rpc.Context` | What a method wrapped with `withContext` receives as its first argument. |
-| `Rpc.Message` | A JSON-RPC 2.0 request, notification, or response. |
+| Type            | Description                                                              |
+| --------------- | ------------------------------------------------------------------------ |
+| `Rpc.Remote`    | The client type `connect` and `http` return for an API type.             |
+| `Rpc.Notifier`  | The type `notifier` returns for an API type.                             |
+| `Rpc.Result`    | What a remote method returns for a result of a given type.               |
+| `Rpc.Transport` | A pair of streams that carry encoded messages.                           |
+| `Rpc.Codec`     | Turns messages into what a transport carries, and back.                  |
+| `Rpc.Context`   | What a method wrapped with `withContext` receives as its first argument. |
+| `Rpc.Message`   | A JSON-RPC 2.0 request, notification, or response.                       |
 
 ## Why use this over comlink, penpal, birpc, and json-rpc-2.0
 
@@ -405,13 +407,13 @@ The benchmarks run over a `MessageChannel` with the default JSON codec.
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/rpc, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/rpc | – | 3.5 kB | 4 | none | included |
-| birpc | 4.2.0 | 1.3 kB | 0 | none | included |
-| comlink | 4.4.2 | 1.7 kB | 0 | none | included |
-| penpal | 8.0.1 | 2.3 kB | 0 | none | included |
-| json-rpc-2.0 | 1.8.1 | 4.0 kB | 0 | none | included |
+| Library       | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| ------------- | ------- | -------------------: | -------------------: | -------------- | ---------------- |
+| @portable/rpc | –       |               3.5 kB |                    4 | none           | included         |
+| birpc         | 4.2.0   |               1.3 kB |                    0 | none           | included         |
+| comlink       | 4.4.2   |               1.7 kB |                    0 | none           | included         |
+| penpal        | 8.0.1   |               2.3 kB |                    0 | none           | included         |
+| json-rpc-2.0  | 1.8.1   |               4.0 kB |                    0 | none           | included         |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

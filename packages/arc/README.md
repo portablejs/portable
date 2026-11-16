@@ -33,13 +33,13 @@ A message is a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which 
 
 `verify` follows RFC 8617 section 5.2: it checks the structure of every ARC set, the newest ARC-Message-Signature, and every ARC-Seal from the newest to the oldest. It resolves to:
 
-| Field | Description |
-| --- | --- |
-| `result` | `'pass'`, `'fail'`, or `'none'` (no ARC fields). It is the `arc=` result of Authentication-Results and the `cv=` value for the next seal. |
-| `instance` | The highest instance on the message's ARC fields, 0 when there are none. |
-| `reason` | Why the result is `fail`, such as `i=1 ams body hash did not verify` or `i=2 as no key`. |
-| `cause` | The resolver's error when a key lookup failed. |
-| `sets` | On `pass`, each set from `i=1` to the newest, with the sealer's `domain` and `selector` and its `authResults`, the ARC-Authentication-Results text after `i=`. Empty otherwise. |
+| Field      | Description                                                                                                                                                                     |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `result`   | `'pass'`, `'fail'`, or `'none'` (no ARC fields). It is the `arc=` result of Authentication-Results and the `cv=` value for the next seal.                                       |
+| `instance` | The highest instance on the message's ARC fields, 0 when there are none.                                                                                                        |
+| `reason`   | Why the result is `fail`, such as `i=1 ams body hash did not verify` or `i=2 as no key`.                                                                                        |
+| `cause`    | The resolver's error when a key lookup failed.                                                                                                                                  |
+| `sets`     | On `pass`, each set from `i=1` to the newest, with the sealer's `domain` and `selector` and its `authResults`, the ARC-Authentication-Results text after `i=`. Empty otherwise. |
 
 Use `sets` to decide whether to trust what an intermediary recorded. ARC proves who sealed each set, not that the sealer told the truth, so only read `authResults` of a sealer you trust:
 
@@ -50,13 +50,13 @@ if (google && /\bdmarc=pass\b/.test(google.authResults)) {
 }
 ```
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `resolver` | required | Looks up the keys: `Dns.create()`, `node:dns/promises`, or any object with `resolveTxt`. |
-| `now` | `new Date()` | The time to check the ARC-Message-Signature's `x=` against, as a `Date` or a `Temporal.Instant`. |
-| `minKeyBits` | `1024` | RSA keys shorter than this fail the chain (RFC 8301). |
-| `hasher` | WebCrypto | Creates the body hash. See [Crypto in @portable/dkim](https://portablejs.com/packages/dkim#crypto). |
-| `signal` | none | Stops reading the message and the key lookups. The promise rejects with `signal.reason`. |
+| Option       | Default      | Description                                                                                         |
+| ------------ | ------------ | --------------------------------------------------------------------------------------------------- |
+| `resolver`   | required     | Looks up the keys: `Dns.create()`, `node:dns/promises`, or any object with `resolveTxt`.            |
+| `now`        | `new Date()` | The time to check the ARC-Message-Signature's `x=` against, as a `Date` or a `Temporal.Instant`.    |
+| `minKeyBits` | `1024`       | RSA keys shorter than this fail the chain (RFC 8301).                                               |
+| `hasher`     | WebCrypto    | Creates the body hash. See [Crypto in @portable/dkim](https://portablejs.com/packages/dkim#crypto). |
+| `signal`     | none         | Stops reading the message and the key lookups. The promise rejects with `signal.reason`.            |
 
 The promise rejects only for invalid options, a failing message stream or an aborted `signal`. A DNS failure fails the chain, because every ARC failure is permanent (RFC 8617 section 5.2).
 
@@ -64,17 +64,17 @@ The promise rejects only for invalid options, a failing message stream or an abo
 
 `seal` resolves to the three fields of the new set, ARC-Seal, ARC-Message-Signature, and ARC-Authentication-Results, each ending in CRLF, to put above the message's other fields. The instance is one more than the highest on the message. The ARC-Message-Signature always uses relaxed/relaxed canonicalization, and lines are folded at 76 characters.
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `domain` | required | The sealing domain (`d=`). A U-label domain is written as its A-label. |
-| `selector` | required | The selector (`s=`). The public key is published at `<selector>._domainkey.<domain>`. |
-| `privateKey` | required | A `CryptoKey`, a JWK, or a PEM `PRIVATE KEY` or `RSA PRIVATE KEY`, as `Dkim.sign` takes it. The key type sets `a=`. Passing an imported `CryptoKey` saves about 1 ms per call in Node. |
-| `authResults` | required | The ARC-Authentication-Results payload: this server's authserv-id and its results, such as `mx.example.com; spf=pass smtp.mailfrom=example.org`. It may be folded with CRLF and whitespace. |
-| `chainValidation` | `'none'` for a message without ARC fields | The `cv=` value: the `result` of `Arc.verify` for this message. Required when the message has ARC fields. |
-| `headers` | DKIM-Signature, Delivered-To, and the `Dkim.sign` defaults | The fields the ARC-Message-Signature signs. ARC fields and Authentication-Results are left out (RFC 8617 section 4.1.2). |
-| `now` | `new Date()` | The time (`t=`) of both signatures, as a `Date` or a `Temporal.Instant`. |
-| `hasher` | WebCrypto | Creates the body hash. |
-| `signal` | none | Stops reading the message. |
+| Option            | Default                                                    | Description                                                                                                                                                                                 |
+| ----------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `domain`          | required                                                   | The sealing domain (`d=`). A U-label domain is written as its A-label.                                                                                                                      |
+| `selector`        | required                                                   | The selector (`s=`). The public key is published at `<selector>._domainkey.<domain>`.                                                                                                       |
+| `privateKey`      | required                                                   | A `CryptoKey`, a JWK, or a PEM `PRIVATE KEY` or `RSA PRIVATE KEY`, as `Dkim.sign` takes it. The key type sets `a=`. Passing an imported `CryptoKey` saves about 1 ms per call in Node.      |
+| `authResults`     | required                                                   | The ARC-Authentication-Results payload: this server's authserv-id and its results, such as `mx.example.com; spf=pass smtp.mailfrom=example.org`. It may be folded with CRLF and whitespace. |
+| `chainValidation` | `'none'` for a message without ARC fields                  | The `cv=` value: the `result` of `Arc.verify` for this message. Required when the message has ARC fields.                                                                                   |
+| `headers`         | DKIM-Signature, Delivered-To, and the `Dkim.sign` defaults | The fields the ARC-Message-Signature signs. ARC fields and Authentication-Results are left out (RFC 8617 section 4.1.2).                                                                    |
+| `now`             | `new Date()`                                               | The time (`t=`) of both signatures, as a `Date` or a `Temporal.Instant`.                                                                                                                    |
+| `hasher`          | WebCrypto                                                  | Creates the body hash.                                                                                                                                                                      |
+| `signal`          | none                                                       | Stops reading the message.                                                                                                                                                                  |
 
 With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a broken chain is sealed as failed and stays failed. A message whose ARC fields are all malformed is sealed with `i=1` and `cv=fail`.
 
@@ -82,12 +82,12 @@ With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a b
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `Arc.Resolver` | `Dkim.Resolver`, the `resolveTxt` lookup `verify` needs. |
-| `Arc.Result` | What `verify` resolves to: `result`, `instance`, `reason`, `cause`, and `sets`, as above. |
-| `Arc.Hasher` | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function `(hash: Arc.Hash) => Arc.Hasher`. Re-exported from [@portable/dkim](https://portablejs.com/packages/dkim). |
-| `Arc.Hash` | A hash name such as `'SHA-256'`, passed to `hasher`. Re-exported from [@portable/dkim](https://portablejs.com/packages/dkim). |
+| Type           | Description                                                                                                                                                                                          |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Arc.Resolver` | `Dkim.Resolver`, the `resolveTxt` lookup `verify` needs.                                                                                                                                             |
+| `Arc.Result`   | What `verify` resolves to: `result`, `instance`, `reason`, `cause`, and `sets`, as above.                                                                                                            |
+| `Arc.Hasher`   | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function `(hash: Arc.Hash) => Arc.Hasher`. Re-exported from [@portable/dkim](https://portablejs.com/packages/dkim). |
+| `Arc.Hash`     | A hash name such as `'SHA-256'`, passed to `hasher`. Re-exported from [@portable/dkim](https://portablejs.com/packages/dkim).                                                                        |
 
 ## Why use this over mailauth
 
@@ -116,11 +116,11 @@ With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a b
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/arc, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/arc | – | 20 kB | 11 | none | included |
-| mailauth | 7.3.0 | 449 kB | 38 | `buffer`, `crypto`, `dns`, `https`, `net`, `stream`, `string_decoder` | included |
-| `node:crypto`, hashing, and signing only | – | built in | – | Node only | – |
+| Library                                  | Version | Minified and gzipped | Runtime dependencies | Node built-ins                                                        | TypeScript types |
+| ---------------------------------------- | ------- | -------------------: | -------------------: | --------------------------------------------------------------------- | ---------------- |
+| @portable/arc                            | –       |                20 kB |                   11 | none                                                                  | included         |
+| mailauth                                 | 7.3.0   |               449 kB |                   38 | `buffer`, `crypto`, `dns`, `https`, `net`, `stream`, `string_decoder` | included         |
+| `node:crypto`, hashing, and signing only | –       |             built in |                    – | Node only                                                             | –                |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

@@ -38,19 +38,22 @@ In tests, `sign` returns the headers the provider would send:
 ```ts
 const body = JSON.stringify({ id: 'evt_1', object: 'event' });
 const headers = await Webhooks.sign(body, { scheme: Webhooks.stripe, secret: 'whsec_test' });
-const response = await worker.fetch(new Request('https://example.com', { method: 'POST', body, headers }), env);
+const response = await worker.fetch(
+  new Request('https://example.com', { method: 'POST', body, headers }),
+  env,
+);
 ```
 
 ## API
 
-| Export | Does |
-| --- | --- |
-| `verify(input, options)` | Checks the signature, then the timestamp, and returns `{ body, id, timestamp }`. `input` is a `Request` or `{ headers, body }`, where `headers` is a `Headers` or a plain object and `body` is the raw body as a string or `Uint8Array`. |
-| `sign(body, options)` | Returns the provider's signature headers for `body` as a plain object. |
-| `standard`, `stripe`, `github`, `slack` | The schemes this package ships, passed as `scheme`. |
-| `Scheme` | The type of a scheme object, for writing one for another sender. |
-| `VerificationError` | Thrown by `verify` for a missing or malformed header, a signature that doesn't match, or a timestamp outside the tolerance. Its `code` is `'missing-header'`, `'malformed-header'`, `'signature'`, or `'timestamp'`. |
-| `MaxBytesError` | Thrown by `verify` when a `Request` body is longer than `maxBytes`. Its `maxBytes` stores the limit. |
+| Export                                  | Does                                                                                                                                                                                                                                     |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `verify(input, options)`                | Checks the signature, then the timestamp, and returns `{ body, id, timestamp }`. `input` is a `Request` or `{ headers, body }`, where `headers` is a `Headers` or a plain object and `body` is the raw body as a string or `Uint8Array`. |
+| `sign(body, options)`                   | Returns the provider's signature headers for `body` as a plain object.                                                                                                                                                                   |
+| `standard`, `stripe`, `github`, `slack` | The schemes this package ships, passed as `scheme`.                                                                                                                                                                                      |
+| `Scheme`                                | The type of a scheme object, for writing one for another sender.                                                                                                                                                                         |
+| `VerificationError`                     | Thrown by `verify` for a missing or malformed header, a signature that doesn't match, or a timestamp outside the tolerance. Its `code` is `'missing-header'`, `'malformed-header'`, `'signature'`, or `'timestamp'`.                     |
+| `MaxBytesError`                         | Thrown by `verify` when a `Request` body is longer than `maxBytes`. Its `maxBytes` stores the limit.                                                                                                                                     |
 
 `verify` throws a `TypeError` or `RangeError` for a mistake in the call rather than in the request. An empty secret, a Standard Webhooks secret that isn't base64, or an invalid `now` throws a `RangeError`. A `scheme` that isn't a scheme object, or a body that isn't a string or `Uint8Array`, such as a parsed JSON object, throws a `TypeError`.
 
@@ -58,25 +61,25 @@ The result's `id` is the delivery id from `webhook-id`, `svix-id`, or `x-github-
 
 ### Options
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `scheme` | `Webhooks.standard` | `Webhooks.standard`, `Webhooks.stripe`, `Webhooks.github`, `Webhooks.slack`, or a scheme you write. |
-| `secret` | required | The signing secret, as a string or raw key bytes. Pass an array while rotating secrets. `verify` accepts a signature from any of them, and `sign` takes one. |
-| `tolerance` | `300_000` | `verify` only. Largest difference between the signed timestamp and `now`, in milliseconds, in either direction. `Infinity` turns the check off. GitHub signs no timestamp. |
-| `maxBytes` | `Infinity` | `verify` only. The longest `Request` body to read, in bytes. A longer body throws `MaxBytesError` and is cancelled. Set it when `verify` reads requests from the internet. |
-| `now` | `new Date()` | In `verify`, the time to compare the signed timestamp with, and in `sign`, the time to sign, as a `Date` or a `Temporal.Instant`. |
-| `id` | `crypto.randomUUID()` | `sign` only. The delivery id for Standard Webhooks, and the `x-github-delivery` header for GitHub. |
-| `hmac` | `WebCrypto.hmac` | A function `(hash, key, data) => Uint8Array \| Promise<Uint8Array>` that computes an HMAC. Webhooks calls it with `'SHA-256'`. |
-| `signal` | none | Aborting rejects with `signal.reason`, and cancels a `Request` body that is still being read. Firefox has no `Request.prototype.body`, so there the body is read whole and isn't cancelled. |
+| Option      | Default               | Description                                                                                                                                                                                 |
+| ----------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scheme`    | `Webhooks.standard`   | `Webhooks.standard`, `Webhooks.stripe`, `Webhooks.github`, `Webhooks.slack`, or a scheme you write.                                                                                         |
+| `secret`    | required              | The signing secret, as a string or raw key bytes. Pass an array while rotating secrets. `verify` accepts a signature from any of them, and `sign` takes one.                                |
+| `tolerance` | `300_000`             | `verify` only. Largest difference between the signed timestamp and `now`, in milliseconds, in either direction. `Infinity` turns the check off. GitHub signs no timestamp.                  |
+| `maxBytes`  | `Infinity`            | `verify` only. The longest `Request` body to read, in bytes. A longer body throws `MaxBytesError` and is cancelled. Set it when `verify` reads requests from the internet.                  |
+| `now`       | `new Date()`          | In `verify`, the time to compare the signed timestamp with, and in `sign`, the time to sign, as a `Date` or a `Temporal.Instant`.                                                           |
+| `id`        | `crypto.randomUUID()` | `sign` only. The delivery id for Standard Webhooks, and the `x-github-delivery` header for GitHub.                                                                                          |
+| `hmac`      | `WebCrypto.hmac`      | A function `(hash, key, data) => Uint8Array \| Promise<Uint8Array>` that computes an HMAC. Webhooks calls it with `'SHA-256'`.                                                              |
+| `signal`    | none                  | Aborting rejects with `signal.reason`, and cancels a `Request` body that is still being read. Firefox has no `Request.prototype.body`, so there the body is read whole and isn't cancelled. |
 
 ### Schemes
 
-| Scheme | Headers | Signed content | Secret |
-| --- | --- | --- | --- |
-| `standard` | `webhook-id`, `webhook-timestamp`, `webhook-signature`, or the `svix-` headers when those are missing | `{id}.{timestamp}.{body}` | base64, `whsec_` prefix optional |
-| `stripe` | `stripe-signature: t=…,v1=…` | `{timestamp}.{body}` | UTF-8 text, `whsec_` prefix included |
-| `github` | `x-hub-signature-256: sha256=…` | `{body}` | UTF-8 text |
-| `slack` | `x-slack-request-timestamp`, `x-slack-signature: v0=…` | `v0:{timestamp}:{body}` | UTF-8 text |
+| Scheme     | Headers                                                                                               | Signed content            | Secret                               |
+| ---------- | ----------------------------------------------------------------------------------------------------- | ------------------------- | ------------------------------------ |
+| `standard` | `webhook-id`, `webhook-timestamp`, `webhook-signature`, or the `svix-` headers when those are missing | `{id}.{timestamp}.{body}` | base64, `whsec_` prefix optional     |
+| `stripe`   | `stripe-signature: t=…,v1=…`                                                                          | `{timestamp}.{body}`      | UTF-8 text, `whsec_` prefix included |
+| `github`   | `x-hub-signature-256: sha256=…`                                                                       | `{body}`                  | UTF-8 text                           |
+| `slack`    | `x-slack-request-timestamp`, `x-slack-signature: v0=…`                                                | `v0:{timestamp}:{body}`   | UTF-8 text                           |
 
 A header can contain several signatures (Standard Webhooks separates them with spaces, Stripe repeats `v1=`), and one match is enough. Standard Webhooks `v1a` (ed25519) signatures and GitHub's SHA-1 `x-hub-signature` header are ignored.
 
@@ -99,10 +102,16 @@ const acme: Webhooks.Scheme = {
     const signature = headers.get('acme-signature');
     const timestamp = headers.get('acme-timestamp');
     if (!signature || !timestamp) {
-      throw new Webhooks.VerificationError({ code: 'missing-header', message: 'Missing Acme headers' });
+      throw new Webhooks.VerificationError({
+        code: 'missing-header',
+        message: 'Missing Acme headers',
+      });
     }
     if (!/^[\da-f]{64}$/.test(signature) || !/^\d+$/.test(timestamp)) {
-      throw new Webhooks.VerificationError({ code: 'malformed-header', message: 'Malformed Acme headers' });
+      throw new Webhooks.VerificationError({
+        code: 'malformed-header',
+        message: 'Malformed Acme headers',
+      });
     }
     return {
       signatures: [Uint8Array.from(signature.match(/../g)!, (byte) => parseInt(byte, 16))],
@@ -142,11 +151,11 @@ const { body } = await Webhooks.verify(request, {
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `Webhooks.Secret` | `string \| Uint8Array`, the `secret` option. If you pass a string, the scheme's `key` function turns it into key bytes. If the scheme has no `key`, the string is encoded as UTF-8. A `Uint8Array` is used as the raw key. |
-| `Webhooks.Hmac` | The `hmac` option: `(hash, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from [@portable/web-crypto](https://portablejs.com/packages/web-crypto). See [Crypto](#crypto). |
-| `Webhooks.VerificationError.Code` | `VerificationError.code`: `'missing-header'`, `'malformed-header'`, `'signature'`, or `'timestamp'`. |
+| Type                              | Description                                                                                                                                                                                                                |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Webhooks.Secret`                 | `string \| Uint8Array`, the `secret` option. If you pass a string, the scheme's `key` function turns it into key bytes. If the scheme has no `key`, the string is encoded as UTF-8. A `Uint8Array` is used as the raw key. |
+| `Webhooks.Hmac`                   | The `hmac` option: `(hash, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from [@portable/web-crypto](https://portablejs.com/packages/web-crypto). See [Crypto](#crypto).                                   |
+| `Webhooks.VerificationError.Code` | `VerificationError.code`: `'missing-header'`, `'malformed-header'`, `'signature'`, or `'timestamp'`.                                                                                                                       |
 
 ## Why use this over the provider libraries
 
@@ -193,17 +202,17 @@ One package verifies all four schemes, and any other HMAC-SHA256 sender through 
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/webhooks, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/webhooks | – | 5.2 kB | 6 | none | included |
-| @portable/webhooks with @noble/hashes | – | 8.0 kB | 7 | none | included |
-| standardwebhooks | 1.1.1 | 4.6 kB | 2 | `Buffer` | included |
-| svix | 2.8.0 | 4.5 kB | 3 | `Buffer` | included |
-| stripe, `constructEventAsync` | 23.0.0 | 30 kB | 0 | `Buffer` | included |
-| stripe, `constructEvent` | 23.0.0 | 30 kB | 0 | `Buffer` | included |
-| @octokit/webhooks-methods, web build | 6.0.0 | 0.4 kB | 0 | none | included |
-| @octokit/webhooks-methods, Node build | 6.0.0 | 0.4 kB | 0 | none | included |
-| @slack/bolt | 5.1.0 | 1.3 kB | 98 | `crypto` | included |
+| Library                               | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| ------------------------------------- | ------- | -------------------: | -------------------: | -------------- | ---------------- |
+| @portable/webhooks                    | –       |               5.2 kB |                    6 | none           | included         |
+| @portable/webhooks with @noble/hashes | –       |               8.0 kB |                    7 | none           | included         |
+| standardwebhooks                      | 1.1.1   |               4.6 kB |                    2 | `Buffer`       | included         |
+| svix                                  | 2.8.0   |               4.5 kB |                    3 | `Buffer`       | included         |
+| stripe, `constructEventAsync`         | 23.0.0  |                30 kB |                    0 | `Buffer`       | included         |
+| stripe, `constructEvent`              | 23.0.0  |                30 kB |                    0 | `Buffer`       | included         |
+| @octokit/webhooks-methods, web build  | 6.0.0   |               0.4 kB |                    0 | none           | included         |
+| @octokit/webhooks-methods, Node build | 6.0.0   |               0.4 kB |                    0 | none           | included         |
+| @slack/bolt                           | 5.1.0   |               1.3 kB |                   98 | `crypto`       | included         |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

@@ -25,11 +25,11 @@ if (await Password.verify(password, stored)) {
 
 ## API
 
-| Function | Returns | Description |
-| --- | --- | --- |
-| `hash(password, options?)` | `Promise<string>` | Hashes a password with a new random salt. |
-| `verify(password, stored, options?)` | `Promise<boolean>` | `true` if the password matches. Compares in constant time. |
-| `needsRehash(stored, options?)` | `boolean` | `true` if `stored` uses fewer iterations than `options.iterations`, a digest other than SHA-256, a salt under 16 bytes or a hash under 32 bytes. |
+| Function                             | Returns            | Description                                                                                                                                      |
+| ------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `hash(password, options?)`           | `Promise<string>`  | Hashes a password with a new random salt.                                                                                                        |
+| `verify(password, stored, options?)` | `Promise<boolean>` | `true` if the password matches. Compares in constant time.                                                                                       |
+| `needsRehash(stored, options?)`      | `boolean`          | `true` if `stored` uses fewer iterations than `options.iterations`, a digest other than SHA-256, a salt under 16 bytes or a hash under 32 bytes. |
 
 `password` is a `string` or its bytes as a `Uint8Array`. A string is normalized to NFC before it is encoded as UTF-8, so `'café'` typed as one code point or as `e` plus a combining accent gives the same hash. Bytes are hashed as they are.
 
@@ -42,19 +42,19 @@ The hash length comes from the stored string, so a 20-byte or 64-byte hash from 
 
 ### Options
 
-| Option | Functions | Default | Description |
-| --- | --- | --- | --- |
-| `iterations` | `hash`, `needsRehash` | `600000` | PBKDF2 iterations to write, or the minimum `needsRehash` accepts. Cloudflare Workers allows at most 100,000. |
-| `maxBytes` | `hash`, `verify` | `4096` | Longest password, in UTF-8 bytes after normalization. `Infinity` turns the check off. |
-| `signal` | `hash`, `verify` | | Rejects with `signal.reason` when aborted. WebCrypto can't stop a derivation that has started, so it runs to the end in the background. |
+| Option       | Functions             | Default  | Description                                                                                                                             |
+| ------------ | --------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `iterations` | `hash`, `needsRehash` | `600000` | PBKDF2 iterations to write, or the minimum `needsRehash` accepts. Cloudflare Workers allows at most 100,000.                            |
+| `maxBytes`   | `hash`, `verify`      | `4096`   | Longest password, in UTF-8 bytes after normalization. `Infinity` turns the check off.                                                   |
+| `signal`     | `hash`, `verify`      |          | Rejects with `signal.reason` when aborted. WebCrypto can't stop a derivation that has started, so it runs to the end in the background. |
 
 ### Errors
 
-| Error | Thrown when |
-| --- | --- |
+| Error               | Thrown when                                                                                                                                                  |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `InvalidInputError` | `stored` is not a well-formed PBKDF2 hash: a missing field, iterations outside 1 to 2^32 - 1 or with a leading zero, a character outside base64, or padding. |
-| `UnsupportedError` | `stored` is another algorithm's hash, such as `$2b$` (bcrypt), `$argon2id$` or `$scrypt$`. |
-| `MaxBytesError` | The password is longer than `maxBytes`. The error's `maxBytes` property holds the limit. |
+| `UnsupportedError`  | `stored` is another algorithm's hash, such as `$2b$` (bcrypt), `$argon2id$` or `$scrypt$`.                                                                   |
+| `MaxBytesError`     | The password is longer than `maxBytes`. The error's `maxBytes` property holds the limit.                                                                     |
 
 A bad `iterations` or `maxBytes` option gives a `RangeError`: `needsRehash` throws it, and `hash` and `verify` reject with it.
 
@@ -130,13 +130,13 @@ async function check(user: User, password: string): Promise<boolean> {
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/password, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/password | – | 4.2 kB | 5 | none | included |
-| pbkdf2 | 3.1.7 | 22 kB | 43 | `buffer`, `events`, `util` | included |
-| pbkdf2-password | 1.2.1 | 1.5 kB | 2 | `Buffer`, `crypto` | none |
-| `node:crypto` | – | built in | – | Node only | – |
-| `crypto.subtle` | – | built in | – | none | – |
+| Library            | Version | Minified and gzipped | Runtime dependencies | Node built-ins             | TypeScript types |
+| ------------------ | ------- | -------------------: | -------------------: | -------------------------- | ---------------- |
+| @portable/password | –       |               4.2 kB |                    5 | none                       | included         |
+| pbkdf2             | 3.1.7   |                22 kB |                   43 | `buffer`, `events`, `util` | included         |
+| pbkdf2-password    | 1.2.1   |               1.5 kB |                    2 | `Buffer`, `crypto`         | none             |
+| `node:crypto`      | –       |             built in |                    – | Node only                  | –                |
+| `crypto.subtle`    | –       |             built in |                    – | none                       | –                |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

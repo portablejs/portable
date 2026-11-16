@@ -40,34 +40,34 @@ const { headers, body } = await MimeStream.splitHeaders(message);
 
 ## API
 
-| Export | Description |
-| --- | --- |
-| `new DecoderStream(options?)` | `TransformStream<Uint8Array, Chunk>`. Splits a message into chunks. Nothing is decoded: bodies are still base64 or quoted-printable. |
-| `new EncoderStream(options?)` | `TransformStream<Input, Uint8Array>`. Writes each chunk's `bytes`. It also takes a `Uint8Array`, or a string, which it writes as UTF-8. |
-| `splitHeaders(stream, options?)` | Resolves to `{ headers, body }`: the root header block as a `Uint8Array` and the rest as a `ReadableStream<Uint8Array>`. If the input ends before an empty line, all of it is the header block. |
-| `MaxHeaderBytesError` | Thrown when a header block is longer than `maxHeaderBytes`. Stores `maxHeaderBytes`, and extends `Errors.MaxBytesError`, so `maxBytes` holds the same limit. |
-| `MaxBoundaryLineBytesError` | Thrown when a boundary line is longer than `maxBoundaryLineBytes`, or when a `boundary` parameter is so long that `--` and the boundary alone would be. Stores `maxBoundaryLineBytes`, and extends `Errors.MaxBytesError`, so `maxBytes` holds the same limit. |
-| `MaxPartsError` | Thrown when a message has more than `maxParts` parts. Stores `maxParts`. |
+| Export                           | Description                                                                                                                                                                                                                                                    |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `new DecoderStream(options?)`    | `TransformStream<Uint8Array, Chunk>`. Splits a message into chunks. Nothing is decoded: bodies are still base64 or quoted-printable.                                                                                                                           |
+| `new EncoderStream(options?)`    | `TransformStream<Input, Uint8Array>`. Writes each chunk's `bytes`. It also takes a `Uint8Array`, or a string, which it writes as UTF-8.                                                                                                                        |
+| `splitHeaders(stream, options?)` | Resolves to `{ headers, body }`: the root header block as a `Uint8Array` and the rest as a `ReadableStream<Uint8Array>`. If the input ends before an empty line, all of it is the header block.                                                                |
+| `MaxHeaderBytesError`            | Thrown when a header block is longer than `maxHeaderBytes`. Stores `maxHeaderBytes`, and extends `Errors.MaxBytesError`, so `maxBytes` holds the same limit.                                                                                                   |
+| `MaxBoundaryLineBytesError`      | Thrown when a boundary line is longer than `maxBoundaryLineBytes`, or when a `boundary` parameter is so long that `--` and the boundary alone would be. Stores `maxBoundaryLineBytes`, and extends `Errors.MaxBytesError`, so `maxBytes` holds the same limit. |
+| `MaxPartsError`                  | Thrown when a message has more than `maxParts` parts. Stores `maxParts`.                                                                                                                                                                                       |
 
 A `Chunk` is `{ type, part, bytes }`. Joining every chunk's `bytes` in order gives back the input.
 
-| `type` | `bytes` | `part` |
-| --- | --- | --- |
-| `'headers'` | A header block, with the empty line that ends it. | The part the headers belong to. Every part starts with one. |
-| `'body'` | Content of a part with no children. | That part. |
-| `'preamble'` | Text before the first delimiter. | The multipart. |
-| `'delimiter'` | A boundary line, with the line break before it and its own line break. | The multipart. |
-| `'epilogue'` | Text after the close delimiter. | The multipart. |
+| `type`        | `bytes`                                                                | `part`                                                      |
+| ------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `'headers'`   | A header block, with the empty line that ends it.                      | The part the headers belong to. Every part starts with one. |
+| `'body'`      | Content of a part with no children.                                    | That part.                                                  |
+| `'preamble'`  | Text before the first delimiter.                                       | The multipart.                                              |
+| `'delimiter'` | A boundary line, with the line break before it and its own line break. | The multipart.                                              |
+| `'epilogue'`  | Text after the close delimiter.                                        | The multipart.                                              |
 
 A `Part` is a plain object, shared by every chunk of that part:
 
-| Field | Description |
-| --- | --- |
-| `parent` | The multipart, or the `message/rfc822` part, that contains it. Missing on the root. |
-| `headers` | The header fields, `{ name, value }[]` in order and unfolded, read as UTF-8. See [@portable/mime-headers](https://portablejs.com/packages/mime-headers) to decode values. |
-| `contentType` | Lowercase media type without parameters. `text/plain` when missing or invalid, and `message/rfc822` inside `multipart/digest` (RFC 2046). |
-| `encoding` | Lowercase `Content-Transfer-Encoding`, `7bit` when missing. |
-| `boundary` | Set on a `multipart/*` part that has a boundary. Its children follow. |
+| Field         | Description                                                                                                                                                               |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `parent`      | The multipart, or the `message/rfc822` part, that contains it. Missing on the root.                                                                                       |
+| `headers`     | The header fields, `{ name, value }[]` in order and unfolded, read as UTF-8. See [@portable/mime-headers](https://portablejs.com/packages/mime-headers) to decode values. |
+| `contentType` | Lowercase media type without parameters. `text/plain` when missing or invalid, and `message/rfc822` inside `multipart/digest` (RFC 2046).                                 |
+| `encoding`    | Lowercase `Content-Transfer-Encoding`, `7bit` when missing.                                                                                                               |
+| `boundary`    | Set on a `multipart/*` part that has a boundary. Its children follow.                                                                                                     |
 
 Parts are split as RFC 2046 says. A delimiter is `--` and the boundary on a line of its own, optionally followed by `--` (the close delimiter) and spaces or tabs. The line break before a delimiter belongs to the delimiter, so a body never ends with it. Lines may end in CRLF or LF. A delimiter of an outer multipart also ends every multipart inside it, and a close delimiter in the preamble is preamble text. After the close delimiter, lines that look like delimiters of that multipart are epilogue text.
 
@@ -75,21 +75,21 @@ Parts are split as RFC 2046 says. A delimiter is `--` and the boundary on a line
 
 The size limits default to `Infinity`. Set `maxHeaderBytes`, `maxBoundaryLineBytes`, and `maxParts` when you read mail from outside your program, because without them a message can make the decoder buffer a header block or boundary line of any size, or report any number of parts. `maxHeaderBytes: 1024 * 1024`, `maxBoundaryLineBytes: 1000`, and `maxParts: 1000` are enough for real mail.
 
-| Option | Of | Default | Description |
-| --- | --- | --- | --- |
-| `embedded` | `DecoderStream` | `false` | Split the message inside a `message/rfc822` or `message/global` part into parts too, unless it is base64 or quoted-printable. Its root part's `parent` is the `message/rfc822` part. |
-| `maxHeaderBytes` | `DecoderStream`, `splitHeaders` | `Infinity` | Longest header block of a part, counted with the empty line that ends it. |
-| `maxBoundaryLineBytes` | `DecoderStream` | `Infinity` | Longest boundary line, line break included. Only whitespace after the boundary makes a line this long. Other lines are never held in memory. |
-| `maxParts` | `DecoderStream` | `Infinity` | The maximum number of parts in a message, counting the root and each embedded message. |
-| `signal` | all | | When it aborts, the streams fail with `signal.reason` and cancel their source. `splitHeaders` rejects with it while it reads the header block, and fails `body` with it after. |
+| Option                 | Of                              | Default    | Description                                                                                                                                                                          |
+| ---------------------- | ------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `embedded`             | `DecoderStream`                 | `false`    | Split the message inside a `message/rfc822` or `message/global` part into parts too, unless it is base64 or quoted-printable. Its root part's `parent` is the `message/rfc822` part. |
+| `maxHeaderBytes`       | `DecoderStream`, `splitHeaders` | `Infinity` | Longest header block of a part, counted with the empty line that ends it.                                                                                                            |
+| `maxBoundaryLineBytes` | `DecoderStream`                 | `Infinity` | Longest boundary line, line break included. Only whitespace after the boundary makes a line this long. Other lines are never held in memory.                                         |
+| `maxParts`             | `DecoderStream`                 | `Infinity` | The maximum number of parts in a message, counting the root and each embedded message.                                                                                               |
+| `signal`               | all                             |            | When it aborts, the streams fail with `signal.reason` and cancel their source. `splitHeaders` rejects with it while it reads the header block, and fails `body` with it after.       |
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `MimeStream.Chunk` | A run of bytes from the message, with its `type` and the `part` it belongs to. |
-| `MimeStream.Part` | One part of the message: the root, a part of a multipart, or the message inside a `message/rfc822` part. |
-| `MimeStream.EncoderStream.Input` | What `EncoderStream` takes: a `Chunk` or any object with `bytes`, a `Uint8Array`, or a string. |
+| Type                             | Description                                                                                              |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `MimeStream.Chunk`               | A run of bytes from the message, with its `type` and the `part` it belongs to.                           |
+| `MimeStream.Part`                | One part of the message: the root, a part of a multipart, or the message inside a `message/rfc822` part. |
+| `MimeStream.EncoderStream.Input` | What `EncoderStream` takes: a `Chunk` or any object with `bytes`, a `Uint8Array`, or a string.           |
 
 ## Why use this over mailsplit
 
@@ -127,11 +127,11 @@ mailsplit is a Node `Transform` stream with libmime, libqp, and libbase64 as dep
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/mime-stream, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/mime-stream | – | 5.5 kB | 5 | none | included |
-| mailsplit | 5.4.23 | 263 kB | 6 | `buffer`, `path`, `stream`, `string_decoder` | included |
-| `TransformStream` copy | – | built in | – | none | – |
+| Library                | Version | Minified and gzipped | Runtime dependencies | Node built-ins                               | TypeScript types |
+| ---------------------- | ------- | -------------------: | -------------------: | -------------------------------------------- | ---------------- |
+| @portable/mime-stream  | –       |               5.5 kB |                    5 | none                                         | included         |
+| mailsplit              | 5.4.23  |               263 kB |                    6 | `buffer`, `path`, `stream`, `string_decoder` | included         |
+| `TransformStream` copy | –       |             built in |                    – | none                                         | –                |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

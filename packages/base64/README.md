@@ -26,42 +26,42 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 
 ## API
 
-| Export | Does |
-| --- | --- |
-| `encode(input, options?)` | Encodes a `Uint8Array`, or a string as UTF-8, to a base64 string. |
-| `decode(input, options?)` | Decodes a base64 string, or its bytes, to a `Uint8Array`. |
-| `new EncoderStream(options?)` | `TransformStream<Uint8Array \| string, Uint8Array>` that emits the base64 text as ASCII bytes. However the input is split into chunks, the output equals `encode` of the whole input. |
+| Export                        | Does                                                                                                                                                                                      |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `encode(input, options?)`     | Encodes a `Uint8Array`, or a string as UTF-8, to a base64 string.                                                                                                                         |
+| `decode(input, options?)`     | Decodes a base64 string, or its bytes, to a `Uint8Array`.                                                                                                                                 |
+| `new EncoderStream(options?)` | `TransformStream<Uint8Array \| string, Uint8Array>` that emits the base64 text as ASCII bytes. However the input is split into chunks, the output equals `encode` of the whole input.     |
 | `new DecoderStream(options?)` | `TransformStream<string \| Uint8Array, Uint8Array>`. Same output as `decode` of the whole input. Line breaks, padding, and groups of four characters can be split across chunks anywhere. |
-| `InvalidInputError` | Thrown, or errors the stream, for a character outside the alphabet or misplaced padding. |
-| `TruncatedError` | Thrown, or errors the stream, when the input ends inside a group of four characters. |
+| `InvalidInputError`           | Thrown, or errors the stream, for a character outside the alphabet or misplaced padding.                                                                                                  |
+| `TruncatedError`              | Thrown, or errors the stream, when the input ends inside a group of four characters.                                                                                                      |
 
 ### Encode options
 
 `encode` and `EncoderStream` take the same options.
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `alphabet` | `'base64'` | `'base64'` uses `+` and `/`. `'base64url'` uses `-` and `_` (RFC 4648 §5). |
-| `omitPadding` | `false` | Leave out the trailing `=`. |
-| `lineLength` | `false` | Characters per line, or `false` for one line. MIME uses 76. The output never ends with a line ending. |
-| `newline` | `'\r\n'` | Inserted between lines. |
-| `signal` | none | `EncoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
+| Option        | Default    | Description                                                                                                 |
+| ------------- | ---------- | ----------------------------------------------------------------------------------------------------------- |
+| `alphabet`    | `'base64'` | `'base64'` uses `+` and `/`. `'base64url'` uses `-` and `_` (RFC 4648 §5).                                  |
+| `omitPadding` | `false`    | Leave out the trailing `=`.                                                                                 |
+| `lineLength`  | `false`    | Characters per line, or `false` for one line. MIME uses 76. The output never ends with a line ending.       |
+| `newline`     | `'\r\n'`   | Inserted between lines.                                                                                     |
+| `signal`      | none       | `EncoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
 ### Decode options
 
 `decode` and `DecoderStream` take the same options.
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `alphabet` | `'base64'` | Alphabet of the input. `'mime'` mode accepts both. |
-| `mode` | `'loose'` | How to treat input that isn't canonical base64, below. |
-| `signal` | none | `DecoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
+| Option     | Default    | Description                                                                                                 |
+| ---------- | ---------- | ----------------------------------------------------------------------------------------------------------- |
+| `alphabet` | `'base64'` | Alphabet of the input. `'mime'` mode accepts both.                                                          |
+| `mode`     | `'loose'`  | How to treat input that isn't canonical base64, below.                                                      |
+| `signal`   | none       | `DecoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
-| Mode | Whitespace | Missing padding | Other characters | Data after padding |
-| --- | --- | --- | --- | --- |
-| `'loose'` | skipped | accepted | `InvalidInputError` | `InvalidInputError` |
-| `'strict'` | skipped | `TruncatedError` | `InvalidInputError` | `InvalidInputError` |
-| `'mime'` | skipped | accepted | skipped | decoded as a new segment |
+| Mode       | Whitespace | Missing padding  | Other characters    | Data after padding       |
+| ---------- | ---------- | ---------------- | ------------------- | ------------------------ |
+| `'loose'`  | skipped    | accepted         | `InvalidInputError` | `InvalidInputError`      |
+| `'strict'` | skipped    | `TruncatedError` | `InvalidInputError` | `InvalidInputError`      |
+| `'mime'`   | skipped    | accepted         | skipped             | decoded as a new segment |
 
 `'loose'` and `'strict'` match `Uint8Array.fromBase64` with `lastChunkHandling` set to the same name. `'strict'` also rejects non-zero bits before the padding (`'YR=='`). Both throw `TruncatedError` for one leftover character (`'YWJjZ'`) or a single `=` where two are needed (`'YQ='`).
 
@@ -69,10 +69,10 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `Base64.Alphabet` | `'base64'` or `'base64url'` (RFC 4648). |
-| `Base64.Mode` | `'loose'`, `'strict'`, or `'mime'`, how `decode` treats input that isn't canonical base64. |
+| Type              | Description                                                                                |
+| ----------------- | ------------------------------------------------------------------------------------------ |
+| `Base64.Alphabet` | `'base64'` or `'base64url'` (RFC 4648).                                                    |
+| `Base64.Mode`     | `'loose'`, `'strict'`, or `'mime'`, how `decode` treats input that isn't canonical base64. |
 
 ## Why use this over base64-js, js-base64, libbase64, and undio
 
@@ -136,14 +136,14 @@ Node 24 has no native base64 on `Uint8Array`, so it runs the fallback. libbase64
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.2, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/base64, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/base64 | – | 3.3 kB | 3 | none | included |
-| base64-js | 1.5.1 | 1.1 kB | 0 | none | included |
-| js-base64 | 3.9.4 | 1.6 kB | 0 | none | included |
-| libbase64 | 1.3.3 | 1.8 kB | 0 | `buffer`, `stream` | none |
-| undio | 0.2.0 | 0.5 kB | 0 | none | included |
-| `Buffer` (Node) | – | built in | – | Node only | – |
+| Library          | Version | Minified and gzipped | Runtime dependencies | Node built-ins     | TypeScript types |
+| ---------------- | ------- | -------------------: | -------------------: | ------------------ | ---------------- |
+| @portable/base64 | –       |               3.3 kB |                    3 | none               | included         |
+| base64-js        | 1.5.1   |               1.1 kB |                    0 | none               | included         |
+| js-base64        | 3.9.4   |               1.6 kB |                    0 | none               | included         |
+| libbase64        | 1.3.3   |               1.8 kB |                    0 | `buffer`, `stream` | none             |
+| undio            | 0.2.0   |               0.5 kB |                    0 | none               | included         |
+| `Buffer` (Node)  | –       |             built in |                    – | Node only          | –                |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

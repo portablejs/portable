@@ -29,19 +29,19 @@ In Node, `node:dns/promises` works as the resolver.
 
 ## Input
 
-| Field | Description |
-| --- | --- |
+| Field  | Description                                                                                                                                                                                                                                 |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `from` | The domain of the RFC5322.From address. U-labels are converted to A-labels. You extract it yourself, because when the From header has no address or has addresses in more than one domain, RFC 9989 section 5.3.1 says DMARC doesn't apply. |
-| `spf` | The SPF result of the MAIL FROM identity, as `Spf.check` returns it. Only `result` and `domain` are read. For a bounce, `Spf.check` checks the HELO name, which RFC 7208 section 2.4 makes the MAIL FROM identity. |
-| `dkim` | One `{ result, domain }` per DKIM signature: the verification result and the `d=` domain. Only `'pass'` counts, so you can pass a richer DKIM result object, such as one from `Dkim.verify`, as it is. |
+| `spf`  | The SPF result of the MAIL FROM identity, as `Spf.check` returns it. Only `result` and `domain` are read. For a bounce, `Spf.check` checks the HELO name, which RFC 7208 section 2.4 makes the MAIL FROM identity.                          |
+| `dkim` | One `{ result, domain }` per DKIM signature: the verification result and the `d=` domain. Only `'pass'` counts, so you can pass a richer DKIM result object, such as one from `Dkim.verify`, as it is.                                      |
 
 ## Options
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `resolver` | required | Answers the lookups. `Dns.create()` from [@portable/dns](https://portablejs.com/packages/dns), `node:dns/promises`, or any object with `resolveTxt`, `resolve4`, and `resolveCname`. |
+| Option                 | Default           | Description                                                                                                                                                                                                                                                                               |
+| ---------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `resolver`             | required          | Answers the lookups. `Dns.create()` from [@portable/dns](https://portablejs.com/packages/dns), `node:dns/promises`, or any object with `resolveTxt`, `resolve4`, and `resolveCname`.                                                                                                      |
 | `organizationalDomain` | the DNS tree walk | A function that returns a domain's organizational domain from a public suffix list, such as tldts' `getDomain`. With it, the check follows RFC 7489: it looks up the record of the From domain, then of its organizational domain, and relaxed alignment compares the function's results. |
-| `signal` | none | Stops the check. The promise rejects with `signal.reason`, as `fetch` does. Use `AbortSignal.timeout(ms)` for a time limit. |
+| `signal`               | none              | Stops the check. The promise rejects with `signal.reason`, as `fetch` does. Use `AbortSignal.timeout(ms)` for a time limit.                                                                                                                                                               |
 
 `check` treats a resolver rejection with `code` `ENOTFOUND`, `ENODATA`, or `EBADNAME` as no records, and any other rejection as a DNS error, which gives `temperror` unless the message passes anyway.
 
@@ -51,18 +51,18 @@ In Node, `node:dns/promises` works as the resolver.
 
 `check` resolves to a plain object. It rejects with a `TypeError` for a `resolver` without one of the three methods, and otherwise only when `signal` aborts.
 
-| Field | Description |
-| --- | --- |
-| `result` | `'pass'`, `'fail'`, `'none'`, `'temperror'`, or `'permerror'`, as Authentication-Results reports it. |
-| `domain` | The From domain that was checked, in lower case and A-label form. |
-| `policy` | The policy the domain owner asks for: `p` for the From domain's own record, otherwise `sp`, or `np` when the From domain doesn't exist. With `t=y` it is one level lower. Missing when no record applies. |
-| `disposition` | `policy` when the result is `fail`, and `'none'` otherwise. RFC 9989 section 5.3.6 says the policy can't be applied after a DNS error, so a `temperror` is left to you. |
-| `policyDomain` | The domain whose `_dmarc` record applies: the From domain, its organizational domain, or its public suffix domain. |
-| `record` | The record that applies, as `{ text, p, sp, np, adkim, aspf, t, psd, rua, ruf, fo }`, with invalid values replaced by their defaults. |
-| `spf` | `{ domain, aligned }` for the SPF result. Set when `spf` was passed. |
-| `dkim` | `{ domain, aligned }` for each signature, in the order they were passed. |
-| `reason` | Why the result is `none`, `temperror`, or `permerror`. |
-| `cause` | The resolver's error behind a `temperror`, or an `AggregateError` of them when more than one lookup failed. |
+| Field          | Description                                                                                                                                                                                               |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `result`       | `'pass'`, `'fail'`, `'none'`, `'temperror'`, or `'permerror'`, as Authentication-Results reports it.                                                                                                      |
+| `domain`       | The From domain that was checked, in lower case and A-label form.                                                                                                                                         |
+| `policy`       | The policy the domain owner asks for: `p` for the From domain's own record, otherwise `sp`, or `np` when the From domain doesn't exist. With `t=y` it is one level lower. Missing when no record applies. |
+| `disposition`  | `policy` when the result is `fail`, and `'none'` otherwise. RFC 9989 section 5.3.6 says the policy can't be applied after a DNS error, so a `temperror` is left to you.                                   |
+| `policyDomain` | The domain whose `_dmarc` record applies: the From domain, its organizational domain, or its public suffix domain.                                                                                        |
+| `record`       | The record that applies, as `{ text, p, sp, np, adkim, aspf, t, psd, rua, ruf, fo }`, with invalid values replaced by their defaults.                                                                     |
+| `spf`          | `{ domain, aligned }` for the SPF result. Set when `spf` was passed.                                                                                                                                      |
+| `dkim`         | `{ domain, aligned }` for each signature, in the order they were passed.                                                                                                                                  |
+| `reason`       | Why the result is `none`, `temperror`, or `permerror`.                                                                                                                                                    |
+| `cause`        | The resolver's error behind a `temperror`, or an `AggregateError` of them when more than one lookup failed.                                                                                               |
 
 `none` means DMARC doesn't apply: there is no record, the record has no valid policy and no valid `rua`, or the From domain is an address literal. `permerror` means `from` isn't a domain name, such as an empty string or a domain with a space or an invisible character.
 
@@ -82,12 +82,12 @@ await Dmarc.check({ from, spf, dkim }, { resolver, organizationalDomain: getDoma
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `Dmarc.Resolver` | `Pick<Dns.Resolver, 'resolveTxt' \| 'resolve4' \| 'resolveCname'>`, the lookups `check` needs. |
-| `Dmarc.Record` | A parsed DMARC record, the type of `Result.record`. |
-| `Dmarc.Policy` | `'none' \| 'quarantine' \| 'reject'`. |
-| `Dmarc.Alignment` | One SPF or DKIM identifier and whether it aligns with the From domain. |
+| Type              | Description                                                                                    |
+| ----------------- | ---------------------------------------------------------------------------------------------- |
+| `Dmarc.Resolver`  | `Pick<Dns.Resolver, 'resolveTxt' \| 'resolve4' \| 'resolveCname'>`, the lookups `check` needs. |
+| `Dmarc.Record`    | A parsed DMARC record, the type of `Result.record`.                                            |
+| `Dmarc.Policy`    | `'none' \| 'quarantine' \| 'reject'`.                                                          |
+| `Dmarc.Alignment` | One SPF or DKIM identifier and whether it aligns with the From domain.                         |
 
 ## Why use this over mailauth
 
@@ -110,10 +110,10 @@ await Dmarc.check({ from, spf, dkim }, { resolver, organizationalDomain: getDoma
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/dmarc, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/dmarc | – | 17 kB | 10 | none | included |
-| mailauth, strict mode | 7.3.0 | 446 kB | 38 | `buffer`, `crypto`, `dns`, `https`, `net`, `os`, `stream`, `string_decoder` | included |
+| Library               | Version | Minified and gzipped | Runtime dependencies | Node built-ins                                                              | TypeScript types |
+| --------------------- | ------- | -------------------: | -------------------: | --------------------------------------------------------------------------- | ---------------- |
+| @portable/dmarc       | –       |                17 kB |                   10 | none                                                                        | included         |
+| mailauth, strict mode | 7.3.0   |               446 kB |                   38 | `buffer`, `crypto`, `dns`, `https`, `net`, `os`, `stream`, `string_decoder` | included         |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

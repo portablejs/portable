@@ -17,8 +17,14 @@ const request = new Request('https://api.example.com/1.1/statuses/update.json', 
 });
 const response = await fetch(
   await OAuth1.sign(request, {
-    consumer: { key: 'xvz1evFS4wEEPTGEFPHBog', secret: 'kAcSOqF21Fu85e7zjz7ZN2U4ZRhfV3WpwPAoE3Z7kBw' },
-    token: { key: '370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb', secret: 'LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE' },
+    consumer: {
+      key: 'xvz1evFS4wEEPTGEFPHBog',
+      secret: 'kAcSOqF21Fu85e7zjz7ZN2U4ZRhfV3WpwPAoE3Z7kBw',
+    },
+    token: {
+      key: '370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb',
+      secret: 'LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE',
+    },
   }),
 );
 ```
@@ -33,20 +39,20 @@ The signature covers what the server will see, because it is computed from the `
 
 ## Options
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `consumer` | required | `{ key, secret }`, or `{ key, privateKey }` for RSA-SHA1. |
-| `token` | none | `{ key, secret }` token credentials. Leave it out when requesting temporary credentials. |
-| `signatureMethod` | `'HMAC-SHA1'` | `'HMAC-SHA1'`, `'HMAC-SHA256'`, `'RSA-SHA1'`, or `'PLAINTEXT'`. |
-| `realm` | none | Sent as the first header parameter. It is not signed. |
-| `callback` | none | `oauth_callback`, for the temporary credentials request. |
-| `verifier` | none | `oauth_verifier`, for the token request. |
-| `bodyHash` | `false` | Add `oauth_body_hash`: the base64 SHA-1 of the body, or SHA-256 with HMAC-SHA256. Form bodies never get one, because their parameters are signed. |
-| `nonce`, `now` | random, `new Date()` | Fix `oauth_nonce` and `oauth_timestamp` in tests. `now` is a `Date` or a `Temporal.Instant`, sent in whole seconds. The default nonce is 32 hex digits from `crypto.getRandomValues`. |
-| `signal` | none | Aborting rejects with `signal.reason`, and cancels a request body that is still being read. Firefox has no `Request.prototype.body`, so there the body is read whole and isn't cancelled. |
-| `placement` | `'header'` | `sign()` only. `'query'` appends the protocol parameters to the URL instead of setting `Authorization`. |
-| `hmac` | `crypto.subtle` HMAC | `(algorithm: 'SHA-1' \| 'SHA-256', key, data) => Uint8Array \| Promise<Uint8Array>`, used for HMAC-SHA1 and HMAC-SHA256. |
-| `digest` | `crypto.subtle.digest` | `(algorithm: 'SHA-1' \| 'SHA-256', data: Uint8Array) => Uint8Array \| Promise<Uint8Array>`, used for `oauth_body_hash`. |
+| Option            | Default                | Description                                                                                                                                                                               |
+| ----------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `consumer`        | required               | `{ key, secret }`, or `{ key, privateKey }` for RSA-SHA1.                                                                                                                                 |
+| `token`           | none                   | `{ key, secret }` token credentials. Leave it out when requesting temporary credentials.                                                                                                  |
+| `signatureMethod` | `'HMAC-SHA1'`          | `'HMAC-SHA1'`, `'HMAC-SHA256'`, `'RSA-SHA1'`, or `'PLAINTEXT'`.                                                                                                                           |
+| `realm`           | none                   | Sent as the first header parameter. It is not signed.                                                                                                                                     |
+| `callback`        | none                   | `oauth_callback`, for the temporary credentials request.                                                                                                                                  |
+| `verifier`        | none                   | `oauth_verifier`, for the token request.                                                                                                                                                  |
+| `bodyHash`        | `false`                | Add `oauth_body_hash`: the base64 SHA-1 of the body, or SHA-256 with HMAC-SHA256. Form bodies never get one, because their parameters are signed.                                         |
+| `nonce`, `now`    | random, `new Date()`   | Fix `oauth_nonce` and `oauth_timestamp` in tests. `now` is a `Date` or a `Temporal.Instant`, sent in whole seconds. The default nonce is 32 hex digits from `crypto.getRandomValues`.     |
+| `signal`          | none                   | Aborting rejects with `signal.reason`, and cancels a request body that is still being read. Firefox has no `Request.prototype.body`, so there the body is read whole and isn't cancelled. |
+| `placement`       | `'header'`             | `sign()` only. `'query'` appends the protocol parameters to the URL instead of setting `Authorization`.                                                                                   |
+| `hmac`            | `crypto.subtle` HMAC   | `(algorithm: 'SHA-1' \| 'SHA-256', key, data) => Uint8Array \| Promise<Uint8Array>`, used for HMAC-SHA1 and HMAC-SHA256.                                                                  |
+| `digest`          | `crypto.subtle.digest` | `(algorithm: 'SHA-1' \| 'SHA-256', data: Uint8Array) => Uint8Array \| Promise<Uint8Array>`, used for `oauth_body_hash`.                                                                   |
 
 `sign` and `authorization` reject with a `RangeError` for an RSA key that can't be used or an invalid `now`, and with `UnsupportedError` for another signature method. Both check `now` and the signature method before they read the body.
 
@@ -78,13 +84,13 @@ await OAuth1.sign(request, { consumer, token, hmac });
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `OAuth1.SignatureMethod` | `'HMAC-SHA1' \| 'HMAC-SHA256' \| 'RSA-SHA1' \| 'PLAINTEXT'`. |
-| `OAuth1.Credentials` | The `consumer` and `signatureMethod` options. |
-| `OAuth1.Token` | `{ key, secret? }`, the `token` option. |
-| `OAuth1.Hmac` | The `hmac` option: `(algorithm, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from [@portable/web-crypto](https://portablejs.com/packages/web-crypto). `OAuth1` passes only `'SHA-1'` and `'SHA-256'`. |
-| `OAuth1.Digest` | The `digest` option: `(algorithm, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from [@portable/web-crypto](https://portablejs.com/packages/web-crypto). `OAuth1` passes only `'SHA-1'` and `'SHA-256'`. |
+| Type                     | Description                                                                                                                                                                                                            |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `OAuth1.SignatureMethod` | `'HMAC-SHA1' \| 'HMAC-SHA256' \| 'RSA-SHA1' \| 'PLAINTEXT'`.                                                                                                                                                           |
+| `OAuth1.Credentials`     | The `consumer` and `signatureMethod` options.                                                                                                                                                                          |
+| `OAuth1.Token`           | `{ key, secret? }`, the `token` option.                                                                                                                                                                                |
+| `OAuth1.Hmac`            | The `hmac` option: `(algorithm, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from [@portable/web-crypto](https://portablejs.com/packages/web-crypto). `OAuth1` passes only `'SHA-1'` and `'SHA-256'`. |
+| `OAuth1.Digest`          | The `digest` option: `(algorithm, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from [@portable/web-crypto](https://portablejs.com/packages/web-crypto). `OAuth1` passes only `'SHA-1'` and `'SHA-256'`.    |
 
 ## Why use this over oauth-1.0a and node-oauth
 
@@ -123,12 +129,12 @@ Both libraries sign some requests wrongly, and the server then rejects the signa
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/oauth1, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/oauth1 | – | 5.3 kB | 6 | none | included |
-| @portable/oauth1 with @noble/hashes | – | 8.0 kB | 7 | none | included |
-| oauth-1.0a | 2.2.6 | 1.7 kB | 0 | none | included |
-| oauth | 0.10.2 | 5.2 kB | 0 | `Buffer`, `crypto`, `http`, `https`, `querystring`, `url` | none |
+| Library                             | Version | Minified and gzipped | Runtime dependencies | Node built-ins                                            | TypeScript types |
+| ----------------------------------- | ------- | -------------------: | -------------------: | --------------------------------------------------------- | ---------------- |
+| @portable/oauth1                    | –       |               5.3 kB |                    6 | none                                                      | included         |
+| @portable/oauth1 with @noble/hashes | –       |               8.0 kB |                    7 | none                                                      | included         |
+| oauth-1.0a                          | 2.2.6   |               1.7 kB |                    0 | none                                                      | included         |
+| oauth                               | 0.10.2  |               5.2 kB |                    0 | `Buffer`, `crypto`, `http`, `https`, `querystring`, `url` | none             |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

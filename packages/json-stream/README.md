@@ -22,11 +22,11 @@ for await (const { value } of Streams.toAsyncIterable(matches)) {
 
 A `TransformStream<Uint8Array | string, { path, value }>` that emits each value found at one of the given JSONPath expressions. Only matched values are built. The rest of the document is checked for syntax and dropped, so memory use depends on the size of a match, not of the document. `path` holds the keys and array indexes from the root to the value. The input may hold several top-level values separated by whitespace.
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `paths` | `['$']` | JSONPath expressions. Supported: `$`, `.name`, `['name']`, `[0]`, `.*`, `[*]`, and `..` before any of them. Any other expression throws a `RangeError`. A nested match is emitted before the value that contains it. |
+| Option      | Default    | Description                                                                                                                                                                                                                                            |
+| ----------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `paths`     | `['$']`    | JSONPath expressions. Supported: `$`, `.name`, `['name']`, `[0]`, `.*`, `[*]`, and `..` before any of them. Any other expression throws a `RangeError`. A nested match is emitted before the value that contains it.                                   |
 | `maxLength` | `Infinity` | Longest matched value, in UTF-16 code units of its JSON text. The stream buffers each matched value until the value ends, and fails with `MaxLengthError` as soon as a buffered value grows past the limit. Values outside `paths` are never buffered. |
-| `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
+| `signal`    | none       | Aborting errors the stream with `signal.reason` and cancels the source piped into it.                                                                                                                                                                  |
 
 The stream fails with `InvalidInputError` on malformed JSON, with `TruncatedError` when the input ends inside a value, and with `MaxLengthError` when a matched value is longer than `maxLength`. The `MaxLengthError` stores the limit in `maxLength`.
 
@@ -39,11 +39,11 @@ const body = JsonStream.encodeStream({ user: getUser(id), posts: db.posts.cursor
 return new Response(body, { headers: { 'content-type': 'application/json' } });
 ```
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `replacer` | none | As in `JSON.stringify`: a function or a list of keys. The function receives resolved values. |
-| `space` | none | As in `JSON.stringify`. |
-| `signal` | none | Aborting errors the output with `signal.reason` and cancels nested streams and iterators. |
+| Option     | Default | Description                                                                                  |
+| ---------- | ------- | -------------------------------------------------------------------------------------------- |
+| `replacer` | none    | As in `JSON.stringify`: a function or a list of keys. The function receives resolved values. |
+| `space`    | none    | As in `JSON.stringify`.                                                                      |
+| `signal`   | none    | Aborting errors the output with `signal.reason` and cancels nested streams and iterators.    |
 
 The text matches what `JSON.stringify` gives for the resolved tree. A circular structure or a `BigInt` fails the stream with a `TypeError`.
 
@@ -83,14 +83,14 @@ Those libraries are Node streams. This package does the same jobs with a `Transf
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/json-stream, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/json-stream | – | 3.3 kB | 3 | none | included |
-| JSONStream | 1.3.5 | 3.9 kB | 2 | `Buffer`, `stream` | none |
-| stream-json | 3.7.0 | 10 kB | 1 | `stream`, `string_decoder` | included |
-| stream-json, web streams | 3.7.0 | 9.0 kB | 1 | `string_decoder` | included |
-| json-stream-stringify | 3.1.7 | 2.8 kB | 0 | `stream` | included |
-| `JSON.parse` or `JSON.stringify` | – | built in | – | none | – |
+| Library                          | Version | Minified and gzipped | Runtime dependencies | Node built-ins             | TypeScript types |
+| -------------------------------- | ------- | -------------------: | -------------------: | -------------------------- | ---------------- |
+| @portable/json-stream            | –       |               3.3 kB |                    3 | none                       | included         |
+| JSONStream                       | 1.3.5   |               3.9 kB |                    2 | `Buffer`, `stream`         | none             |
+| stream-json                      | 3.7.0   |                10 kB |                    1 | `stream`, `string_decoder` | included         |
+| stream-json, web streams         | 3.7.0   |               9.0 kB |                    1 | `string_decoder`           | included         |
+| json-stream-stringify            | 3.1.7   |               2.8 kB |                    0 | `stream`                   | included         |
+| `JSON.parse` or `JSON.stringify` | –       |             built in |                    – | none                       | –                |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

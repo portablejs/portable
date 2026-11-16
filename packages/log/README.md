@@ -30,13 +30,13 @@ Turn namespaces on in the browser console with `localStorage.debug = 'app:*'`, i
 
 Returns a logger. `debug` and `info` calls print only when a pattern enables the namespace. `warn` and `error` calls print unless a pattern turns the namespace off.
 
-| Member | Description |
-| --- | --- |
+| Member                                                               | Description                                                                                                                                                                                                                |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `debug(...args)`, `info(...args)`, `warn(...args)`, `error(...args)` | Logs at that level. The arguments are the same as `console.log`'s, and a string first argument can hold `%s`, `%d`, `%o`, and the other format specifiers. The methods don't use `this`, so `const { debug } = log` works. |
-| `extend(suffix)` | Returns a logger for `namespace:suffix` with the same properties. |
-| `with(properties)` | Returns a logger with the same namespace whose records also include `properties`. |
-| `isEnabled(level)` | Whether a call at `level` would log with the current patterns. Use it to skip expensive work: `if (log.isEnabled('debug')) { log.debug(dump(state)); }`. |
-| `namespace` | The namespace string. |
+| `extend(suffix)`                                                     | Returns a logger for `namespace:suffix` with the same properties.                                                                                                                                                          |
+| `with(properties)`                                                   | Returns a logger with the same namespace whose records also include `properties`.                                                                                                                                          |
+| `isEnabled(level)`                                                   | Whether a call at `level` would log with the current patterns. Use it to skip expensive work: `if (log.isEnabled('debug')) { log.debug(dump(state)); }`.                                                                   |
+| `namespace`                                                          | The namespace string.                                                                                                                                                                                                      |
 
 ### Patterns
 
@@ -60,19 +60,19 @@ In a browser, a change to `localStorage.debug` in another tab applies at once th
 
 Replaces the patterns. Throws a `RangeError` when a pattern has an unknown level, and keeps the previous patterns.
 
-| Option | Default | Description |
-| --- | --- | --- |
+| Option    | Default | Description                                                                     |
+| --------- | ------- | ------------------------------------------------------------------------------- |
 | `persist` | `false` | Also writes the patterns to `localStorage.debug`, so they apply after a reload. |
 
 ### `Log.configure(options)`
 
 Sets how enabled calls are written. It changes only the options you pass.
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `console` | `true` | Writes enabled calls to `console`. Set to `false` to log only through `subscribe`. |
-| `time` | `false` | Prefixes console output with an ISO 8601 timestamp, which Node's console doesn't show. |
-| `context` | | Storage for `withContext`, such as `new AsyncLocalStorage()` from `node:async_hooks`. |
+| Option    | Default | Description                                                                            |
+| --------- | ------- | -------------------------------------------------------------------------------------- |
+| `console` | `true`  | Writes enabled calls to `console`. Set to `false` to log only through `subscribe`.     |
+| `time`    | `false` | Prefixes console output with an ISO 8601 timestamp, which Node's console doesn't show. |
+| `context` |         | Storage for `withContext`, such as `new AsyncLocalStorage()` from `node:async_hooks`.  |
 
 ### `Log.disable()`
 
@@ -119,13 +119,13 @@ Writes a record as the default output does: the namespace in a color picked from
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `Log.Logger` | What `create` returns. |
-| `Log.Level` | `'debug' \| 'info' \| 'warn' \| 'error'`. |
-| `Log.Record` | `{ time, level, namespace, args, properties }`, one enabled call. `time` is a `Date`, and `args` are the arguments as passed. |
-| `Log.Properties` | An object of properties from `with` and `withContext`. |
-| `Log.ContextStorage` | `{ run, getStore }`, the part of `AsyncLocalStorage` that `withContext` uses. |
+| Type                 | Description                                                                                                                   |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `Log.Logger`         | What `create` returns.                                                                                                        |
+| `Log.Level`          | `'debug' \| 'info' \| 'warn' \| 'error'`.                                                                                     |
+| `Log.Record`         | `{ time, level, namespace, args, properties }`, one enabled call. `time` is a `Date`, and `args` are the arguments as passed. |
+| `Log.Properties`     | An object of properties from `with` and `withContext`.                                                                        |
+| `Log.ContextStorage` | `{ run, getStore }`, the part of `AsyncLocalStorage` that `withContext` uses.                                                 |
 
 ## Why use this over debug
 
@@ -181,14 +181,14 @@ When switching from debug, note these differences:
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.80GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/log, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/log | – | 1.3 kB | 0 | none | included |
-| debug | 4.4.3 | 2.7 kB | 1 | none | @types/debug |
-| loglevel | 1.9.2 | 1.6 kB | 0 | none | included |
-| consola | 3.4.2 | 2.4 kB | 0 | none | included |
-| @logtape/logtape | 2.4.2 | 13 kB | 0 | none | included |
-| pino | 10.4.0 | 5.2 kB | 12 | none | included |
+| Library          | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| ---------------- | ------- | -------------------: | -------------------: | -------------- | ---------------- |
+| @portable/log    | –       |               1.3 kB |                    0 | none           | included         |
+| debug            | 4.4.3   |               2.7 kB |                    1 | none           | @types/debug     |
+| loglevel         | 1.9.2   |               1.6 kB |                    0 | none           | included         |
+| consola          | 3.4.2   |               2.4 kB |                    0 | none           | included         |
+| @logtape/logtape | 2.4.2   |                13 kB |                    0 | none           | included         |
+| pino             | 10.4.0  |               5.2 kB |                   12 | none           | included         |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

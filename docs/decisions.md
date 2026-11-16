@@ -2,6 +2,18 @@
 
 Decisions made while building the packages, with the options considered and the reason for each choice. Newest first. Change any of them by editing this file.
 
+## oxfmt formats Markdown
+
+- **Options:** keep ignoring `**/*.md`; format Markdown with the repo's oxfmt options; format it with `proseWrap: 'never'` for `*.md` files only.
+- **Trade-offs:** While Markdown was ignored, nothing checked the line width or style of the TypeScript examples in the READMEs, so some of their lines grew to 126 columns. oxfmt pads the cells of every Markdown table so its columns line up, which grew AGENTS.md from 44 KB to 60 KB. With `proseWrap: 'never'`, oxfmt pads a table only when the padded table fits in 100 columns, so AGENTS.md would stay at 44 KB. Then an edit that makes a padded table wider than 100 columns removes the padding from every row. `never` would also need an override for `*.md`, because oxfmt applies `proseWrap` to YAML too, and in `.github/workflows/changesets.yml` it joined the folded `if:` into one line. oxfmt reads `__proto__` outside a code span as bold syntax and rewrites it to `**proto**`, so the two test names in PARITY.md files that contain it now put it in a code span. When `response.body!` starts a chain of `.pipeThrough` calls, oxfmt puts `response` on its own line and `.body!.pipeThrough(…)` on the next, so the two examples with that chain now store the first step in a variable.
+- **Chosen:** format Markdown with the repo's oxfmt options. Tables that line up are easier to read in the source, and that matters more than the extra bytes. `pnpm check` and the pre-push hook check Markdown, pre-commit formats staged Markdown, and `pnpm readme` formats the READMEs after `scripts/readme-stats.ts` rewrites their tables. CHANGELOG.md files stay ignored, because changesets writes them. `site/scripts/snippets.mjs` still formats the code blocks on the site to 72 columns.
+
+## Each package has a generated API report in `api.md`
+
+- **Options:** review the public API from the generated site pages (`site/scripts/api.mjs`), which aren't checked in; run api-extractor, which writes a `<package>.api.md` report from the built declaration files; write our own script over the TypeScript checker that writes `packages/<name>/api.md` from source.
+- **Trade-offs:** the site pages include JSDoc, examples, and option tables, so their diff would mix comment changes with signature changes. They're generated only during a site build and aren't checked in. api-extractor needs `pnpm build` first, bundles its own TypeScript version, and warns about missing release tags, which the repo doesn't use. Our own script runs on source in about two seconds, because `isolatedDeclarations` lets `ts.transpileDeclaration` emit each file on its own.
+- **Chosen:** `scripts/api-report.ts`, run by `pnpm api`. Each report has one TypeScript block per public entry point. The declarations are sorted by name and have no JSDoc, so a report changes only when a signature changes. `tools/lint/src/apiReport.test.ts` fails on a stale report, and the pre-push hook runs it.
+
 ## npm releases publish when the "Version packages" pull request is merged
 
 - **Options:** keep publishing from a maintainer's machine; publish from a workflow started by hand on `main`, after the version bumps are merged; run changesets/action on every push to `main`, which opens a "Version packages" pull request and publishes when it is merged, as the wevm repos do.

@@ -26,40 +26,40 @@ await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, credentialKey, ra
 
 Every function that takes bytes takes any `Uint8Array`, including a `subarray` or a Node `Buffer`, and reads only the bytes the view covers. Every result is a `Uint8Array<ArrayBuffer>` that `crypto.subtle` accepts as a `BufferSource` without a copy. `Hash` is `'SHA-1' | 'SHA-256' | 'SHA-384' | 'SHA-512'`.
 
-| Function | Returns | Description |
-| --- | --- | --- |
-| `digest(hash, data, options?)` | `Promise<Uint8Array>` | Hashes `data`. A string is hashed as UTF-8. |
-| `hmac(hash, key, data, options?)` | `Promise<Uint8Array>` | HMAC (RFC 2104). `key` and `data` are bytes or UTF-8 strings. An empty key is accepted. The imported `CryptoKey` is cached for up to 16 keys of at most 256 bytes. |
-| `hkdf(hash, key, options?)` | `Promise<Uint8Array>` | HKDF (RFC 5869) extract and expand. |
-| `importSeed(algorithm, seed, options?)` | `Promise<CryptoKeyPair>` | Imports a 32-byte `'Ed25519'` or `'X25519'` private key and returns it with its public key. |
-| `importPem(algorithm, pem, options?)` | `Promise<CryptoKey>` | Imports the first `PRIVATE KEY` (PKCS #8), `RSA PRIVATE KEY` (PKCS #1), `PUBLIC KEY` (SubjectPublicKeyInfo) or `RSA PUBLIC KEY` (PKCS #1) block of a PEM string or its bytes, skipping other blocks. `algorithm` is what `crypto.subtle.importKey` takes. |
-| `publicKeyOf(privateKey, options?)` | `Promise<CryptoKey>` | The public key of an extractable Ed25519, X25519, ECDSA, ECDH, or RSA private key. |
-| `derToRawEcdsa(signature, options?)` | `Uint8Array` | DER to raw `r \|\| s`. Accepts only strict DER. |
-| `rawToDerEcdsa(signature)` | `Uint8Array` | Raw `r \|\| s` to DER. The curve follows from the length: 64, 96, or 132 bytes. |
+| Function                                | Returns                  | Description                                                                                                                                                                                                                                               |
+| --------------------------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `digest(hash, data, options?)`          | `Promise<Uint8Array>`    | Hashes `data`. A string is hashed as UTF-8.                                                                                                                                                                                                               |
+| `hmac(hash, key, data, options?)`       | `Promise<Uint8Array>`    | HMAC (RFC 2104). `key` and `data` are bytes or UTF-8 strings. An empty key is accepted. The imported `CryptoKey` is cached for up to 16 keys of at most 256 bytes.                                                                                        |
+| `hkdf(hash, key, options?)`             | `Promise<Uint8Array>`    | HKDF (RFC 5869) extract and expand.                                                                                                                                                                                                                       |
+| `importSeed(algorithm, seed, options?)` | `Promise<CryptoKeyPair>` | Imports a 32-byte `'Ed25519'` or `'X25519'` private key and returns it with its public key.                                                                                                                                                               |
+| `importPem(algorithm, pem, options?)`   | `Promise<CryptoKey>`     | Imports the first `PRIVATE KEY` (PKCS #8), `RSA PRIVATE KEY` (PKCS #1), `PUBLIC KEY` (SubjectPublicKeyInfo) or `RSA PUBLIC KEY` (PKCS #1) block of a PEM string or its bytes, skipping other blocks. `algorithm` is what `crypto.subtle.importKey` takes. |
+| `publicKeyOf(privateKey, options?)`     | `Promise<CryptoKey>`     | The public key of an extractable Ed25519, X25519, ECDSA, ECDH, or RSA private key.                                                                                                                                                                        |
+| `derToRawEcdsa(signature, options?)`    | `Uint8Array`             | DER to raw `r \|\| s`. Accepts only strict DER.                                                                                                                                                                                                           |
+| `rawToDerEcdsa(signature)`              | `Uint8Array`             | Raw `r \|\| s` to DER. The curve follows from the length: 64, 96, or 132 bytes.                                                                                                                                                                           |
 
-| Option | Of | Default | Description |
-| --- | --- | --- | --- |
-| `signal` | every async function | | Rejects with `signal.reason` once aborted. |
-| `info` | `hkdf` | empty | Context for the derived key, bytes, or a UTF-8 string. |
-| `length` | `hkdf` | the hash length | Bytes to derive, at most 255 times the hash length. |
-| `salt` | `hkdf` | empty | Bytes or a UTF-8 string. RFC 5869 treats an empty salt as zero bytes as long as the hash. |
-| `extractable` | `importSeed` | `false` | Whether the private key can be exported. The public key always can. |
-| `extractable` | `importPem` | `false` | Whether the key can be exported. |
-| `usages` | `importPem` | by algorithm | The key's usages. The default is `['sign']` or `['verify']` for RSASSA-PKCS1-v1_5, RSA-PSS, ECDSA, and Ed25519; `['decrypt', 'unwrapKey']` or `['encrypt', 'wrapKey']` for RSA-OAEP; and `['deriveBits', 'deriveKey']` or none for ECDH and X25519. For another algorithm, `usages` is required and a missing one throws a `RangeError`. |
-| `namedCurve` | `derToRawEcdsa` | `'P-256'` | `'P-256'`, `'P-384'`, or `'P-521'`. It sets the width of `r` and `s` in the output. |
+| Option        | Of                   | Default         | Description                                                                                                                                                                                                                                                                                                                              |
+| ------------- | -------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `signal`      | every async function |                 | Rejects with `signal.reason` once aborted.                                                                                                                                                                                                                                                                                               |
+| `info`        | `hkdf`               | empty           | Context for the derived key, bytes, or a UTF-8 string.                                                                                                                                                                                                                                                                                   |
+| `length`      | `hkdf`               | the hash length | Bytes to derive, at most 255 times the hash length.                                                                                                                                                                                                                                                                                      |
+| `salt`        | `hkdf`               | empty           | Bytes or a UTF-8 string. RFC 5869 treats an empty salt as zero bytes as long as the hash.                                                                                                                                                                                                                                                |
+| `extractable` | `importSeed`         | `false`         | Whether the private key can be exported. The public key always can.                                                                                                                                                                                                                                                                      |
+| `extractable` | `importPem`          | `false`         | Whether the key can be exported.                                                                                                                                                                                                                                                                                                         |
+| `usages`      | `importPem`          | by algorithm    | The key's usages. The default is `['sign']` or `['verify']` for RSASSA-PKCS1-v1_5, RSA-PSS, ECDSA, and Ed25519; `['decrypt', 'unwrapKey']` or `['encrypt', 'wrapKey']` for RSA-OAEP; and `['deriveBits', 'deriveKey']` or none for ECDH and X25519. For another algorithm, `usages` is required and a missing one throws a `RangeError`. |
+| `namedCurve`  | `derToRawEcdsa`      | `'P-256'`       | `'P-256'`, `'P-384'`, or `'P-521'`. It sets the width of `r` and `s` in the output.                                                                                                                                                                                                                                                      |
 
 The functions throw or reject with `WebCrypto.InvalidInputError` when the DER is malformed, when a raw signature or seed has the wrong length, when a key is not an extractable private key, or when a PEM string has no key block, isn't valid base64, or isn't a key for `algorithm`. `importPem` rejects with `WebCrypto.UnsupportedError` when the PEM block is of a kind it doesn't import: an `EC PRIVATE KEY` (SEC 1), an encrypted key, or a certificate. It wraps any error from `importKey` in `InvalidInputError`, including the one for a malformed `algorithm`, because Chromium and Firefox throw different errors for a key that doesn't match the algorithm. Other errors from `crypto.subtle`, such as the one for an HKDF `length` over the limit, are passed on unchanged.
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `WebCrypto.Hash` | `'SHA-1' \| 'SHA-256' \| 'SHA-384' \| 'SHA-512'`, the algorithm names WebCrypto uses. |
-| `WebCrypto.Digest` | A sync or async function `(hash, data) => bytes`. [@portable/oauth1](https://portablejs.com/packages/oauth1) takes one as `digest`, and `WebCrypto.digest` has this type. |
-| `WebCrypto.Hmac` | A sync or async function `(hash, key, data) => bytes`. [@portable/webhooks](https://portablejs.com/packages/webhooks) takes one as `hmac`, and `WebCrypto.hmac` has this type. |
-| `WebCrypto.Hasher` | An incremental hash `{ update(data), digest() }`, the shape of noble's `sha256.create()`. [@portable/dkim](https://portablejs.com/packages/dkim), [@portable/arc](https://portablejs.com/packages/arc), and [@portable/mail-auth](https://portablejs.com/packages/mail-auth) take a function that returns one as `hasher`. |
-| `WebCrypto.NamedCurve` | `'P-256' \| 'P-384' \| 'P-521'`, the `namedCurve` option of `derToRawEcdsa`. |
-| `WebCrypto.SeedAlgorithm` | `'Ed25519' \| 'X25519'`, the algorithms `importSeed` takes. |
+| Type                      | Description                                                                                                                                                                                                                                                                                                                |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `WebCrypto.Hash`          | `'SHA-1' \| 'SHA-256' \| 'SHA-384' \| 'SHA-512'`, the algorithm names WebCrypto uses.                                                                                                                                                                                                                                      |
+| `WebCrypto.Digest`        | A sync or async function `(hash, data) => bytes`. [@portable/oauth1](https://portablejs.com/packages/oauth1) takes one as `digest`, and `WebCrypto.digest` has this type.                                                                                                                                                  |
+| `WebCrypto.Hmac`          | A sync or async function `(hash, key, data) => bytes`. [@portable/webhooks](https://portablejs.com/packages/webhooks) takes one as `hmac`, and `WebCrypto.hmac` has this type.                                                                                                                                             |
+| `WebCrypto.Hasher`        | An incremental hash `{ update(data), digest() }`, the shape of noble's `sha256.create()`. [@portable/dkim](https://portablejs.com/packages/dkim), [@portable/arc](https://portablejs.com/packages/arc), and [@portable/mail-auth](https://portablejs.com/packages/mail-auth) take a function that returns one as `hasher`. |
+| `WebCrypto.NamedCurve`    | `'P-256' \| 'P-384' \| 'P-521'`, the `namedCurve` option of `derToRawEcdsa`.                                                                                                                                                                                                                                               |
+| `WebCrypto.SeedAlgorithm` | `'Ed25519' \| 'X25519'`, the algorithms `importSeed` takes.                                                                                                                                                                                                                                                                |
 
 ## Why use this over hand-written WebCrypto calls
 
@@ -113,13 +113,13 @@ The helpers cost what the `crypto.subtle` calls under them cost. On Node, synchr
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/web-crypto, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/web-crypto | – | 2.7 kB | 2 | none | included |
-| ecdsa-sig-formatter | 1.0.11 | 1.7 kB | 1 | `buffer` | included |
-| @noble/hashes | 2.4.0 | 3.4 kB | 0 | none | included |
-| @noble/curves | 2.4.0 | 20 kB | 1 | none | included |
-| `node:crypto` | – | built in | – | Node only | – |
+| Library              | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| -------------------- | ------- | -------------------: | -------------------: | -------------- | ---------------- |
+| @portable/web-crypto | –       |               2.7 kB |                    2 | none           | included         |
+| ecdsa-sig-formatter  | 1.0.11  |               1.7 kB |                    1 | `buffer`       | included         |
+| @noble/hashes        | 2.4.0   |               3.4 kB |                    0 | none           | included         |
+| @noble/curves        | 2.4.0   |                20 kB |                    1 | none           | included         |
+| `node:crypto`        | –       |             built in |                    – | Node only      | –                |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

@@ -23,19 +23,19 @@ for await (const line of Streams.toAsyncIterable(lines)) {
 
 ## Options
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `separator` | `/\r?\n/` | A string, a `RegExp`, or any object with `[Symbol.split]`. With the default or a string, a line that spans many chunks is split in linear time. With any other separator, the unfinished line is split again for each chunk, so set `maxLength` when lines can be long. |
-| `encoding` | `'utf-8'` | `TextDecoder` label for byte chunks. |
-| `maxLength` | `Infinity` | Longest allowed line, in UTF-16 code units. |
-| `overflow` | `'error'` | When a line exceeds `maxLength`: `'error'` fails the stream with `MaxLengthError`, `'skip'` drops the line. |
-| `skipEmpty` | `false` | Drop empty lines. |
-| `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
+| Option      | Default    | Description                                                                                                                                                                                                                                                             |
+| ----------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `separator` | `/\r?\n/`  | A string, a `RegExp`, or any object with `[Symbol.split]`. With the default or a string, a line that spans many chunks is split in linear time. With any other separator, the unfinished line is split again for each chunk, so set `maxLength` when lines can be long. |
+| `encoding`  | `'utf-8'`  | `TextDecoder` label for byte chunks.                                                                                                                                                                                                                                    |
+| `maxLength` | `Infinity` | Longest allowed line, in UTF-16 code units.                                                                                                                                                                                                                             |
+| `overflow`  | `'error'`  | When a line exceeds `maxLength`: `'error'` fails the stream with `MaxLengthError`, `'skip'` drops the line.                                                                                                                                                             |
+| `skipEmpty` | `false`    | Drop empty lines.                                                                                                                                                                                                                                                       |
+| `signal`    | none       | Aborting errors the stream with `signal.reason` and cancels the source piped into it.                                                                                                                                                                                   |
 
 ## Types
 
-| Type | Description |
-| --- | --- |
+| Type              | Description                                                                                       |
+| ----------------- | ------------------------------------------------------------------------------------------------- |
 | `Lines.Separator` | The `separator` option: a string to match, or anything with `[Symbol.split]`, such as a `RegExp`. |
 
 ## Why use this over split2 and byline
@@ -63,12 +63,12 @@ split2 and byline are Node `Transform` streams. `Lines.DecoderStream` is a `Tran
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/lines, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/lines | – | 1.3 kB | 3 | none | included |
-| split2 | 4.2.0 | 1.1 kB | 0 | `stream`, `string_decoder` | @types/split2 |
-| byline | 5.0.0 | 1.2 kB | 0 | `Buffer`, `stream`, `timers`, `util` | @types/byline |
-| `node:readline` | – | built in | – | Node only | – |
+| Library         | Version | Minified and gzipped | Runtime dependencies | Node built-ins                       | TypeScript types |
+| --------------- | ------- | -------------------: | -------------------: | ------------------------------------ | ---------------- |
+| @portable/lines | –       |               1.3 kB |                    3 | none                                 | included         |
+| split2          | 4.2.0   |               1.1 kB |                    0 | `stream`, `string_decoder`           | @types/split2    |
+| byline          | 5.0.0   |               1.2 kB |                    0 | `Buffer`, `stream`, `timers`, `util` | @types/byline    |
+| `node:readline` | –       |             built in |                    – | Node only                            | –                |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
