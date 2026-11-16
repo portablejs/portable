@@ -109,6 +109,12 @@ zile reads `exports` and builds the `src` files into the `types` and `default` p
 
 If zile causes problems, removing it takes two steps: commit the `package.json` that `zile publish:prepare` writes, and change the build script to `tsc`.
 
+## API reports
+
+`packages/<name>/api.md` lists the declarations that each public entry point of the package exports, as `tsc` would emit them into `dist/`, without JSDoc or function bodies. A pull request that changes the public API therefore changes an `api.md`, so you can review the new signatures in the diff without reading the implementation. `scripts/api-report.ts` writes the reports. It reads the entry points with the TypeScript checker and emits each declaration with `ts.transpileDeclaration`, which works file by file because every package sets `isolatedDeclarations`. It sorts the declarations by name, so moving an export between modules doesn't change the report. When an export's signature uses a type that the entry point doesn't export, the report lists that type too, under a comment, because the signature can't be read without that type's shape. `./internal` entries are left out, because only other `@portable/*` packages import them.
+
+`pnpm api` rewrites the reports. `tools/lint/src/apiReport.test.ts` fails when a report doesn't match the source. The pre-push hook runs that test through `pnpm check:api`, and CI runs it with the other Node tests.
+
 ## Tests
 
 ### Projects
@@ -159,7 +165,7 @@ Git hooks run the checks before each commit and push. `pnpm install` installs th
 | Hook | Runs |
 | --- | --- |
 | pre-commit | `vp staged`, which runs `vp check --fix` on staged files |
-| pre-push | `vp check`, `pnpm check:prose`, and `pnpm check:types`, then the Node tests affected by changes since `origin/main` (`pnpm test:changed`) |
+| pre-push | `vp check`, `pnpm check:prose`, `pnpm check:api`, and `pnpm check:types`, then the Node tests affected by changes since `origin/main` (`pnpm test:changed`) |
 
 Browser tests are slower, so you run them on demand (`pnpm test:browser`), and CI runs them before every release. `git push --no-verify` skips the hooks.
 

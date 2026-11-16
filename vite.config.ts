@@ -217,6 +217,7 @@ export default defineConfig({
           '**/*.oracle.test.ts',
           '**/*.bench.ts',
           'vite.config.ts',
+          'tools/lint/src/apiReport.test.ts',
           'tools/lint/src/publicApi.test.ts',
           'tools/lint/src/forAwait.test.ts',
           'tools/lint/src/examples.test.ts',

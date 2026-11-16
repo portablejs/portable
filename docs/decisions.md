@@ -2,6 +2,12 @@
 
 Decisions made while building the packages, with the options considered and the reason for each choice. Newest first. Change any of them by editing this file.
 
+## Each package has a generated API report in `api.md`
+
+- **Options:** review the public API from the generated site pages (`site/scripts/api.mjs`), which aren't checked in; run api-extractor, which writes a `<package>.api.md` report from the built declaration files; write our own script over the TypeScript checker that writes `packages/<name>/api.md` from source.
+- **Trade-offs:** the site pages include JSDoc, examples, and option tables, so their diff would mix comment changes with signature changes. They're generated only during a site build and aren't checked in. api-extractor needs `pnpm build` first, bundles its own TypeScript version, and warns about missing release tags, which the repo doesn't use. Our own script runs on source in about two seconds, because `isolatedDeclarations` lets `ts.transpileDeclaration` emit each file on its own.
+- **Chosen:** `scripts/api-report.ts`, run by `pnpm api`. Each report has one TypeScript block per public entry point. The declarations are sorted by name and have no JSDoc, so a report changes only when a signature changes. `tools/lint/src/apiReport.test.ts` fails on a stale report, and the pre-push hook runs it.
+
 ## npm releases publish when the "Version packages" pull request is merged
 
 - **Options:** keep publishing from a maintainer's machine; publish from a workflow started by hand on `main`, after the version bumps are merged; run changesets/action on every push to `main`, which opens a "Version packages" pull request and publishes when it is merged, as the wevm repos do.
