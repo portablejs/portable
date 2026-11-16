@@ -8,6 +8,7 @@ if command -v flock >/dev/null; then
 fi
 pnpm vp check
 pnpm check:prose
+pnpm check:api
 pnpm check:types
 if git rev-parse --verify --quiet origin/main >/dev/null; then
   pnpm test:changed
