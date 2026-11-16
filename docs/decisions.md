@@ -2,6 +2,12 @@
 
 Decisions made while building the packages, with the options considered and the reason for each choice. Newest first. Change any of them by editing this file.
 
+## `Rpc.connect` takes a stream of connections to detect dropped ones
+
+- **Options:** `open` and `close` events on the object `WebSockets.connect` returns, with a count of the writes passed to each socket, which `Rpc.connect` compares with the number of writes it made; a marker message in `readable`; an `onClose` callback that you wire to `Rpc.reset(remote)`; a stream of connections, each with its own `readable` and `writable`, that `Rpc.connect` accepts in place of one transport.
+- **Trade-offs:** a write to the `writable` that `connect` returns resolves both when the socket sends it and when it is queued for the next connection, so rpc can't tell a lost request from a queued one unless websockets reports which writes each socket sent. Events need the write count, and they fire outside the message stream, so a response still buffered in `readable` when `close` fires can be rejected as lost. A marker message is ordered with the data, but it changes the type of `readable` for every websockets user. A callback works only if you remember to wire it. In a stream of connections, each connection's `readable` ends after its last message, so rpc sees the drop after every response that arrived before it. It needs no counter, and it follows the AGENTS.md rule to return streams instead of events. It adds `WebSockets.connections` and widens the input of `Rpc.connect`.
+- **Chosen:** a stream of connections. `WebSockets.connections` enqueues a pair when its socket is ready. A pair's `readable` delivers the messages it holds before it ends. A write to a closed connection rejects without sending. `connect` joins the pairs and queues writes between them, as before. `Rpc.connect` sends on the newest transport, holds calls between transports, and rejects the calls written to a transport when its `readable` ends.
+
 ## oxfmt formats Markdown
 
 - **Options:** keep ignoring `**/*.md`; format Markdown with the repo's oxfmt options; format it with `proseWrap: 'never'` for `*.md` files only.

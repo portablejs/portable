@@ -94,6 +94,33 @@ Writes wait while `bufferedAmount` is above `highWaterMark`. `connect` checks it
 
 A browser can't pause reading from a WebSocket: messages arrive whether or not anyone reads them, and `readable` queues them. `maxBuffered` sets a limit, so a reader that falls behind gets a `MaxBufferedError` instead of the tab running out of memory.
 
+## `connections(url, options)`
+
+Returns a `ReadableStream` with one `{ readable, writable }` pair for each connection. It takes the same options as `connect` except `maxQueued`, and reconnects the same way. `connect` calls `connections` and joins the pairs into one `{ readable, writable }` that stays the same across reconnects.
+
+Use it when you need to know which messages went out on which connection. `Rpc.connect` from [@portable/rpc](https://portablejs.com/packages/rpc) accepts the stream and rejects only the calls whose requests went out on a dropped connection.
+
+```ts
+import * as Streams from '@portable/streams';
+
+const connections = WebSockets.connections('wss://example.com/feed');
+for await (const { readable, writable } of Streams.toAsyncIterable(connections)) {
+  const writer = writable.getWriter();
+  await writer.write(JSON.stringify({ subscribe: 'prices' }));
+  writer.releaseLock();
+  for await (const message of Streams.toAsyncIterable(readable)) {
+    console.log(message);
+  }
+}
+```
+
+- A pair is enqueued once its socket is open and `open` has finished.
+- When the socket closes, the pair's `readable` delivers the messages it holds and then ends. If the close code is 1000, 1001, or 1005, or you closed the pair, `readable` closes. Otherwise it fails with a `CloseError`, or with the error that ended the connection. If `maxBuffered` is exceeded, a message can't be decoded, or the stream is cancelled or aborted, the held messages are dropped.
+- A write to a pair whose socket isn't open rejects, and nothing is sent. Nothing is queued between connections.
+- Closing a pair's `writable` or cancelling its `readable` closes the socket with 1000 and ends the stream of pairs.
+- When `reconnectIf` returns false, the stream ends if the close code is 1000, 1001, or 1005, and fails with a `CloseError` for any other code. It fails with the last error when `attempts` runs out, when `reconnectIf` throws, or when an error stops reconnecting, such as `MaxBufferedError`.
+- Cancelling the stream closes the socket with 1000. Aborting `signal` does the same and also errors the stream with `signal.reason`.
+
 ## `fromSocket(socket, options)`
 
 Returns `{ readable, writable }` for a socket you already have. It never reconnects. It sets `binaryType` to `'arraybuffer'`, and writes wait until a connecting socket opens. Options: `signal`, `highWaterMark`, and `maxBuffered`, as above. `readable` ends when the socket closes with 1000, 1001, or 1005 and fails with a `CloseError` for other codes.
@@ -110,13 +137,13 @@ Returns `{ readable, writable }` for a socket you already have. It never reconne
 
 ## Types
 
-| Type                 | Description                                                                                                               |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `WebSockets.Duplex`  | `{ readable, writable }`, what `connect`, and `fromSocket` return, with `[Symbol.asyncDispose]` where the runtime has it. |
-| `WebSockets.Message` | A received message: text as a `string`, binary data as a `Uint8Array`.                                                    |
-| `WebSockets.Socket`  | The part of the platform `WebSocket` this package uses. Any object with this shape works.                                 |
-| `WebSockets.Delay`   | The `delay` option, `Timers.Delay` from [@portable/timers](https://portablejs.com/packages/timers).                       |
-| `WebSockets.Backoff` | `{ initial, max, factor?, jitter? }`, exponential backoff for `delay`.                                                    |
+| Type                 | Description                                                                                                                                                           |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `WebSockets.Duplex`  | `{ readable, writable }`: what `connect` and `fromSocket` return, and each pair that `connections` enqueues. It has `[Symbol.asyncDispose]` where the runtime has it. |
+| `WebSockets.Message` | A received message: text as a `string`, binary data as a `Uint8Array`.                                                                                                |
+| `WebSockets.Socket`  | The part of the platform `WebSocket` this package uses. Any object with this shape works.                                                                             |
+| `WebSockets.Delay`   | The `delay` option, `Timers.Delay` from [@portable/timers](https://portablejs.com/packages/timers).                                                                   |
+| `WebSockets.Backoff` | `{ initial, max, factor?, jitter? }`, exponential backoff for `delay`.                                                                                                |
 
 ## Why use this over reconnecting-websocket, partysocket, and websocket-ts
 

@@ -79,6 +79,11 @@ namespace connect {
   type Url = string | URL | (() => string | URL | PromiseLike<string | URL>);
 }
 
+function connections(url: connect.Url, options?: connections.Options): ReadableStream<Duplex>;
+namespace connections {
+  type Options = Omit<connect.Options, 'maxQueued'>;
+}
+
 function fromSocket(socket: Socket, options?: fromSocket.Options): Duplex;
 namespace fromSocket {
   type Options = {
