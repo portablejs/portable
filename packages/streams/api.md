@@ -12,7 +12,10 @@ class MaxBytesError extends Errors.MaxBytesError {
 
 type Source<chunk> = ReadableStream<chunk> | AsyncIterable<chunk> | Iterable<chunk>;
 
-function abortable<input, output>(transformer: abortable.Transformer<input, output>, options?: abortable.Options): abortable.Transformer<input, output>;
+function abortable<input, output>(
+  transformer: abortable.Transformer<input, output>,
+  options?: abortable.Options,
+): abortable.Transformer<input, output>;
 namespace abortable {
   type Options = {
     signal?: AbortSignal | undefined;
@@ -29,52 +32,79 @@ namespace batch {
   };
 }
 
-function concat<chunk>(sources: readonly Source<chunk>[], options?: concat.Options): ReadableStream<chunk>;
+function concat<chunk>(
+  sources: readonly Source<chunk>[],
+  options?: concat.Options,
+): ReadableStream<chunk>;
 namespace concat {
   type Options = {
     signal?: AbortSignal | undefined;
   };
 }
 
-function filter<chunk, state extends chunk>(fn: (chunk: chunk, index: number) => chunk is state, options?: filter.Options): TransformStream<chunk, state>;
-function filter<chunk>(fn: (chunk: chunk, index: number) => boolean | PromiseLike<boolean>, options?: filter.Options): TransformStream<chunk, chunk>;
+function filter<chunk, state extends chunk>(
+  fn: (chunk: chunk, index: number) => chunk is state,
+  options?: filter.Options,
+): TransformStream<chunk, state>;
+function filter<chunk>(
+  fn: (chunk: chunk, index: number) => boolean | PromiseLike<boolean>,
+  options?: filter.Options,
+): TransformStream<chunk, chunk>;
 namespace filter {
   type Options = {
     signal?: AbortSignal | undefined;
   };
 }
 
-function fromIterable<chunk>(iterable: Iterable<chunk | PromiseLike<chunk>> | AsyncIterable<chunk>): ReadableStream<chunk>;
+function fromIterable<chunk>(
+  iterable: Iterable<chunk | PromiseLike<chunk>> | AsyncIterable<chunk>,
+): ReadableStream<chunk>;
 
-function limitBytes<chunk extends Uint8Array | string>(maxBytes: number, options?: limitBytes.Options): TransformStream<chunk, chunk>;
+function limitBytes<chunk extends Uint8Array | string>(
+  maxBytes: number,
+  options?: limitBytes.Options,
+): TransformStream<chunk, chunk>;
 namespace limitBytes {
   type Options = {
     signal?: AbortSignal | undefined;
   };
 }
 
-function map<input, output>(fn: (chunk: input, index: number) => output | PromiseLike<output>, options?: map.Options): TransformStream<input, output>;
+function map<input, output>(
+  fn: (chunk: input, index: number) => output | PromiseLike<output>,
+  options?: map.Options,
+): TransformStream<input, output>;
 namespace map {
   type Options = {
     signal?: AbortSignal | undefined;
   };
 }
 
-function merge<chunk>(sources: readonly Source<chunk>[], options?: merge.Options): ReadableStream<chunk>;
+function merge<chunk>(
+  sources: readonly Source<chunk>[],
+  options?: merge.Options,
+): ReadableStream<chunk>;
 namespace merge {
   type Options = {
     signal?: AbortSignal | undefined;
   };
 }
 
-function tap<chunk>(fn: (chunk: chunk, index: number) => void | PromiseLike<void>, options?: tap.Options): TransformStream<chunk, chunk>;
+function tap<chunk>(
+  fn: (chunk: chunk, index: number) => void | PromiseLike<void>,
+  options?: tap.Options,
+): TransformStream<chunk, chunk>;
 namespace tap {
   type Options = {
     signal?: AbortSignal | undefined;
   };
 }
 
-function tee<chunk>(source: Source<chunk>, count: number, options?: tee.Options): ReadableStream<chunk>[];
+function tee<chunk>(
+  source: Source<chunk>,
+  count: number,
+  options?: tee.Options,
+): ReadableStream<chunk>[];
 namespace tee {
   type Options = {
     highWaterMark?: number | undefined;
@@ -90,7 +120,10 @@ namespace toArray {
   };
 }
 
-function toAsyncIterable<chunk>(stream: ReadableStream<chunk>, options?: toAsyncIterable.Options): AsyncIterableIterator<chunk>;
+function toAsyncIterable<chunk>(
+  stream: ReadableStream<chunk>,
+  options?: toAsyncIterable.Options,
+): AsyncIterableIterator<chunk>;
 namespace toAsyncIterable {
   type Options = {
     preventCancel?: boolean | undefined;
@@ -104,7 +137,10 @@ namespace toBlob {
   };
 }
 
-function toBytes(source: Source<Uint8Array | string>, options?: toBytes.Options): Promise<Uint8Array<ArrayBuffer>>;
+function toBytes(
+  source: Source<Uint8Array | string>,
+  options?: toBytes.Options,
+): Promise<Uint8Array<ArrayBuffer>>;
 namespace toBytes {
   type Options = {
     maxBytes?: number | undefined;
@@ -126,7 +162,10 @@ namespace toText {
   };
 }
 
-function transform<input, output>(fn: (source: AsyncIterable<input>) => AsyncIterable<output>, options?: transform.Options): ReadableWritablePair<output, input>;
+function transform<input, output>(
+  fn: (source: AsyncIterable<input>) => AsyncIterable<output>,
+  options?: transform.Options,
+): ReadableWritablePair<output, input>;
 namespace transform {
   type Options = {
     signal?: AbortSignal | undefined;
@@ -137,7 +176,10 @@ namespace transform {
 ## @portable/streams/node
 
 ```ts
-function toWeb(readable: Readable, options?: toWeb.Options): ReadableStream<Uint8Array<ArrayBuffer>>;
+function toWeb(
+  readable: Readable,
+  options?: toWeb.Options,
+): ReadableStream<Uint8Array<ArrayBuffer>>;
 namespace toWeb {
   type Options = {
     signal?: AbortSignal | undefined;

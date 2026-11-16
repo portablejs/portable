@@ -11,10 +11,7 @@ class CloseError extends Errors.BaseError {
   static readonly kind: string;
   readonly code: number;
   readonly reason: string;
-  constructor(options: {
-    code: number;
-    reason: string;
-  });
+  constructor(options: { code: number; reason: string });
 }
 
 type Duplex = AsyncDisposeMethod & {
@@ -25,9 +22,7 @@ type Duplex = AsyncDisposeMethod & {
 class MaxBufferedError extends Errors.BaseError {
   static readonly kind: string;
   readonly maxBuffered: number;
-  constructor(options: {
-    maxBuffered: number;
-  });
+  constructor(options: { maxBuffered: number });
 }
 
 type Message = string | Uint8Array<ArrayBuffer>;
@@ -51,9 +46,14 @@ namespace connect {
     attempts?: number | undefined;
     timeout?: number | undefined;
     open?: ((context: Context) => void | PromiseLike<void>) | undefined;
-    reconnectIf?: ((close: Close, retry: {
-      attempt: number;
-    }) => boolean | PromiseLike<boolean>) | undefined;
+    reconnectIf?:
+      | ((
+          close: Close,
+          retry: {
+            attempt: number;
+          },
+        ) => boolean | PromiseLike<boolean>)
+      | undefined;
     maxQueued?: number | undefined;
     highWaterMark?: number | undefined;
     maxBuffered?: number | undefined;

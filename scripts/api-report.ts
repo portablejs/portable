@@ -5,6 +5,8 @@
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import ts from 'typescript';
+import { format } from 'vite-plus/fmt';
+import config from '../vite.config.ts';
 
 const root = join(import.meta.dirname, '..');
 const packagesDir = join(root, 'packages');
@@ -127,8 +129,7 @@ function print(declaration: Declaration, options: ts.CompilerOptions): string {
       printer
         .printNode(ts.EmitHint.Unspecified, statement, source)
         .replace(/^export /, '')
-        .replace(/^declare /, '')
-        .replace(/^(?: {4})+/gm, (indent) => ' '.repeat(indent.length / 2)),
+        .replace(/^declare /, ''),
     )
     .join('\n');
 }
@@ -139,7 +140,7 @@ function byName(a: Declaration, b: Declaration): number {
   return a.name < b.name ? -1 : a.name > b.name ? 1 : a.file < b.file ? -1 : 1;
 }
 
-function report(name: string, program: ts.Program): string {
+async function report(name: string, program: ts.Program): Promise<string> {
   const checker = program.getTypeChecker();
   const options = program.getCompilerOptions();
   const sections: string[] = [];
@@ -260,7 +261,14 @@ function report(name: string, program: ts.Program): string {
           .join('\n\n');
     }
     const specifier = `${readPackage(name).name}${entry.subpath.slice(1)}`;
-    sections.push(`## ${specifier}\n\n\`\`\`ts\n${code}\n\`\`\`\n`);
+    // oxfmt skips Markdown, so the block is formatted here with the settings in vite.config.ts.
+    const formatted = await format('api.d.ts', code, config.fmt);
+    if (formatted.errors.length > 0) {
+      throw new Error(`oxfmt can't format the report for ${specifier}`, {
+        cause: formatted.errors,
+      });
+    }
+    sections.push(`## ${specifier}\n\n\`\`\`ts\n${formatted.code.trimEnd()}\n\`\`\`\n`);
   }
   return (
     `# ${readPackage(name).name} API\n\n` +
@@ -271,16 +279,22 @@ function report(name: string, program: ts.Program): string {
 }
 
 // The report for each package in `names`, keyed by package directory name.
-export function apiReports(names: readonly string[] = packageNames()): Map<string, string> {
+export async function apiReports(
+  names: readonly string[] = packageNames(),
+): Promise<Map<string, string>> {
   const program = createProgram(names);
-  return new Map(names.map((name) => [name, report(name, program)]));
+  const reports = new Map<string, string>();
+  for (const name of names) {
+    reports.set(name, await report(name, program));
+  }
+  return reports;
 }
 
 export const reportPath = (name: string): string => join(packagesDir, name, 'api.md');
 
 if (import.meta.main) {
   const names = process.argv.slice(2);
-  for (const [name, text] of apiReports(names.length > 0 ? names : packageNames())) {
+  for (const [name, text] of await apiReports(names.length > 0 ? names : packageNames())) {
     writeFileSync(reportPath(name), text);
   }
 }

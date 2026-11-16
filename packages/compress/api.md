@@ -46,7 +46,10 @@ namespace decode {
   };
 }
 
-function encode(data: Uint8Array | string, options?: encode.Options): Promise<Uint8Array<ArrayBuffer>>;
+function encode(
+  data: Uint8Array | string,
+  options?: encode.Options,
+): Promise<Uint8Array<ArrayBuffer>>;
 namespace encode {
   type Options = {
     format?: Format | undefined;

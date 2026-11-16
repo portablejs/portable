@@ -5,14 +5,16 @@
 ## @portable/ip
 
 ```ts
-type Address = {
-  version: 4;
-  bytes: Uint8Array;
-} | {
-  version: 6;
-  bytes: Uint8Array;
-  zone?: string | undefined;
-};
+type Address =
+  | {
+      version: 4;
+      bytes: Uint8Array;
+    }
+  | {
+      version: 6;
+      bytes: Uint8Array;
+      zone?: string | undefined;
+    };
 
 type Cidr = {
   address: Address;
@@ -23,7 +25,36 @@ class InvalidInputError extends Errors.InvalidInputError {
   static readonly kind: string;
 }
 
-type Range = '6to4' | '6to4RelayAnycast' | 'amt' | 'as112' | 'benchmarking' | 'broadcast' | 'deprecatedOrchid' | 'deprecatedSiteLocal' | 'discard' | 'documentation' | 'droneRemoteIdProtocolEntityTags' | 'dummy' | 'ietfProtocolAssignments' | 'ipv4Ipv6Translation' | 'ipv4Mapped' | 'ipv4Translated' | 'linkLocal' | 'loopback' | 'multicast' | 'orchidV2' | 'private' | 'reserved' | 'segmentRouting' | 'sharedAddressSpace' | 'teredo' | 'thisNetwork' | 'uniqueLocal' | 'unicast' | 'unspecified';
+type Range =
+  | '6to4'
+  | '6to4RelayAnycast'
+  | 'amt'
+  | 'as112'
+  | 'benchmarking'
+  | 'broadcast'
+  | 'deprecatedOrchid'
+  | 'deprecatedSiteLocal'
+  | 'discard'
+  | 'documentation'
+  | 'droneRemoteIdProtocolEntityTags'
+  | 'dummy'
+  | 'ietfProtocolAssignments'
+  | 'ipv4Ipv6Translation'
+  | 'ipv4Mapped'
+  | 'ipv4Translated'
+  | 'linkLocal'
+  | 'loopback'
+  | 'multicast'
+  | 'orchidV2'
+  | 'private'
+  | 'reserved'
+  | 'segmentRouting'
+  | 'sharedAddressSpace'
+  | 'teredo'
+  | 'thisNetwork'
+  | 'uniqueLocal'
+  | 'unicast'
+  | 'unspecified';
 
 function canParse(text: unknown, options?: canParse.Options): boolean;
 namespace canParse {

@@ -34,7 +34,11 @@ namespace needsRehash {
   };
 }
 
-function verify(password: string | Uint8Array, stored: string, options?: verify.Options): Promise<boolean>;
+function verify(
+  password: string | Uint8Array,
+  stored: string,
+  options?: verify.Options,
+): Promise<boolean>;
 namespace verify {
   type Options = {
     maxBytes?: number | undefined;

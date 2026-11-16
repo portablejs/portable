@@ -62,9 +62,14 @@ namespace connect {
     fetch?: ((request: Request) => Promise<Response>) | undefined;
     idleTimeout?: number | undefined;
     maxLength?: number | undefined;
-    reconnectIf?: ((error: unknown, retry: {
-      attempt: number;
-    }) => boolean | PromiseLike<boolean>) | undefined;
+    reconnectIf?:
+      | ((
+          error: unknown,
+          retry: {
+            attempt: number;
+          },
+        ) => boolean | PromiseLike<boolean>)
+      | undefined;
     signal?: AbortSignal | undefined;
   };
 }

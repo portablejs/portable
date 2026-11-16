@@ -7,14 +7,16 @@
 ```ts
 export { Connect, Socket } from '@portable/sockets';
 
-type Auth = {
-  user: string;
-  pass: string;
-  method?: 'PLAIN' | 'LOGIN' | undefined;
-} | {
-  user: string;
-  accessToken: string;
-};
+type Auth =
+  | {
+      user: string;
+      pass: string;
+      method?: 'PLAIN' | 'LOGIN' | undefined;
+    }
+  | {
+      user: string;
+      accessToken: string;
+    };
 
 type Client = AsyncDisposeMethod & {
   readonly secure: boolean;

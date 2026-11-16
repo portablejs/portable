@@ -8,9 +8,9 @@ const root = join(import.meta.dirname, '../../..');
 // Each package's api.md lists the declarations its entry points export, so a pull request's diff
 // shows every change to the public API. This test fails when a report doesn't match the source.
 
-test('every api.md matches the exports', () => {
+test('every api.md matches the exports', async () => {
   const stale: string[] = [];
-  for (const [name, text] of apiReports()) {
+  for (const [name, text] of await apiReports()) {
     const path = reportPath(name);
     if (!existsSync(path) || readFileSync(path, 'utf8') !== text) {
       stale.push(relative(root, path));

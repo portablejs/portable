@@ -21,9 +21,11 @@ class MaxBytesError extends Errors.MaxBytesError {
 class ResponseError extends Errors.ResponseError {
   static readonly kind: string;
   readonly body: string;
-  constructor(options: Errors.ResponseError.Options & {
-    body: string;
-  });
+  constructor(
+    options: Errors.ResponseError.Options & {
+      body: string;
+    },
+  );
 }
 
 type Subscription = {
@@ -68,13 +70,15 @@ namespace send {
   type Options = toRequest.Options & {
     fetch?: ((request: Request) => Promise<Response>) | undefined;
   };
-  type ReturnType = {
-    kind: 'sent';
-    status: number;
-  } | {
-    kind: 'gone';
-    status: 404 | 410;
-  };
+  type ReturnType =
+    | {
+        kind: 'sent';
+        status: number;
+      }
+    | {
+        kind: 'gone';
+        status: 404 | 410;
+      };
 }
 
 function toRequest(options: toRequest.Options): Promise<Request>;

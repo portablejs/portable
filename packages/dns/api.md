@@ -15,7 +15,11 @@ type CaaRecord = {
 };
 
 type DohResolver = Resolver & {
-  query(name: string, type: DnsPacket.RecordType, options?: Resolver.CallOptions): Promise<DnsPacket.DecodedPacket>;
+  query(
+    name: string,
+    type: DnsPacket.RecordType,
+    options?: Resolver.CallOptions,
+  ): Promise<DnsPacket.DecodedPacket>;
 };
 
 type MxRecord = {
@@ -40,7 +44,18 @@ class QueryError extends Errors.BaseError {
   constructor(options: QueryError.Options);
 }
 namespace QueryError {
-  type Code = 'ENOTFOUND' | 'ENODATA' | 'ESERVFAIL' | 'EREFUSED' | 'ENOTIMP' | 'EFORMERR' | 'EBADRESP' | 'ETIMEOUT' | 'ECONNREFUSED' | 'EBADNAME' | 'EINVAL';
+  type Code =
+    | 'ENOTFOUND'
+    | 'ENODATA'
+    | 'ESERVFAIL'
+    | 'EREFUSED'
+    | 'ENOTIMP'
+    | 'EFORMERR'
+    | 'EBADRESP'
+    | 'ETIMEOUT'
+    | 'ECONNREFUSED'
+    | 'EBADNAME'
+    | 'EINVAL';
   type Options = ErrorOptions & {
     code: Code;
     syscall: string;

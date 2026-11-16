@@ -24,7 +24,9 @@ class MaxLengthError extends Errors.MaxLengthError {
   constructor(options: Errors.MaxLengthError.Options);
 }
 
-type Separator = string | {
-  [Symbol.split](text: string, limit?: number): string[];
-};
+type Separator =
+  | string
+  | {
+      [Symbol.split](text: string, limit?: number): string[];
+    };
 ```

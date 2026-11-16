@@ -34,7 +34,10 @@ class TruncatedError extends Errors.TruncatedError {
   constructor(message?: string, options?: ErrorOptions);
 }
 
-function encodeStream(value: unknown, options?: encodeStream.Options): ReadableStream<Uint8Array<ArrayBuffer>>;
+function encodeStream(
+  value: unknown,
+  options?: encodeStream.Options,
+): ReadableStream<Uint8Array<ArrayBuffer>>;
 namespace encodeStream {
   type Replacer = (this: unknown, key: string, value: unknown) => unknown;
   type Options = {

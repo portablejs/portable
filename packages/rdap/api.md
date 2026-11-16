@@ -54,28 +54,34 @@ type Network = Common & {
 class NotFoundError extends Errors.ResponseError {
   static readonly kind: string;
   readonly url: string;
-  constructor(options: Errors.ResponseError.Options & {
-    url: string;
-  });
+  constructor(
+    options: Errors.ResponseError.Options & {
+      url: string;
+    },
+  );
 }
 
-type Referral = {
-  url: string;
-  raw: Record<string, unknown>;
-  error?: undefined;
-} | {
-  url: string;
-  raw?: undefined;
-  error: unknown;
-};
+type Referral =
+  | {
+      url: string;
+      raw: Record<string, unknown>;
+      error?: undefined;
+    }
+  | {
+      url: string;
+      raw?: undefined;
+      error: unknown;
+    };
 
 class ResponseError extends Errors.ResponseError {
   static readonly kind: string;
   readonly url: string;
   readonly body: unknown;
-  constructor(options: Errors.ResponseError.Options & {
-    url: string;
-  });
+  constructor(
+    options: Errors.ResponseError.Options & {
+      url: string;
+    },
+  );
 }
 
 class UnsupportedError extends Errors.UnsupportedError {

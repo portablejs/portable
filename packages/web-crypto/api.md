@@ -14,7 +14,11 @@ type Hasher = {
   digest(): Uint8Array | Promise<Uint8Array>;
 };
 
-type Hmac = (hash: Hash, key: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>) => Uint8Array | Promise<Uint8Array>;
+type Hmac = (
+  hash: Hash,
+  key: Uint8Array<ArrayBuffer>,
+  data: Uint8Array<ArrayBuffer>,
+) => Uint8Array | Promise<Uint8Array>;
 
 class InvalidInputError extends Errors.InvalidInputError {
   static readonly kind: string;
@@ -28,21 +32,32 @@ class UnsupportedError extends Errors.UnsupportedError {
   static readonly kind: string;
 }
 
-function derToRawEcdsa(signature: Uint8Array, options?: derToRawEcdsa.Options): Uint8Array<ArrayBuffer>;
+function derToRawEcdsa(
+  signature: Uint8Array,
+  options?: derToRawEcdsa.Options,
+): Uint8Array<ArrayBuffer>;
 namespace derToRawEcdsa {
   type Options = {
     namedCurve?: NamedCurve | undefined;
   };
 }
 
-function digest(hash: Hash, data: string | Uint8Array, options?: digest.Options): Promise<Uint8Array<ArrayBuffer>>;
+function digest(
+  hash: Hash,
+  data: string | Uint8Array,
+  options?: digest.Options,
+): Promise<Uint8Array<ArrayBuffer>>;
 namespace digest {
   type Options = {
     signal?: AbortSignal | undefined;
   };
 }
 
-function hkdf(hash: Hash, key: string | Uint8Array, options?: hkdf.Options): Promise<Uint8Array<ArrayBuffer>>;
+function hkdf(
+  hash: Hash,
+  key: string | Uint8Array,
+  options?: hkdf.Options,
+): Promise<Uint8Array<ArrayBuffer>>;
 namespace hkdf {
   type Options = {
     info?: string | Uint8Array | undefined;
@@ -52,14 +67,23 @@ namespace hkdf {
   };
 }
 
-function hmac(hash: Hash, key: string | Uint8Array, data: string | Uint8Array, options?: hmac.Options): Promise<Uint8Array<ArrayBuffer>>;
+function hmac(
+  hash: Hash,
+  key: string | Uint8Array,
+  data: string | Uint8Array,
+  options?: hmac.Options,
+): Promise<Uint8Array<ArrayBuffer>>;
 namespace hmac {
   type Options = {
     signal?: AbortSignal | undefined;
   };
 }
 
-function importPem(algorithm: importPem.Algorithm, pem: string | Uint8Array, options?: importPem.Options): Promise<CryptoKey>;
+function importPem(
+  algorithm: importPem.Algorithm,
+  pem: string | Uint8Array,
+  options?: importPem.Options,
+): Promise<CryptoKey>;
 namespace importPem {
   type Algorithm = AlgorithmIdentifier | RsaHashedImportParams | EcKeyImportParams;
   type Options = {
@@ -69,7 +93,11 @@ namespace importPem {
   };
 }
 
-function importSeed(algorithm: SeedAlgorithm, seed: Uint8Array, options?: importSeed.Options): Promise<CryptoKeyPair>;
+function importSeed(
+  algorithm: SeedAlgorithm,
+  seed: Uint8Array,
+  options?: importSeed.Options,
+): Promise<CryptoKeyPair>;
 namespace importSeed {
   type Options = {
     extractable?: boolean | undefined;

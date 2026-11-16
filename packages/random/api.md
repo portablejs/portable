@@ -8,9 +8,12 @@
 type Seeded = {
   readonly int: (min: number, max: number) => number;
   readonly float: () => number;
-  readonly string: (length: number, options?: {
-    alphabet?: string | undefined;
-  }) => string;
+  readonly string: (
+    length: number,
+    options?: {
+      alphabet?: string | undefined;
+    },
+  ) => string;
   readonly shuffle: <value>(array: readonly value[]) => value[];
   readonly pick: <value>(array: readonly value[]) => value;
   readonly bytes: (length: number) => Uint8Array<ArrayBuffer>;

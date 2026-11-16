@@ -41,7 +41,11 @@ namespace create {
 
 function limit(concurrency: number): Queue['add'];
 
-function map<chunk, result>(input: Iterable<chunk> | AsyncIterable<chunk>, fn: (item: chunk, context: map.Context) => result | PromiseLike<result>, options?: map.Options): Promise<result[]>;
+function map<chunk, result>(
+  input: Iterable<chunk> | AsyncIterable<chunk>,
+  fn: (item: chunk, context: map.Context) => result | PromiseLike<result>,
+  options?: map.Options,
+): Promise<result[]>;
 namespace map {
   type Options = {
     concurrency?: number | undefined;
@@ -54,7 +58,10 @@ namespace map {
   };
 }
 
-function once<value>(fn: () => value | PromiseLike<value>, options?: once.Options): () => Promise<value>;
+function once<value>(
+  fn: () => value | PromiseLike<value>,
+  options?: once.Options,
+): () => Promise<value>;
 namespace once {
   type Options = {
     cache?: boolean | undefined;

@@ -28,9 +28,12 @@ class EncoderStream extends TransformStream<EncoderStream.Input, Uint8Array> {
   constructor(options?: EncoderStream.Options);
 }
 namespace EncoderStream {
-  type Input = Uint8Array | string | {
-    readonly bytes: Uint8Array | string;
-  };
+  type Input =
+    | Uint8Array
+    | string
+    | {
+        readonly bytes: Uint8Array | string;
+      };
   type Options = {
     signal?: AbortSignal | undefined;
   };
@@ -39,25 +42,31 @@ namespace EncoderStream {
 class MaxBoundaryLineBytesError extends Errors.MaxBytesError {
   static readonly kind: string;
   readonly maxBoundaryLineBytes: number;
-  constructor(options: ErrorOptions & {
-    maxBoundaryLineBytes: number;
-  });
+  constructor(
+    options: ErrorOptions & {
+      maxBoundaryLineBytes: number;
+    },
+  );
 }
 
 class MaxHeaderBytesError extends Errors.MaxBytesError {
   static readonly kind: string;
   readonly maxHeaderBytes: number;
-  constructor(options: ErrorOptions & {
-    maxHeaderBytes: number;
-  });
+  constructor(
+    options: ErrorOptions & {
+      maxHeaderBytes: number;
+    },
+  );
 }
 
 class MaxPartsError extends Errors.BaseError {
   static readonly kind: string;
   readonly maxParts: number;
-  constructor(options: ErrorOptions & {
-    maxParts: number;
-  });
+  constructor(
+    options: ErrorOptions & {
+      maxParts: number;
+    },
+  );
 }
 
 type Part = {
@@ -68,7 +77,10 @@ type Part = {
   boundary?: string | undefined;
 };
 
-function splitHeaders(stream: ReadableStream<Uint8Array>, options?: splitHeaders.Options): Promise<splitHeaders.ReturnType>;
+function splitHeaders(
+  stream: ReadableStream<Uint8Array>,
+  options?: splitHeaders.Options,
+): Promise<splitHeaders.ReturnType>;
 namespace splitHeaders {
   type Options = {
     maxHeaderBytes?: number | undefined;

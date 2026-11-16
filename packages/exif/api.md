@@ -17,15 +17,19 @@ class MaxBytesError extends Errors.MaxBytesError {
 type Metadata = Ifds & {
   latitude?: number | undefined;
   longitude?: number | undefined;
-  imageSize?: {
-    width: number;
-    height: number;
-  } | undefined;
-  thumbnail?: {
-    offset: number;
-    length: number;
-    bytes: Uint8Array | undefined;
-  } | undefined;
+  imageSize?:
+    | {
+        width: number;
+        height: number;
+      }
+    | undefined;
+  thumbnail?:
+    | {
+        offset: number;
+        length: number;
+        bytes: Uint8Array | undefined;
+      }
+    | undefined;
 };
 
 class StripStream extends TransformStream<Uint8Array, Uint8Array> {
@@ -62,7 +66,10 @@ namespace parseDate {
   };
 }
 
-function parseStream(stream: ReadableStream<Uint8Array>, options?: parseStream.Options): Promise<Metadata>;
+function parseStream(
+  stream: ReadableStream<Uint8Array>,
+  options?: parseStream.Options,
+): Promise<Metadata>;
 namespace parseStream {
   type Options = {
     maxBytes?: number | undefined;

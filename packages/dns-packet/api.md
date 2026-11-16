@@ -40,34 +40,42 @@ type DecodedRecordData = Omit<RecordData, 'TXT'> & {
   TXT: Uint8Array[];
 };
 
-type DecodedResourceRecord = {
-  [key in KnownType]: DecodedFields & {
-    type: key;
-    data: DecodedRecordData[key];
-  };
-}[KnownType] | (DecodedFields & {
-  type: UnknownType;
-  data: Uint8Array;
-}) | DecodedOptRecord;
+type DecodedResourceRecord =
+  | {
+      [key in KnownType]: DecodedFields & {
+        type: key;
+        data: DecodedRecordData[key];
+      };
+    }[KnownType]
+  | (DecodedFields & {
+      type: UnknownType;
+      data: Uint8Array;
+    })
+  | DecodedOptRecord;
 
-type EdnsOption = {
-  code: 'CLIENT_SUBNET';
-  ip: string;
-  sourcePrefixLength: number;
-  scopePrefixLength?: number | undefined;
-} | {
-  code: 'TCP_KEEPALIVE';
-  timeout?: number | undefined;
-} | {
-  code: 'PADDING';
-  length: number;
-} | {
-  code: 'KEY_TAG';
-  tags: readonly number[];
-} | {
-  code: Exclude<OptionCode, 'CLIENT_SUBNET' | 'TCP_KEEPALIVE' | 'PADDING' | 'KEY_TAG'>;
-  data: Uint8Array;
-};
+type EdnsOption =
+  | {
+      code: 'CLIENT_SUBNET';
+      ip: string;
+      sourcePrefixLength: number;
+      scopePrefixLength?: number | undefined;
+    }
+  | {
+      code: 'TCP_KEEPALIVE';
+      timeout?: number | undefined;
+    }
+  | {
+      code: 'PADDING';
+      length: number;
+    }
+  | {
+      code: 'KEY_TAG';
+      tags: readonly number[];
+    }
+  | {
+      code: Exclude<OptionCode, 'CLIENT_SUBNET' | 'TCP_KEEPALIVE' | 'PADDING' | 'KEY_TAG'>;
+      data: Uint8Array;
+    };
 
 type Flags = {
   aa?: boolean | undefined;
@@ -94,7 +102,23 @@ type OptRecord = {
   options?: readonly EdnsOption[] | undefined;
 };
 
-type OptionCode = 'LLQ' | 'UL' | 'NSID' | 'DAU' | 'DHU' | 'N3U' | 'CLIENT_SUBNET' | 'EXPIRE' | 'COOKIE' | 'TCP_KEEPALIVE' | 'PADDING' | 'CHAIN' | 'KEY_TAG' | 'EDE' | 'DEVICEID' | `OPTION${number}`;
+type OptionCode =
+  | 'LLQ'
+  | 'UL'
+  | 'NSID'
+  | 'DAU'
+  | 'DHU'
+  | 'N3U'
+  | 'CLIENT_SUBNET'
+  | 'EXPIRE'
+  | 'COOKIE'
+  | 'TCP_KEEPALIVE'
+  | 'PADDING'
+  | 'CHAIN'
+  | 'KEY_TAG'
+  | 'EDE'
+  | 'DEVICEID'
+  | `OPTION${number}`;
 
 type Packet = {
   id?: number | undefined;
@@ -115,7 +139,20 @@ type Question = {
   qu?: boolean | undefined;
 };
 
-type Rcode = 'NOERROR' | 'FORMERR' | 'SERVFAIL' | 'NXDOMAIN' | 'NOTIMP' | 'REFUSED' | 'YXDOMAIN' | 'YXRRSET' | 'NXRRSET' | 'NOTAUTH' | 'NOTZONE' | 'DSOTYPENI' | `RCODE${number}`;
+type Rcode =
+  | 'NOERROR'
+  | 'FORMERR'
+  | 'SERVFAIL'
+  | 'NXDOMAIN'
+  | 'NOTIMP'
+  | 'REFUSED'
+  | 'YXDOMAIN'
+  | 'YXRRSET'
+  | 'NXRRSET'
+  | 'NOTAUTH'
+  | 'NOTZONE'
+  | 'DSOTYPENI'
+  | `RCODE${number}`;
 
 type RecordClass = 'IN' | 'CS' | 'CH' | 'HS' | 'NONE' | 'ANY' | `CLASS${number}`;
 
@@ -210,15 +247,18 @@ type RecordData = {
 
 type RecordType = keyof typeof typeNumbers | `TYPE${number}`;
 
-type ResourceRecord = {
-  [key in KnownType]: Fields & {
-    type: key;
-    data: RecordData[key];
-  };
-}[KnownType] | (Fields & {
-  type: UnknownType;
-  data: Uint8Array;
-}) | OptRecord;
+type ResourceRecord =
+  | {
+      [key in KnownType]: Fields & {
+        type: key;
+        data: RecordData[key];
+      };
+    }[KnownType]
+  | (Fields & {
+      type: UnknownType;
+      data: Uint8Array;
+    })
+  | OptRecord;
 
 class TruncatedError extends Errors.TruncatedError {
   static readonly kind: string;

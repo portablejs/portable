@@ -33,7 +33,36 @@ class TruncatedError extends Errors.TruncatedError {
   constructor(message?: string, options?: ErrorOptions);
 }
 
-type Type = 'avif' | 'avis' | 'bigtiff' | 'bmp' | 'cur' | 'dds' | 'gif' | 'heic' | 'heix' | 'hevc' | 'hevx' | 'icns' | 'ico' | 'j2c' | 'jp2' | 'jpg' | 'jxl' | 'jxl-stream' | 'ktx' | 'ktx2' | 'mif1' | 'msf1' | 'png' | 'pnm' | 'psd' | 'svg' | 'tga' | 'tiff' | 'webp';
+type Type =
+  | 'avif'
+  | 'avis'
+  | 'bigtiff'
+  | 'bmp'
+  | 'cur'
+  | 'dds'
+  | 'gif'
+  | 'heic'
+  | 'heix'
+  | 'hevc'
+  | 'hevx'
+  | 'icns'
+  | 'ico'
+  | 'j2c'
+  | 'jp2'
+  | 'jpg'
+  | 'jxl'
+  | 'jxl-stream'
+  | 'ktx'
+  | 'ktx2'
+  | 'mif1'
+  | 'msf1'
+  | 'png'
+  | 'pnm'
+  | 'psd'
+  | 'svg'
+  | 'tga'
+  | 'tiff'
+  | 'webp';
 
 class UnsupportedError extends Errors.UnsupportedError {
   static readonly kind: string;
@@ -42,7 +71,10 @@ class UnsupportedError extends Errors.UnsupportedError {
 
 function parse(bytes: Uint8Array): Size;
 
-function parseStream(stream: ReadableStream<Uint8Array>, options?: parseStream.Options): Promise<Size>;
+function parseStream(
+  stream: ReadableStream<Uint8Array>,
+  options?: parseStream.Options,
+): Promise<Size>;
 namespace parseStream {
   type Options = {
     maxBytes?: number | undefined;

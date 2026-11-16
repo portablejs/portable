@@ -29,9 +29,11 @@ class InvalidInputError extends Errors.InvalidInputError {
 class MaxPixelsError extends Errors.BaseError {
   static readonly kind: string;
   readonly maxPixels: number;
-  constructor(options: ErrorOptions & {
-    maxPixels: number;
-  });
+  constructor(
+    options: ErrorOptions & {
+      maxPixels: number;
+    },
+  );
 }
 
 type RgbaImage = {
@@ -73,11 +75,13 @@ namespace encode {
   type Options = {
     colorType?: 0 | 2 | 4 | 6 | undefined;
     filter?: FilterType | readonly FilterType[] | undefined;
-    background?: {
-      red: number;
-      green: number;
-      blue: number;
-    } | undefined;
+    background?:
+      | {
+          red: number;
+          green: number;
+          blue: number;
+        }
+      | undefined;
     deflate?: ((data: Uint8Array) => Uint8Array | Promise<Uint8Array>) | undefined;
     signal?: AbortSignal | undefined;
   };

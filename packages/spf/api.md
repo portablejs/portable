@@ -5,7 +5,10 @@
 ## @portable/spf
 
 ```ts
-type Resolver = Pick<Dns.Resolver, 'resolve4' | 'resolve6' | 'resolveMx' | 'resolvePtr' | 'resolveTxt'>;
+type Resolver = Pick<
+  Dns.Resolver,
+  'resolve4' | 'resolve6' | 'resolveMx' | 'resolvePtr' | 'resolveTxt'
+>;
 
 type Result = {
   result: Result.Code;

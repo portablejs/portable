@@ -7,19 +7,21 @@
 ```ts
 export { Digest, Hmac } from '@portable/web-crypto';
 
-type Credentials = {
-  signatureMethod?: 'HMAC-SHA1' | 'HMAC-SHA256' | 'PLAINTEXT' | undefined;
-  consumer: {
-    key: string;
-    secret: string;
-  };
-} | {
-  signatureMethod: 'RSA-SHA1';
-  consumer: {
-    key: string;
-    privateKey: CryptoKey | string;
-  };
-};
+type Credentials =
+  | {
+      signatureMethod?: 'HMAC-SHA1' | 'HMAC-SHA256' | 'PLAINTEXT' | undefined;
+      consumer: {
+        key: string;
+        secret: string;
+      };
+    }
+  | {
+      signatureMethod: 'RSA-SHA1';
+      consumer: {
+        key: string;
+        privateKey: CryptoKey | string;
+      };
+    };
 
 type SignatureMethod = 'HMAC-SHA1' | 'HMAC-SHA256' | 'RSA-SHA1' | 'PLAINTEXT';
 

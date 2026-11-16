@@ -31,13 +31,19 @@ type Debounced<args extends unknown[], result, self = unknown> = DisposeMethod &
 
 type Delay = number | Backoff | ((attempt: Attempt) => number);
 
-type Instant = Date | {
-  readonly epochMilliseconds: number;
-};
+type Instant =
+  | Date
+  | {
+      readonly epochMilliseconds: number;
+    };
 
 function backoff(delay: Delay): (attempt: Attempt) => number;
 
-function debounce<args extends unknown[], result, self = unknown>(fn: (this: self, ...args: args) => result, ms: number, options?: debounce.Options): Debounced<args, result, self>;
+function debounce<args extends unknown[], result, self = unknown>(
+  fn: (this: self, ...args: args) => result,
+  ms: number,
+  options?: debounce.Options,
+): Debounced<args, result, self>;
 namespace debounce {
   type Options = {
     leading?: boolean | undefined;
@@ -47,7 +53,10 @@ namespace debounce {
   };
 }
 
-function poll<value>(fn: (context: Context) => value | undefined | PromiseLike<value | undefined>, options?: poll.Options): Promise<value>;
+function poll<value>(
+  fn: (context: Context) => value | undefined | PromiseLike<value | undefined>,
+  options?: poll.Options,
+): Promise<value>;
 namespace poll {
   type Options = {
     delay?: Delay | undefined;
@@ -55,14 +64,22 @@ namespace poll {
   };
 }
 
-function retry<value>(fn: (context: Context) => value | PromiseLike<value>, options?: retry.Options): Promise<value>;
+function retry<value>(
+  fn: (context: Context) => value | PromiseLike<value>,
+  options?: retry.Options,
+): Promise<value>;
 namespace retry {
   type Options = {
     attempts?: number | undefined;
     delay?: Delay | undefined;
-    retryIf?: ((error: unknown, retry: {
-      attempt: number;
-    }) => boolean | PromiseLike<boolean>) | undefined;
+    retryIf?:
+      | ((
+          error: unknown,
+          retry: {
+            attempt: number;
+          },
+        ) => boolean | PromiseLike<boolean>)
+      | undefined;
     onRetry?: ((error: unknown, retry: retry.Retry) => void | PromiseLike<void>) | undefined;
     timeout?: number | undefined;
     signal?: AbortSignal | undefined;
@@ -80,7 +97,11 @@ namespace sleep {
   };
 }
 
-function throttle<args extends unknown[], result, self = unknown>(fn: (this: self, ...args: args) => result, ms: number, options?: throttle.Options): Debounced<args, result, self>;
+function throttle<args extends unknown[], result, self = unknown>(
+  fn: (this: self, ...args: args) => result,
+  ms: number,
+  options?: throttle.Options,
+): Debounced<args, result, self>;
 namespace throttle {
   type Options = {
     leading?: boolean | undefined;

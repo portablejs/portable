@@ -5,16 +5,21 @@
 ## @portable/csv
 
 ```ts
-class DecoderStream<const header extends DecoderStream.Header = false, relax extends boolean = false> extends TransformStream<Uint8Array | string, DecoderStream.Row<header, relax>> {
+class DecoderStream<
+  const header extends DecoderStream.Header = false,
+  relax extends boolean = false,
+> extends TransformStream<Uint8Array | string, DecoderStream.Row<header, relax>> {
   constructor(options?: DecoderStream.Options<header, relax>);
 }
 namespace DecoderStream {
   type Header = boolean | readonly string[];
-  type Row<header extends Header = false, relax extends boolean = false> = header extends false ? string[] : header extends readonly (infer name extends string)[] ? [
-    relax
-  ] extends [
-    false
-  ] ? Record<name, string> : Partial<Record<name, string>> : Record<string, string>;
+  type Row<header extends Header = false, relax extends boolean = false> = header extends false
+    ? string[]
+    : header extends readonly (infer name extends string)[]
+      ? [relax] extends [false]
+        ? Record<name, string>
+        : Partial<Record<name, string>>
+      : Record<string, string>;
   type Options<header extends Header = Header, relax extends boolean = boolean> = {
     delimiter?: string | undefined;
     encoding?: string | undefined;
@@ -49,17 +54,25 @@ class TruncatedError extends Errors.TruncatedError {
   static readonly kind: string;
 }
 
-function decode<const header extends DecoderStream.Header = false, relax extends boolean = false>(input: string | Uint8Array, options?: decode.Options<header, relax>): DecoderStream.Row<header, relax>[];
+function decode<const header extends DecoderStream.Header = false, relax extends boolean = false>(
+  input: string | Uint8Array,
+  options?: decode.Options<header, relax>,
+): DecoderStream.Row<header, relax>[];
 namespace decode {
-  type Options<header extends DecoderStream.Header = DecoderStream.Header, relax extends boolean = boolean> = Omit<DecoderStream.Options<header, relax>, 'signal'>;
+  type Options<
+    header extends DecoderStream.Header = DecoderStream.Header,
+    relax extends boolean = boolean,
+  > = Omit<DecoderStream.Options<header, relax>, 'signal'>;
 }
 
 function encode(rows: readonly encode.Row[], options?: encode.Options): string;
 namespace encode {
   type Value = string | number | boolean | bigint | Date | null | undefined;
-  type Row = readonly Value[] | {
-    readonly [name: string]: Value;
-  };
+  type Row =
+    | readonly Value[]
+    | {
+        readonly [name: string]: Value;
+      };
   type Options = {
     bom?: boolean | undefined;
     delimiter?: string | undefined;

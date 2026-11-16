@@ -36,9 +36,10 @@ type Socket = {
 ## @portable/sockets/node
 
 ```ts
-type Socket = Omit<Sockets.Socket, 'startTls'> & AsyncDisposeMethod & {
-  startTls(): Socket;
-};
+type Socket = Omit<Sockets.Socket, 'startTls'> &
+  AsyncDisposeMethod & {
+    startTls(): Socket;
+  };
 
 const connect: create.ReturnType;
 

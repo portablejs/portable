@@ -38,10 +38,12 @@ type Secret = string | Uint8Array;
 class VerificationError extends Errors.BaseError {
   static readonly kind: string;
   readonly code: VerificationError.Code;
-  constructor(options: ErrorOptions & {
-    code: VerificationError.Code;
-    message: string;
-  });
+  constructor(
+    options: ErrorOptions & {
+      code: VerificationError.Code;
+      message: string;
+    },
+  );
 }
 namespace VerificationError {
   type Code = 'missing-header' | 'malformed-header' | 'signature' | 'timestamp';
@@ -69,10 +71,12 @@ const stripe: Scheme;
 
 function verify(input: verify.Input, options: verify.Options): Promise<verify.ReturnType>;
 namespace verify {
-  type Input = Request | {
-    headers: HeadersInit;
-    body: string | Uint8Array;
-  };
+  type Input =
+    | Request
+    | {
+        headers: HeadersInit;
+        body: string | Uint8Array;
+      };
   type Options = {
     scheme?: Scheme | undefined;
     secret: Secret | readonly Secret[];

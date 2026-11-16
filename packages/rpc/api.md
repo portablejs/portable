@@ -15,11 +15,22 @@ type Context = {
   readonly request?: Request | undefined;
 };
 
-type Message = RequestMessage | NotificationMessage | ResponseMessage | readonly (RequestMessage | NotificationMessage)[] | readonly ResponseMessage[];
+type Message =
+  | RequestMessage
+  | NotificationMessage
+  | ResponseMessage
+  | readonly (RequestMessage | NotificationMessage)[]
+  | readonly ResponseMessage[];
 
-type Remote<api> = 0 extends 1 & api ? any : {
-  readonly [key in keyof api]: api[key] extends (...args: infer args) => infer result ? (...args: args) => Result<Awaited<result>> : api[key] extends object ? Remote<api[key]> : never;
-};
+type Remote<api> = 0 extends 1 & api
+  ? any
+  : {
+      readonly [key in keyof api]: api[key] extends (...args: infer args) => infer result
+        ? (...args: args) => Result<Awaited<result>>
+        : api[key] extends object
+          ? Remote<api[key]>
+          : never;
+    };
 
 class RemoteError extends Errors.BaseError {
   static readonly kind: string;
@@ -31,11 +42,9 @@ namespace RemoteError {
   type Options = ErrorObject & ErrorOptions;
 }
 
-type Result<value> = [
-  value
-] extends [
-  AsyncIterable<infer item> | ReadableStream<infer item>
-] ? Promise<ReadableStream<item>> & AsyncIterable<item> : Promise<value>;
+type Result<value> = [value] extends [AsyncIterable<infer item> | ReadableStream<infer item>]
+  ? Promise<ReadableStream<item>> & AsyncIterable<item>
+  : Promise<value>;
 
 type Transport = {
   readonly readable: ReadableStream<unknown>;
@@ -46,14 +55,21 @@ class TransportError extends Errors.BaseError {
   static readonly kind: string;
 }
 
-function call<fn extends (...args: any[]) => unknown>(method: fn, params: CallParams<fn>, options?: call.Options): ReturnType<fn>;
+function call<fn extends (...args: any[]) => unknown>(
+  method: fn,
+  params: CallParams<fn>,
+  options?: call.Options,
+): ReturnType<fn>;
 namespace call {
   type Options = {
     signal?: AbortSignal | undefined;
   };
 }
 
-function connect<api>(transport: Transport, options?: connect.Options): Remote<api> & AsyncDisposeMethod;
+function connect<api>(
+  transport: Transport,
+  options?: connect.Options,
+): Remote<api> & AsyncDisposeMethod;
 namespace connect {
   type Options = {
     codec?: Codec<any> | undefined;
@@ -74,7 +90,11 @@ namespace http {
 
 const json: Codec<string | Uint8Array>;
 
-function notify<fn extends (...args: any[]) => unknown>(method: fn, params: CallParams<fn>, options?: notify.Options): Promise<void>;
+function notify<fn extends (...args: any[]) => unknown>(
+  method: fn,
+  params: CallParams<fn>,
+  options?: notify.Options,
+): Promise<void>;
 namespace notify {
   type Options = {
     signal?: AbortSignal | undefined;
@@ -111,7 +131,9 @@ namespace window {
   };
 }
 
-function withContext<args extends unknown[], result>(fn: (context: Context, ...args: args) => result): (...args: args) => result;
+function withContext<args extends unknown[], result>(
+  fn: (context: Context, ...args: args) => result,
+): (...args: args) => result;
 
 // Not exported, but used by the exports above.
 
@@ -131,9 +153,11 @@ type NotificationMessage = {
   params?: Params | undefined;
 };
 
-type Params = readonly unknown[] | {
-  readonly [key: string]: unknown;
-};
+type Params =
+  | readonly unknown[]
+  | {
+      readonly [key: string]: unknown;
+    };
 
 type RequestMessage = {
   jsonrpc: '2.0';
@@ -142,13 +166,15 @@ type RequestMessage = {
   params?: Params | undefined;
 };
 
-type ResponseMessage = {
-  jsonrpc: '2.0';
-  id: Id;
-  result: unknown;
-} | {
-  jsonrpc: '2.0';
-  id: Id;
-  error: ErrorObject;
-};
+type ResponseMessage =
+  | {
+      jsonrpc: '2.0';
+      id: Id;
+      result: unknown;
+    }
+  | {
+      jsonrpc: '2.0';
+      id: Id;
+      error: ErrorObject;
+    };
 ```

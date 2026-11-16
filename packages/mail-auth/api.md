@@ -44,5 +44,9 @@ namespace authenticate {
 
 // Not exported, but used by the exports above.
 
-type SkipReason = 'no-author-domain' | 'multiple-author-domains' | 'invalid-author-domain' | 'multiple-from-fields';
+type SkipReason =
+  | 'no-author-domain'
+  | 'multiple-author-domains'
+  | 'invalid-author-domain'
+  | 'multiple-from-fields';
 ```
