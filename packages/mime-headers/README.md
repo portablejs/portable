@@ -15,7 +15,7 @@ MimeHeaders.fold('Subject: ' + MimeHeaders.encodeWords('Tere õhtust, Mari'));
 // 'Subject: Tere =?UTF-8?Q?=C3=B5htust=2C?= Mari'
 MimeHeaders.decodeWords('Tere =?UTF-8?Q?=C3=B5htust=2C?= Mari'); // 'Tere õhtust, Mari'
 
-MimeHeaders.parseValue('attachment; filename*=UTF-8\'\'%C3%B5.pdf');
+MimeHeaders.parseValue("attachment; filename*=UTF-8''%C3%B5.pdf");
 // { value: 'attachment', params: { filename: 'õ.pdf' } }
 MimeHeaders.formatValue({ value: 'attachment', params: { filename: 'õ.pdf' } });
 // "attachment; filename*0*=utf-8''%C3%B5.pdf"
@@ -34,21 +34,21 @@ MimeHeaders.parseHeaders('Subject: Tere\r\n õhtust\r\nTo: mari@example.com\r\n\
 
 Functions come in pairs. `encode*` and `decode*` convert text to encoded-words and back, and `parse*` and `format*` read structured values from header text and write them back. Every function that takes text also takes a `Uint8Array`, which it reads as UTF-8.
 
-| Export | Takes | Returns |
-| --- | --- | --- |
-| `encodeWord(text, options?)` | text | all of it as encoded words |
-| `encodeWords(text, options?)` | text | the text, with the part that needs it as encoded words |
-| `decodeWords(text)` | a header value | the value with its encoded words decoded |
-| `fold(line, options?)` | a header line | the line with a CRLF inserted before whitespace where it is too long |
-| `unfold(text)` | folded text | the text with every CRLF before whitespace removed |
-| `parseHeaders(text, options?)` | a header block | `Header[]`, `{ name, value }` in order, unfolded |
-| `parseValue(text)` | a value such as `text/plain; charset=utf-8` | `Value`, `{ value, params }` |
-| `formatValue(value)` | `Value` | the header value |
-| `parseAddresses(text, options?)` | an address list | `Address[]`, each a `Mailbox` `{ name, address }` or a `Group` `{ name, group }` |
-| `parseMailboxes(text, options?)` | an address list | `Mailbox[]`, with the members of each group in place of the group |
-| `formatAddresses(addresses, options?)` | `Address[]` | the address list |
-| `InvalidInputError` | | thrown by `parseAddresses` and `parseMailboxes` in strict mode and by `formatValue` and `formatAddresses` |
-| `MaxLengthError` | | thrown by `parseHeaders` when the header block is longer than `maxLength`. The error stores the limit in `maxLength`. |
+| Export                                 | Takes                                       | Returns                                                                                                               |
+| -------------------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `encodeWord(text, options?)`           | text                                        | all of it as encoded words                                                                                            |
+| `encodeWords(text, options?)`          | text                                        | the text, with the part that needs it as encoded words                                                                |
+| `decodeWords(text)`                    | a header value                              | the value with its encoded words decoded                                                                              |
+| `fold(line, options?)`                 | a header line                               | the line with a CRLF inserted before whitespace where it is too long                                                  |
+| `unfold(text)`                         | folded text                                 | the text with every CRLF before whitespace removed                                                                    |
+| `parseHeaders(text, options?)`         | a header block                              | `Header[]`, `{ name, value }` in order, unfolded                                                                      |
+| `parseValue(text)`                     | a value such as `text/plain; charset=utf-8` | `Value`, `{ value, params }`                                                                                          |
+| `formatValue(value)`                   | `Value`                                     | the header value                                                                                                      |
+| `parseAddresses(text, options?)`       | an address list                             | `Address[]`, each a `Mailbox` `{ name, address }` or a `Group` `{ name, group }`                                      |
+| `parseMailboxes(text, options?)`       | an address list                             | `Mailbox[]`, with the members of each group in place of the group                                                     |
+| `formatAddresses(addresses, options?)` | `Address[]`                                 | the address list                                                                                                      |
+| `InvalidInputError`                    |                                             | thrown by `parseAddresses` and `parseMailboxes` in strict mode and by `formatValue` and `formatAddresses`             |
+| `MaxLengthError`                       |                                             | thrown by `parseHeaders` when the header block is longer than `maxLength`. The error stores the limit in `maxLength`. |
 
 `decodeWords` joins encoded words separated only by whitespace, and decodes adjacent words in the same charset together, so a character split across two words still decodes. It decodes the charset with `TextDecoder`, and reads the text as UTF-8 if `TextDecoder` doesn't know the label, such as `utf-7`. It never throws.
 
@@ -58,26 +58,26 @@ Functions come in pairs. `encode*` and `decode*` convert text to encoded-words a
 
 ## Options
 
-| Option | Of | Default | Description |
-| --- | --- | --- | --- |
-| `wordEncoding` | `encodeWord`, `encodeWords`, `formatAddresses` | `'Q'` | In `'Q'` words, ASCII stays readable, and `'B'` is base64. |
-| `wordLength` | `encodeWord`, `encodeWords` | `75` | Longest encoded word, including `=?` and `?=`, as RFC 2047 requires. Longer text is split into several words, and no character is split across two words. With `Infinity`, the text is written as one encoded word whatever its length. |
-| `charset` | `encodeWord`, `encodeWords`, `formatAddresses` | UTF-8 | A `CharsetEncoder`, `{ name, encode(text) }`, for mail that has to use another charset. Every charset from [@portable/charset](https://portablejs.com/packages/charset) is one. |
-| `lineLength` | `fold` | `76` | Longest line, not counting the line break. A word longer than a line is not broken. |
-| `strict` | `parseAddresses`, `parseMailboxes` | `false` | Throw `InvalidInputError` on input RFC 5322 doesn't allow. |
-| `maxLength` | `parseHeaders` | `Infinity` | Longest header block in UTF-16 code units. `parseHeaders` throws `MaxLengthError` for a longer block. The body doesn't count toward the limit. |
+| Option         | Of                                             | Default    | Description                                                                                                                                                                                                                             |
+| -------------- | ---------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wordEncoding` | `encodeWord`, `encodeWords`, `formatAddresses` | `'Q'`      | In `'Q'` words, ASCII stays readable, and `'B'` is base64.                                                                                                                                                                              |
+| `wordLength`   | `encodeWord`, `encodeWords`                    | `75`       | Longest encoded word, including `=?` and `?=`, as RFC 2047 requires. Longer text is split into several words, and no character is split across two words. With `Infinity`, the text is written as one encoded word whatever its length. |
+| `charset`      | `encodeWord`, `encodeWords`, `formatAddresses` | UTF-8      | A `CharsetEncoder`, `{ name, encode(text) }`, for mail that has to use another charset. Every charset from [@portable/charset](https://portablejs.com/packages/charset) is one.                                                         |
+| `lineLength`   | `fold`                                         | `76`       | Longest line, not counting the line break. A word longer than a line is not broken.                                                                                                                                                     |
+| `strict`       | `parseAddresses`, `parseMailboxes`             | `false`    | Throw `InvalidInputError` on input RFC 5322 doesn't allow.                                                                                                                                                                              |
+| `maxLength`    | `parseHeaders`                                 | `Infinity` | Longest header block in UTF-16 code units. `parseHeaders` throws `MaxLengthError` for a longer block. The body doesn't count toward the limit.                                                                                          |
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `MimeHeaders.Address` | One entry of an address list: a `Mailbox` or a `Group`. |
-| `MimeHeaders.Mailbox` | `{ name, address }`. `address` is `''` when the entry has no address. |
-| `MimeHeaders.Group` | `{ name, group }`, a named group of mailboxes. |
-| `MimeHeaders.Header` | `{ name, value }`, one header field from `parseHeaders`. |
-| `MimeHeaders.Value` | `{ value, params }`, a header value with parameters. |
+| Type                         | Description                                                                                                                                                      |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MimeHeaders.Address`        | One entry of an address list: a `Mailbox` or a `Group`.                                                                                                          |
+| `MimeHeaders.Mailbox`        | `{ name, address }`. `address` is `''` when the entry has no address.                                                                                            |
+| `MimeHeaders.Group`          | `{ name, group }`, a named group of mailboxes.                                                                                                                   |
+| `MimeHeaders.Header`         | `{ name, value }`, one header field from `parseHeaders`.                                                                                                         |
+| `MimeHeaders.Value`          | `{ value, params }`, a header value with parameters.                                                                                                             |
 | `MimeHeaders.CharsetEncoder` | `{ name, encode(text) }`, the charset that encoded words are written in. `encode` is called once per word, so the bytes from each call must decode on their own. |
-| `MimeHeaders.WordEncoding` | `'Q' \| 'B'`, the encodings of an encoded-word. |
+| `MimeHeaders.WordEncoding`   | `'Q' \| 'B'`, the encodings of an encoded-word.                                                                                                                  |
 
 ## Why use this over libmime, addressparser, and email-addresses
 
@@ -149,13 +149,13 @@ It has no dependencies outside `@portable/*`. It takes and returns plain strings
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/mime-headers, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/mime-headers | – | 8.1 kB | 4 | none | included |
-| libmime | 5.4.9 | 258 kB | 5 | `buffer`, `stream`, `string_decoder` | none |
-| addressparser | 10.2.1 | 3.6 kB | 0 | none | none |
-| email-addresses | 5.0.0 | 3.1 kB | 0 | none | included |
-| Node `Buffer` and `TextDecoder` | – | built in | – | Node only | – |
+| Library                         | Version | Minified and gzipped | Runtime dependencies | Node built-ins                       | TypeScript types |
+| ------------------------------- | ------- | -------------------: | -------------------: | ------------------------------------ | ---------------- |
+| @portable/mime-headers          | –       |               8.1 kB |                    4 | none                                 | included         |
+| libmime                         | 5.4.9   |               258 kB |                    5 | `buffer`, `stream`, `string_decoder` | none             |
+| addressparser                   | 10.2.1  |               3.6 kB |                    0 | none                                 | none             |
+| email-addresses                 | 5.0.0   |               3.1 kB |                    0 | none                                 | included         |
+| Node `Buffer` and `TextDecoder` | –       |             built in |                    – | Node only                            | –                |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

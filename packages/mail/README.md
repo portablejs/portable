@@ -19,7 +19,11 @@ const message: Mail.Message = {
   html: '<p>Tere! Aruanne on lisatud.</p><img src="cid:logo">',
   attachments: [
     { content: logoBytes, contentType: 'image/png', cid: 'logo' },
-    { content: (await fetch(reportUrl)).body!, filename: 'aruanne.pdf', contentType: 'application/pdf' },
+    {
+      content: (await fetch(reportUrl)).body!,
+      filename: 'aruanne.pdf',
+      contentType: 'application/pdf',
+    },
   ],
 };
 
@@ -33,27 +37,27 @@ The report is read from the network while you read the message, so a large attac
 
 ## API
 
-| Export | Description |
-| --- | --- |
-| `encodeStream(message, options?)` | Returns the message as a `ReadableStream<Uint8Array>` with CRLF line breaks. If the message can't be written, `encodeStream` throws `InvalidInputError` or `TypeError` when it is called, before it reads any content. |
-| `envelope(message)` | Returns `{ from, to }`: the first `From` address (else `Sender`) and every `To`, `Cc`, and `Bcc` address once, with group members in place of groups. Throws `InvalidInputError` if the message has neither a `From` nor a `Sender` address. The result has the fields `Smtp.send` takes for the envelope. |
-| `InvalidInputError` | Thrown for an address, header name, content type, file name, or `Date` that can't be written. |
-| `Message`, `Attachment`, `Part`, `Content`, `Addresses`, `Mailbox`, `HeaderFields`, `TransferEncoding`, `Envelope`, `Instant` | Types. |
+| Export                                                                                                                        | Description                                                                                                                                                                                                                                                                                                |
+| ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `encodeStream(message, options?)`                                                                                             | Returns the message as a `ReadableStream<Uint8Array>` with CRLF line breaks. If the message can't be written, `encodeStream` throws `InvalidInputError` or `TypeError` when it is called, before it reads any content.                                                                                     |
+| `envelope(message)`                                                                                                           | Returns `{ from, to }`: the first `From` address (else `Sender`) and every `To`, `Cc`, and `Bcc` address once, with group members in place of groups. Throws `InvalidInputError` if the message has neither a `From` nor a `Sender` address. The result has the fields `Smtp.send` takes for the envelope. |
+| `InvalidInputError`                                                                                                           | Thrown for an address, header name, content type, file name, or `Date` that can't be written.                                                                                                                                                                                                              |
+| `Message`, `Attachment`, `Part`, `Content`, `Addresses`, `Mailbox`, `HeaderFields`, `TransferEncoding`, `Envelope`, `Instant` | Types.                                                                                                                                                                                                                                                                                                     |
 
 ### Message
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `from`, `sender`, `to`, `cc`, `replyTo` | `Addresses` | An address list as text (`'Mari <mari@example.com>, b@example.com'`), a `{ name?, address }`, or a list of either. Groups are allowed in text. |
-| `bcc` | `Addresses` | Read by `envelope`. `encodeStream` writes the header only with `keepBcc`. |
-| `subject` | `string` | Encoded as RFC 2047 words when it isn't printable ASCII. |
-| `messageId`, `inReplyTo` | `string` | Angle brackets are added if missing. The default Message-ID is random, at the `From` domain. |
-| `references` | `string \| string[]` | Message IDs separated by whitespace. |
-| `date` | `Date \| Instant \| string` | Defaults to now. A `Date`, a `Temporal.Instant`, or a `Temporal.ZonedDateTime` is written in UTC, as `Tue, 2 Jan 2024 03:04:05 +0000`. A string is written as given. |
-| `text`, `amp`, `html` | `Content` | The bodies, written as `multipart/alternative` in that order. |
-| `alternatives` | `Part[]` | More alternatives after the HTML, each `{ content, contentType, headers?, transferEncoding? }`. |
-| `attachments` | `Attachment[]` | Each `{ content, filename?, contentType?, cid?, disposition?, headers?, transferEncoding? }`. |
-| `headers` | `HeaderFields` | Extra header fields, written first, in order. A list value is written as one field per value. |
+| Field                                   | Type                        | Description                                                                                                                                                          |
+| --------------------------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `from`, `sender`, `to`, `cc`, `replyTo` | `Addresses`                 | An address list as text (`'Mari <mari@example.com>, b@example.com'`), a `{ name?, address }`, or a list of either. Groups are allowed in text.                       |
+| `bcc`                                   | `Addresses`                 | Read by `envelope`. `encodeStream` writes the header only with `keepBcc`.                                                                                            |
+| `subject`                               | `string`                    | Encoded as RFC 2047 words when it isn't printable ASCII.                                                                                                             |
+| `messageId`, `inReplyTo`                | `string`                    | Angle brackets are added if missing. The default Message-ID is random, at the `From` domain.                                                                         |
+| `references`                            | `string \| string[]`        | Message IDs separated by whitespace.                                                                                                                                 |
+| `date`                                  | `Date \| Instant \| string` | Defaults to now. A `Date`, a `Temporal.Instant`, or a `Temporal.ZonedDateTime` is written in UTC, as `Tue, 2 Jan 2024 03:04:05 +0000`. A string is written as given. |
+| `text`, `amp`, `html`                   | `Content`                   | The bodies, written as `multipart/alternative` in that order.                                                                                                        |
+| `alternatives`                          | `Part[]`                    | More alternatives after the HTML, each `{ content, contentType, headers?, transferEncoding? }`.                                                                      |
+| `attachments`                           | `Attachment[]`              | Each `{ content, filename?, contentType?, cid?, disposition?, headers?, transferEncoding? }`.                                                                        |
+| `headers`                               | `HeaderFields`              | Extra header fields, written first, in order. A list value is written as one field per value.                                                                        |
 
 `Content` is a `string`, `Uint8Array`, `Blob` (including `File`) or `ReadableStream<Uint8Array>`. A `File` gives the attachment its file name and a `Blob` its content type.
 
@@ -63,12 +67,12 @@ Text bodies are `7bit` when every line is ASCII and at most 76 characters, other
 
 ### Options
 
-| Option | Default | Description |
-| --- | --- | --- |
+| Option     | Default                             | Description                                                                                                                                                                                                                                     |
+| ---------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `boundary` | `'=_'`, 16 random hex digits, `'_'` | The start of every multipart boundary. Each boundary is this value followed by the number of its multipart, counted from 1 in the order the parts are written. Up to 60 characters from RFC 2046's `bchars`; anything else throws `RangeError`. |
-| `charset` | UTF-8 | A `CharsetEncoder` (`{ name, encode(text) }`) for encoded words and string text bodies, for mail that has to use another charset. Every charset from [@portable/charset](https://portablejs.com/packages/charset) is one. |
-| `keepBcc` | `false` | Write the `Bcc` header, for a transport such as sendmail that reads recipients from it. |
-| `signal` | | Aborting it errors the result with `signal.reason` and cancels every content stream not yet read. |
+| `charset`  | UTF-8                               | A `CharsetEncoder` (`{ name, encode(text) }`) for encoded words and string text bodies, for mail that has to use another charset. Every charset from [@portable/charset](https://portablejs.com/packages/charset) is one.                       |
+| `keepBcc`  | `false`                             | Write the `Bcc` header, for a transport such as sendmail that reads recipients from it.                                                                                                                                                         |
+| `signal`   |                                     | Aborting it errors the result with `signal.reason` and cancels every content stream not yet read.                                                                                                                                               |
 
 Set `boundary`, `messageId`, and `date` to get the same bytes on every run, for example in tests.
 
@@ -103,7 +107,12 @@ const field = await Dkim.sign(raw, {
 });
 await Smtp.send(
   { ...Mail.envelope(message), message: Bytes.concat([new TextEncoder().encode(field), raw]) },
-  { connect, host: 'smtp.example.com', auth: { user: 'mari@example.com', pass: env.SMTP_PASSWORD }, signal },
+  {
+    connect,
+    host: 'smtp.example.com',
+    auth: { user: 'mari@example.com', pass: env.SMTP_PASSWORD },
+    signal,
+  },
 );
 ```
 
@@ -111,18 +120,18 @@ Without DKIM, pass the stream from `Mail.encodeStream(message)` to `Smtp.send`, 
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `Mail.Message` | A message to encode. Every field is optional. |
-| `Mail.Addresses` | An address list as text, a `Mailbox`, or a list of either. |
-| `Mail.Mailbox` | `{ name?, address }`. |
-| `Mail.Content` | Text, bytes, a `Blob`, or a byte stream, for a body or an attachment. |
-| `Mail.Attachment` | A file attached to the message, or an inline image the HTML refers to as `cid:<cid>`. |
-| `Mail.Part` | An alternative body, such as a calendar invitation. |
-| `Mail.HeaderFields` | Extra header fields by name, with a list for repeated fields. |
-| `Mail.TransferEncoding` | `'7bit'`, `'8bit'`, `'quoted-printable'`, or `'base64'`. |
-| `Mail.Envelope` | `{ from, to }`, what `envelope` returns. |
-| `Mail.Instant` | `Timers.Instant`: a `Date`, or any object with `epochMilliseconds`, such as a `Temporal.Instant` or `Temporal.ZonedDateTime`. |
+| Type                    | Description                                                                                                                   |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `Mail.Message`          | A message to encode. Every field is optional.                                                                                 |
+| `Mail.Addresses`        | An address list as text, a `Mailbox`, or a list of either.                                                                    |
+| `Mail.Mailbox`          | `{ name?, address }`.                                                                                                         |
+| `Mail.Content`          | Text, bytes, a `Blob`, or a byte stream, for a body or an attachment.                                                         |
+| `Mail.Attachment`       | A file attached to the message, or an inline image the HTML refers to as `cid:<cid>`.                                         |
+| `Mail.Part`             | An alternative body, such as a calendar invitation.                                                                           |
+| `Mail.HeaderFields`     | Extra header fields by name, with a list for repeated fields.                                                                 |
+| `Mail.TransferEncoding` | `'7bit'`, `'8bit'`, `'quoted-printable'`, or `'base64'`.                                                                      |
+| `Mail.Envelope`         | `{ from, to }`, what `envelope` returns.                                                                                      |
+| `Mail.Instant`          | `Timers.Instant`: a `Date`, or any object with `epochMilliseconds`, such as a `Temporal.Instant` or `Temporal.ZonedDateTime`. |
 
 ## Why use this over nodemailer
 
@@ -172,10 +181,10 @@ nodemailer's composer needs Node streams, `Buffer`, `fs`, `http`, and `crypto`, 
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/mail, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/mail | – | 13 kB | 8 | none | included |
-| nodemailer | 10.2.1 | 39 kB | 0 | `Buffer`, `crypto`, `dns`, `fs`, `http`, `https`, `net`, `os`, `path`, `stream`, `url`, `util`, `zlib` | none |
+| Library        | Version | Minified and gzipped | Runtime dependencies | Node built-ins                                                                                         | TypeScript types |
+| -------------- | ------- | -------------------: | -------------------: | ------------------------------------------------------------------------------------------------------ | ---------------- |
+| @portable/mail | –       |                13 kB |                    8 | none                                                                                                   | included         |
+| nodemailer     | 10.2.1  |                39 kB |                    0 | `Buffer`, `crypto`, `dns`, `fs`, `http`, `https`, `net`, `os`, `path`, `stream`, `url`, `util`, `zlib` | none             |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

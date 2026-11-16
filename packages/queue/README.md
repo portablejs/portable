@@ -33,24 +33,24 @@ const db = await connect();
 
 Returns a queue object.
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `concurrency` | `Infinity` | The most tasks that run at once. A positive integer or `Infinity`. |
-| `interval` | `0` | The length of the sliding window for `intervalCap`, in ms. `0` turns rate limiting off. |
-| `intervalCap` | `Infinity` | The most tasks that start in any `interval` ms. |
-| `signal` | | Aborting it rejects every waiting and running task with `signal.reason`, and every task added later. |
+| Option        | Default    | Description                                                                                          |
+| ------------- | ---------- | ---------------------------------------------------------------------------------------------------- |
+| `concurrency` | `Infinity` | The most tasks that run at once. A positive integer or `Infinity`.                                   |
+| `interval`    | `0`        | The length of the sliding window for `intervalCap`, in ms. `0` turns rate limiting off.              |
+| `intervalCap` | `Infinity` | The most tasks that start in any `interval` ms.                                                      |
+| `signal`      |            | Aborting it rejects every waiting and running task with `signal.reason`, and every task added later. |
 
-| Member | Description |
-| --- | --- |
-| `add(task, { priority, signal })` | Adds a task and returns a promise for its result. `task` receives `{ signal }`. Higher `priority` starts first (default `0`), and equal priorities start in the order they were added. |
-| `idle()` | Resolves when no task is waiting or running. It never rejects. |
-| `pause()`, `resume()` | Stop and restart starting tasks. Running tasks continue. |
-| `clear()` | Removes every waiting task and rejects its promise with an `AbortError` `DOMException`. Running tasks continue. |
-| `size` | The number of waiting tasks. |
-| `pending` | The number of running tasks. |
-| `paused` | Whether the queue is paused. |
-| `concurrency` | Read or set the limit. Raising it starts waiting tasks at once. |
-| `[Symbol.asyncDispose]()` | Rejects waiting and running tasks and every later `add` with an `AbortError` `DOMException`, and aborts the `signal` of running tasks, as aborting the queue's `signal` does. It then resolves once the running tasks have settled. It exists only where the runtime has `Symbol.asyncDispose`, and TypeScript sees it only when your `lib` includes `esnext.disposable`. |
+| Member                            | Description                                                                                                                                                                                                                                                                                                                                                               |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `add(task, { priority, signal })` | Adds a task and returns a promise for its result. `task` receives `{ signal }`. Higher `priority` starts first (default `0`), and equal priorities start in the order they were added.                                                                                                                                                                                    |
+| `idle()`                          | Resolves when no task is waiting or running. It never rejects.                                                                                                                                                                                                                                                                                                            |
+| `pause()`, `resume()`             | Stop and restart starting tasks. Running tasks continue.                                                                                                                                                                                                                                                                                                                  |
+| `clear()`                         | Removes every waiting task and rejects its promise with an `AbortError` `DOMException`. Running tasks continue.                                                                                                                                                                                                                                                           |
+| `size`                            | The number of waiting tasks.                                                                                                                                                                                                                                                                                                                                              |
+| `pending`                         | The number of running tasks.                                                                                                                                                                                                                                                                                                                                              |
+| `paused`                          | Whether the queue is paused.                                                                                                                                                                                                                                                                                                                                              |
+| `concurrency`                     | Read or set the limit. Raising it starts waiting tasks at once.                                                                                                                                                                                                                                                                                                           |
+| `[Symbol.asyncDispose]()`         | Rejects waiting and running tasks and every later `add` with an `AbortError` `DOMException`, and aborts the `signal` of running tasks, as aborting the queue's `signal` does. It then resolves once the running tasks have settled. It exists only where the runtime has `Symbol.asyncDispose`, and TypeScript sees it only when your `lib` includes `esnext.disposable`. |
 
 The `signal` passed to a task aborts when the task's own `signal` or the queue's `signal` aborts, or when the queue is disposed. If the task is still waiting, it is removed. If it is running, `add` rejects with the abort reason at once, but the task keeps its slot until it settles, so no more than `concurrency` tasks ever run. Pass the signal on to `fetch` or whatever the task awaits so it stops early.
 
@@ -77,11 +77,11 @@ Returns `create({ concurrency }).add`. Use it when you only need to run tasks.
 
 Calls `fn(item, { index, signal })` on every item of `input`, at most `concurrency` at once, and resolves with the results in input order. `input` is any iterable or async iterable, and is read one item at a time as slots free up, so an endless generator works. Items are passed to `fn` as they are, and a promise item is not awaited first.
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `concurrency` | `Infinity` | The most calls of `fn` that run at once. |
-| `signal` | | Rejects with `signal.reason`, aborts the signal passed to `fn` and stops reading `input`. |
-| `stopOnError` | `true` | With `true`, the first error rejects at once, aborts the signal passed to the calls still running and closes `input`. With `false`, every item is mapped and the errors reject as one `AggregateError`, in input order. |
+| Option        | Default    | Description                                                                                                                                                                                                             |
+| ------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `concurrency` | `Infinity` | The most calls of `fn` that run at once.                                                                                                                                                                                |
+| `signal`      |            | Rejects with `signal.reason`, aborts the signal passed to `fn` and stops reading `input`.                                                                                                                               |
+| `stopOnError` | `true`     | With `true`, the first error rejects at once, aborts the signal passed to the calls still running and closes `input`. With `false`, every item is mapped and the errors reject as one `AggregateError`, in input order. |
 
 ### `Queue.once(fn, { cache })`
 
@@ -126,10 +126,10 @@ To time out a single task, call `queue.add(task, { signal: AbortSignal.timeout(5
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `Queue.Queue` | The object `create` returns. |
-| `Queue.Task` | `(context) => value \| Promise<value>`, a function the queue runs. |
+| Type            | Description                                                                                                                          |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `Queue.Queue`   | The object `create` returns.                                                                                                         |
+| `Queue.Task`    | `(context) => value \| Promise<value>`, a function the queue runs.                                                                   |
 | `Queue.Context` | `{ signal }`, what a task receives. The signal aborts when the task's or the queue's `signal` aborts, or when the queue is disposed. |
 
 ## Why use this over p-limit, p-queue, p-map, and p-throttle
@@ -177,13 +177,13 @@ They run in browsers too, but they are four packages with four APIs, and they ha
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/queue, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/queue | – | 2.3 kB | 1 | none | included |
-| p-limit | 7.3.3 | 1.0 kB | 1 | none | included |
-| p-queue | 10.0.0 | 3.5 kB | 0 | none | included |
-| p-map | 7.1.1 | 2.1 kB | 0 | none | included |
-| `Promise.all`, no limit | – | built in | – | none | – |
+| Library                 | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| ----------------------- | ------- | -------------------: | -------------------: | -------------- | ---------------- |
+| @portable/queue         | –       |               2.3 kB |                    1 | none           | included         |
+| p-limit                 | 7.3.3   |               1.0 kB |                    1 | none           | included         |
+| p-queue                 | 10.0.0  |               3.5 kB |                    0 | none           | included         |
+| p-map                   | 7.1.1   |               2.1 kB |                    0 | none           | included         |
+| `Promise.all`, no limit | –       |             built in |                    – | none           | –                |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

@@ -43,34 +43,34 @@ await frames.writable.getWriter().write(writer.toBytes());
 
 `Binary.createReader(bytes, options)` returns a `Reader` that reads values one after another from a `Uint8Array`. Each read moves `reader.offset` past the value. A read that fails throws and leaves `offset` where it was, so you can catch a `Binary.TruncatedError`, wait for more bytes and try again. The reader doesn't copy `bytes`.
 
-| Option | Default | Description |
-| --- | --- | --- |
+| Option   | Default | Description                                                     |
+| -------- | ------- | --------------------------------------------------------------- |
 | `endian` | `'big'` | Byte order of multi-byte values. `'big'` is network byte order. |
 
-| Member | Returns | Description |
-| --- | --- | --- |
-| `uint8()`, `int8()`, `uint16()`, `int16()`, `uint32()`, `int32()` | `number` | An integer of 1, 2, or 4 bytes. |
-| `bigUint64()`, `bigInt64()` | `bigint` | A 64-bit integer. |
-| `float32()`, `float64()` | `number` | An IEEE 754 float. |
-| `uint(byteLength)`, `int(byteLength)` | `number` | An integer of 1 to 6 bytes, such as the 24-bit lengths in TLS. |
-| `varint(options)` | `number` | A varint that fits in a safe integer. A larger one throws `Binary.InvalidInputError`. |
-| `bigVarint(options)` | `bigint` | A varint of up to 64 bits. |
-| `bytes(byteLength)` | `Uint8Array` | The next bytes, as a view of the reader's bytes. Copy them with `.slice()` to keep them after the input changes. |
-| `string(byteLength, options)` | `string` | The next bytes, decoded as UTF-8. A leading byte order mark is kept. |
-| `cstring(options)` | `string` | UTF-8 up to the next zero byte. `offset` moves past the zero byte. |
-| `skip(byteLength)` | | Moves `offset` forward. |
-| `offset` | `number` | Where the next read starts. You can set it to any position from 0 to `length`. |
-| `endian` | `'big' \| 'little'` | The byte order. You can change it between reads. |
-| `length` | `number` | The number of bytes the reader was created with. |
-| `remaining` | `number` | `length - offset`. |
+| Member                                                            | Returns             | Description                                                                                                      |
+| ----------------------------------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `uint8()`, `int8()`, `uint16()`, `int16()`, `uint32()`, `int32()` | `number`            | An integer of 1, 2, or 4 bytes.                                                                                  |
+| `bigUint64()`, `bigInt64()`                                       | `bigint`            | A 64-bit integer.                                                                                                |
+| `float32()`, `float64()`                                          | `number`            | An IEEE 754 float.                                                                                               |
+| `uint(byteLength)`, `int(byteLength)`                             | `number`            | An integer of 1 to 6 bytes, such as the 24-bit lengths in TLS.                                                   |
+| `varint(options)`                                                 | `number`            | A varint that fits in a safe integer. A larger one throws `Binary.InvalidInputError`.                            |
+| `bigVarint(options)`                                              | `bigint`            | A varint of up to 64 bits.                                                                                       |
+| `bytes(byteLength)`                                               | `Uint8Array`        | The next bytes, as a view of the reader's bytes. Copy them with `.slice()` to keep them after the input changes. |
+| `string(byteLength, options)`                                     | `string`            | The next bytes, decoded as UTF-8. A leading byte order mark is kept.                                             |
+| `cstring(options)`                                                | `string`            | UTF-8 up to the next zero byte. `offset` moves past the zero byte.                                               |
+| `skip(byteLength)`                                                |                     | Moves `offset` forward.                                                                                          |
+| `offset`                                                          | `number`            | Where the next read starts. You can set it to any position from 0 to `length`.                                   |
+| `endian`                                                          | `'big' \| 'little'` | The byte order. You can change it between reads.                                                                 |
+| `length`                                                          | `number`            | The number of bytes the reader was created with.                                                                 |
+| `remaining`                                                       | `number`            | `length - offset`.                                                                                               |
 
 `varint` and `bigVarint` take an `encoding` option, which defaults to `'unsigned'`:
 
-| `encoding` | Format | Used by |
-| --- | --- | --- |
-| `'unsigned'` | LEB128 | protobuf `uint32`, `uint64`, and `int64`; Minecraft VarInt and VarLong; WebAssembly `u32` |
-| `'zigzag'` | 0, -1, 1, -2 stored as 0, 1, 2, 3 | protobuf `sint32` and `sint64` |
-| `'signed'` | SLEB128 | WebAssembly `i32` and `i64`, DWARF |
+| `encoding`   | Format                            | Used by                                                                                   |
+| ------------ | --------------------------------- | ----------------------------------------------------------------------------------------- |
+| `'unsigned'` | LEB128                            | protobuf `uint32`, `uint64`, and `int64`; Minecraft VarInt and VarLong; WebAssembly `u32` |
+| `'zigzag'`   | 0, -1, 1, -2 stored as 0, 1, 2, 3 | protobuf `sint32` and `sint64`                                                            |
+| `'signed'`   | SLEB128                           | WebAssembly `i32` and `i64`, DWARF                                                        |
 
 `string` and `cstring` take `fatal`, which defaults to `false`. With `fatal: true`, malformed UTF-8 throws `Binary.InvalidInputError` instead of decoding to U+FFFD.
 
@@ -105,32 +105,32 @@ Returns the number of bytes in the UTF-8 encoding of `text` without encoding it.
 
 `Binary.FrameDecoderStream` is a `TransformStream<Uint8Array, Uint8Array>` that reads a length prefix and that many bytes, and emits the bytes without the prefix. A frame can arrive split across chunks, and one chunk can hold many frames. Each frame is a copy, so it stays valid after later chunks arrive. `Binary.FrameEncoderStream` does the reverse: for each chunk, it writes one output chunk with the length prefix followed by the chunk's bytes.
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `prefix` | `'varint'` | `'uint8'`, `'uint16'`, `'uint32'`, or `'varint'`. The length counts only the frame's bytes, not the prefix. |
-| `endian` | `'big'` | Byte order of a `uint16` or `uint32` prefix. |
+| Option     | Default    | Description                                                                                                                                                                                              |
+| ---------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `prefix`   | `'varint'` | `'uint8'`, `'uint16'`, `'uint32'`, or `'varint'`. The length counts only the frame's bytes, not the prefix.                                                                                              |
+| `endian`   | `'big'`    | Byte order of a `uint16` or `uint32` prefix.                                                                                                                                                             |
 | `maxBytes` | `Infinity` | `FrameDecoderStream` only. The largest frame, not counting the prefix. A larger length errors the stream with `Binary.MaxBytesError` as soon as the prefix is read, before any of the frame is buffered. |
-| `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
+| `signal`   | none       | Aborting errors the stream with `signal.reason` and cancels the source piped into it.                                                                                                                    |
 
 `FrameDecoderStream` errors with `Binary.TruncatedError` if the input ends inside a frame or a prefix, and with `Binary.InvalidInputError` if a varint prefix is longer than 10 bytes. `FrameEncoderStream` errors with `Binary.InvalidInputError` for a chunk too long for its prefix, such as 256 bytes with `prefix: 'uint8'`.
 
 ## Errors
 
-| Error | Thrown when |
-| --- | --- |
-| `Binary.TruncatedError` | A read needs more bytes than remain, or a stream ends inside a frame. `offset` is where the value or frame starts. |
+| Error                      | Thrown when                                                                                                                        |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `Binary.TruncatedError`    | A read needs more bytes than remain, or a stream ends inside a frame. `offset` is where the value or frame starts.                 |
 | `Binary.InvalidInputError` | A varint is longer than 10 bytes or too large for its type, `fatal` text isn't valid UTF-8, or a frame is too long for its prefix. |
-| `Binary.MaxBytesError` | A frame's length is larger than `maxBytes`. `maxBytes` holds the limit. |
+| `Binary.MaxBytesError`     | A frame's length is larger than `maxBytes`. `maxBytes` holds the limit.                                                            |
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `Binary.Reader` | What `createReader` returns. `Binary.Reader.VarintOptions` and `Binary.Reader.StringOptions` are the types of its methods' options. |
-| `Binary.Writer` | What `createWriter` returns. `Binary.Writer.VarintOptions` is the type of the options that `varint` and `bigVarint` take. |
-| `Binary.Endian` | `'big' \| 'little'`. |
-| `Binary.VarintEncoding` | `'unsigned' \| 'zigzag' \| 'signed'`. |
-| `Binary.Prefix` | `'uint8' \| 'uint16' \| 'uint32' \| 'varint'`. |
+| Type                    | Description                                                                                                                         |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `Binary.Reader`         | What `createReader` returns. `Binary.Reader.VarintOptions` and `Binary.Reader.StringOptions` are the types of its methods' options. |
+| `Binary.Writer`         | What `createWriter` returns. `Binary.Writer.VarintOptions` is the type of the options that `varint` and `bigVarint` take.           |
+| `Binary.Endian`         | `'big' \| 'little'`.                                                                                                                |
+| `Binary.VarintEncoding` | `'unsigned' \| 'zigzag' \| 'signed'`.                                                                                               |
+| `Binary.Prefix`         | `'uint8' \| 'uint16' \| 'uint32' \| 'varint'`.                                                                                      |
 
 ## Why use this over smart-buffer, varint, and it-length-prefixed
 
@@ -175,14 +175,14 @@ smart-buffer wraps a Node `Buffer`, so a browser or a Worker needs a `Buffer` po
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.1, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/binary, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/binary | – | 4.7 kB | 3 | none | included |
-| smart-buffer | 4.2.0 | 3.1 kB | 0 | `buffer` | included |
-| varint | 6.0.0 | 0.8 kB | 0 | none | @types/varint |
-| @bufbuild/protobuf | 2.16.0 | 3.4 kB | 0 | none | included |
-| it-length-prefixed | 11.0.1 | 3.0 kB | 6 | none | included |
-| `DataView` and `TextDecoder` | – | built in | – | none | – |
+| Library                      | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| ---------------------------- | ------- | -------------------: | -------------------: | -------------- | ---------------- |
+| @portable/binary             | –       |               4.7 kB |                    3 | none           | included         |
+| smart-buffer                 | 4.2.0   |               3.1 kB |                    0 | `buffer`       | included         |
+| varint                       | 6.0.0   |               0.8 kB |                    0 | none           | @types/varint    |
+| @bufbuild/protobuf           | 2.16.0  |               3.4 kB |                    0 | none           | included         |
+| it-length-prefixed           | 11.0.1  |               3.0 kB |                    6 | none           | included         |
+| `DataView` and `TextDecoder` | –       |             built in |                    – | none           | –                |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

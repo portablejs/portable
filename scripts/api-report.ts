@@ -261,7 +261,8 @@ async function report(name: string, program: ts.Program): Promise<string> {
           .join('\n\n');
     }
     const specifier = `${readPackage(name).name}${entry.subpath.slice(1)}`;
-    // oxfmt skips Markdown, so the block is formatted here with the settings in vite.config.ts.
+    // `vp fmt` formats the code blocks in api.md, so the block is formatted here with the same
+    // settings and `apiReport.test.ts` compares the report with a formatted file.
     const formatted = await format('api.d.ts', code, config.fmt);
     if (formatted.errors.length > 0) {
       throw new Error(`oxfmt can't format the report for ${specifier}`, {

@@ -25,15 +25,15 @@ random.int(1, 6); // the same number on every run, in every runtime
 
 ## API
 
-| Function | Returns |
-| --- | --- |
-| `int(min, max)` | An integer from `min` to `max`, both included. Both must be safe integers with `min <= max`, and the range can include up to 2^53 integers, such as `0` to `Number.MAX_SAFE_INTEGER`. |
-| `float()` | A number from 0 up to but not including 1, made from 53 random bits. |
+| Function                       | Returns                                                                                                                                                                                                                                                                                                        |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `int(min, max)`                | An integer from `min` to `max`, both included. Both must be safe integers with `min <= max`, and the range can include up to 2^53 integers, such as `0` to `Number.MAX_SAFE_INTEGER`.                                                                                                                          |
+| `float()`                      | A number from 0 up to but not including 1, made from 53 random bits.                                                                                                                                                                                                                                           |
 | `string(length, { alphabet })` | `length` characters, each picked from `alphabet` with equal chance. The default alphabet is the 64 characters `A-Z`, `a-z`, `0-9`, `-`, and `_`, so 21 characters have 126 random bits, like a nanoid. `alphabet` is split into code points, so emoji work. A character listed twice is picked twice as often. |
-| `shuffle(array)` | A shuffled copy of `array`. Every order is equally likely. |
-| `pick(array)` | A random element of `array`. |
-| `bytes(length)` | A new `Uint8Array` of random bytes, with no 65,536-byte limit. |
-| `seeded(seed)` | A `Random.Seeded` object with all of the functions above, drawing from a deterministic generator. `seed` is a safe integer. |
+| `shuffle(array)`               | A shuffled copy of `array`. Every order is equally likely.                                                                                                                                                                                                                                                     |
+| `pick(array)`                  | A random element of `array`.                                                                                                                                                                                                                                                                                   |
+| `bytes(length)`                | A new `Uint8Array` of random bytes, with no 65,536-byte limit.                                                                                                                                                                                                                                                 |
+| `seeded(seed)`                 | A `Random.Seeded` object with all of the functions above, drawing from a deterministic generator. `seed` is a safe integer.                                                                                                                                                                                    |
 
 Arguments outside these rules throw a `RangeError`: a fractional or unsafe bound, `min > max`, a length that is negative or fractional, an empty alphabet, an empty array for `pick`, or a fractional seed. Nothing is coerced or swapped.
 
@@ -53,8 +53,8 @@ xoshiro128** has 128 bits of state, so `seeded(seed).shuffle` can reach at most 
 
 ## Types
 
-| Type | Description |
-| --- | --- |
+| Type            | Description                                                                                          |
+| --------------- | ---------------------------------------------------------------------------------------------------- |
 | `Random.Seeded` | The functions of @portable/random, drawing from a seeded generator, as `Random.seeded` returns them. |
 
 ## Why use this over random-int, crypto-random-string, nanoid, seedrandom, and lodash
@@ -118,16 +118,16 @@ Each benchmark makes 1,000 calls per sample.
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/random, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/random | – | 1.6 kB | 0 | none | included |
-| random-int | 3.1.0 | 0.3 kB | 0 | none | included |
-| crypto-random-string | 6.0.0 | 1.3 kB | 3 | none | included |
-| nanoid | 6.0.2 | 0.3 kB | 0 | none | included |
-| seedrandom | 3.0.5 | 2.9 kB | 0 | `crypto` | @types/seedrandom |
-| lodash | 4.18.1 | 26 kB | 0 | `Buffer` | @types/lodash |
-| `node:crypto` | – | built in | – | Node only | – |
-| `Math.random` or `crypto.getRandomValues` | – | built in | – | none | – |
+| Library                                   | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types  |
+| ----------------------------------------- | ------- | -------------------: | -------------------: | -------------- | ----------------- |
+| @portable/random                          | –       |               1.6 kB |                    0 | none           | included          |
+| random-int                                | 3.1.0   |               0.3 kB |                    0 | none           | included          |
+| crypto-random-string                      | 6.0.0   |               1.3 kB |                    3 | none           | included          |
+| nanoid                                    | 6.0.2   |               0.3 kB |                    0 | none           | included          |
+| seedrandom                                | 3.0.5   |               2.9 kB |                    0 | `crypto`       | @types/seedrandom |
+| lodash                                    | 4.18.1  |                26 kB |                    0 | `Buffer`       | @types/lodash     |
+| `node:crypto`                             | –       |             built in |                    – | Node only      | –                 |
+| `Math.random` or `crypto.getRandomValues` | –       |             built in |                    – | none           | –                 |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

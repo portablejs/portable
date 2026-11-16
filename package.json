@@ -18,7 +18,7 @@
     "test:workers": "node tools/workers/src/run.ts",
     "coverage": "vp test run --project node --coverage",
     "fuzz": "vp test run --project node --mode fuzz --testTimeout=3600000 fuzz.conformance fuzz.oracle",
-    "readme": "pnpm bench && node scripts/bundle-size.ts && node scripts/readme-stats.ts",
+    "readme": "pnpm bench && node scripts/bundle-size.ts && node scripts/readme-stats.ts && vp fmt packages/*/README.md",
     "bench": "pnpm build && node scripts/bench.ts",
     "changeset": "changeset",
     "changeset:version": "changeset version",

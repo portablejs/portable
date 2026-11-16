@@ -23,17 +23,17 @@ Every charset and label follows the [WHATWG Encoding Standard](https://encoding.
 
 Each family is its own entry point, so a bundle only includes the tables it imports. Sizes are minified and gzipped, including `encode`.
 
-| Entry point | Exports | gzip |
-| --- | --- | --- |
-| @portable/charset | `encode`, `EncoderStream`, `utf8`, `normalizeLabel`, `load`, `UnsupportedError` | 1.0 kB |
+| Entry point                     | Exports                                                                                                                                                          | gzip                           |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| @portable/charset               | `encode`, `EncoderStream`, `utf8`, `normalizeLabel`, `load`, `UnsupportedError`                                                                                  | 1.0 kB                         |
 | `@portable/charset/single-byte` | `ibm866`, `iso8859_2` to `iso8859_16`, `iso8859_8i`, `koi8R`, `koi8U`, `macintosh`, `windows874`, `windows1250` to `windows1258`, `xMacCyrillic`, `xUserDefined` | 1.6 kB for one, 3.1 kB for all |
-| `@portable/charset/shift_jis` | `shiftJis` | 11.6 kB |
-| `@portable/charset/euc-jp` | `eucJp` | 11.5 kB |
-| `@portable/charset/iso-2022-jp` | `iso2022Jp` | 11.8 kB |
-| `@portable/charset/gbk` | `gbk`, `gb18030` | 18.2 kB |
-| `@portable/charset/big5` | `big5` | 18.2 kB |
-| `@portable/charset/euc-kr` | `eucKr` | 13.5 kB |
-| `@portable/charset/utf-16` | `utf16le`, `utf16be` | 0.4 kB |
+| `@portable/charset/shift_jis`   | `shiftJis`                                                                                                                                                       | 11.6 kB                        |
+| `@portable/charset/euc-jp`      | `eucJp`                                                                                                                                                          | 11.5 kB                        |
+| `@portable/charset/iso-2022-jp` | `iso2022Jp`                                                                                                                                                      | 11.8 kB                        |
+| `@portable/charset/gbk`         | `gbk`, `gb18030`                                                                                                                                                 | 18.2 kB                        |
+| `@portable/charset/big5`        | `big5`                                                                                                                                                           | 18.2 kB                        |
+| `@portable/charset/euc-kr`      | `eucKr`                                                                                                                                                          | 13.5 kB                        |
+| `@portable/charset/utf-16`      | `utf16le`, `utf16be`                                                                                                                                             | 0.4 kB                         |
 
 The three Japanese charsets share one table, so all three together are about 13 kB. Each table is unpacked on first use and takes 128 kB of memory after that.
 
@@ -56,11 +56,11 @@ Bundlers split `load` into one chunk per family. With every family reachable, th
 
 `encode(text, charset, options)` and `new EncoderStream(charset, options)` take the same options.
 
-| Option | Default | Description |
-| --- | --- | --- |
+| Option       | Default     | Description                                                                                                                                                                                                                                                                                           |
+| ------------ | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `unmappable` | `'replace'` | What to write for a character the charset can't represent. `'replace'` writes `?`. `'html'` writes a numeric character reference such as `&#26085;`, as browsers do when submitting forms. `'error'` throws `UnsupportedError`. A function `(codePoint) => string` returns the text to write instead. |
-| `bom` | `false` | Write a byte order mark first. Only UTF-8, UTF-16LE, and UTF-16BE have one. |
-| `signal` | none | `EncoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
+| `bom`        | `false`     | Write a byte order mark first. Only UTF-8, UTF-16LE, and UTF-16BE have one.                                                                                                                                                                                                                           |
+| `signal`     | none        | `EncoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it.                                                                                                                                                                                           |
 
 `'replace'` is the default for three reasons: iconv-lite also writes `?`, one `?` replaces one character, and a `?` can't inject markup into a non-HTML output such as CSV or email. Use `'html'` for HTML forms and pages, and `'error'` when silent data loss is worse than failing.
 
@@ -72,10 +72,10 @@ Text input can be a string or a `Uint8Array` of UTF-8. A UTF-8 byte order mark a
 
 ## Types
 
-| Type | Description |
-| --- | --- |
+| Type              | Description                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------ |
 | `Charset.Charset` | A charset that `encode` and `EncoderStream` write, with its `name` and an `encode(text)` method. |
-| `Charset.Name` | The WHATWG name of a charset this package encodes, such as `'Shift_JIS'`. |
+| `Charset.Name`    | The WHATWG name of a charset this package encodes, such as `'Shift_JIS'`.                        |
 
 ## Why use this over iconv-lite
 
@@ -106,11 +106,11 @@ iconv-lite looks charsets up by name in one registry, so a bundle includes every
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/charset, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/charset | – | 14 kB | 3 | none | included |
-| iconv-lite | 0.7.3 | 153 kB | 1 | `buffer`, `stream`, `string_decoder` | included |
-| `TextEncoder` | – | built in | – | none | – |
+| Library           | Version | Minified and gzipped | Runtime dependencies | Node built-ins                       | TypeScript types |
+| ----------------- | ------- | -------------------: | -------------------: | ------------------------------------ | ---------------- |
+| @portable/charset | –       |                14 kB |                    3 | none                                 | included         |
+| iconv-lite        | 0.7.3   |               153 kB |                    1 | `buffer`, `stream`, `string_decoder` | included         |
+| `TextEncoder`     | –       |             built in |                    – | none                                 | –                |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

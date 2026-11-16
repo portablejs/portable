@@ -63,13 +63,13 @@ Packages run on ES2022 and on the web APIs listed below. We don't ship polyfills
 For each ES version, the table gives the share of global browser usage that comes from browsers supporting all of its features, and the first Chrome, Firefox, and Safari versions that support them. The data is from caniuse-lite 1.0.30001817 and @mdn/browser-compat-data 8.1.6 as of October 2026. No ES version can reach more than 96.7%, because caniuse counts the remaining usage, from Opera Mini, UC Browser, QQ Browser, Internet Explorer, and browsers it doesn't track, as supporting none of them. The rows don't count top-level await, because no package uses it and MDN lists Safari support before 27 as partial.
 
 | ES version | Usage share | Chrome | Firefox | Safari and iOS |
-| --- | --- | --- | --- | --- |
-| ES2021 | 96.1% | 85 | 79 | 16.4 |
-| ES2022 | 96.0% | 94 | 93 | 16.4 |
-| ES2023 | 94.8% | 110 | 115 | 16.4 |
-| ES2024 | 92.8% | 119 | 128 | 17.4 |
-| ES2025 | 86.6% | 136 | 138 | 26 |
-| ES2026 | 69.5% | 147 | 138 | none |
+| ---------- | ----------- | ------ | ------- | -------------- |
+| ES2021     | 96.1%       | 85     | 79      | 16.4           |
+| ES2022     | 96.0%       | 94     | 93      | 16.4           |
+| ES2023     | 94.8%       | 110    | 115     | 16.4           |
+| ES2024     | 92.8%       | 119    | 128     | 17.4           |
+| ES2025     | 86.6%       | 136    | 138     | 26             |
+| ES2026     | 69.5%       | 147    | 138     | none           |
 
 Safari added regex lookbehind, the last ES2018 feature it lacked, in 16.4, so every version from ES2018 to ES2023 needs Safari 16.4. We chose ES2022 because packages already use its built-ins, such as `Array.prototype.at`, `Object.hasOwn`, and the `cause` option of `Error`, and moving up from ES2021 costs 0.1%. No package uses an ES2023 API. With `lib` set to ES2022, `tsc` rejects `findLast`, `toSorted`, `Promise.withResolvers`, and other newer built-ins in package code. Raise `target` and `lib` when a package needs one of them.
 
@@ -77,15 +77,15 @@ The version table shows when each browser first shipped a feature, not whether i
 
 `tsc` can't reject a web API that is too new, because TypeScript's DOM library declares every web API, however new. These are the newest ones packages use:
 
-| API | Packages | Usage share | Chrome | Firefox | Safari |
-| --- | --- | --- | --- | --- | --- |
-| `crypto.randomUUID` | webhooks | 96.4% | 92 | 95 | 15.4 |
-| `AbortSignal.timeout` | none (the examples pass it as `signal`) | 96.1% | 103 | 100 | 16 |
-| `CompressionStream('deflate-raw')` | compress | 96.0% | 103 | 113 | 16.4 |
-| `Response.json` | rpc | 95.3% | 105 | 115 | 17 |
-| `AbortSignal.any` | dns, queue, rpc, sse | 93.3% | 116 | 124 | 17.4 |
-| WebCrypto X25519 | web-crypto | 90.5% | 133 | 130 | 17 |
-| WebCrypto Ed25519 | arc, dkim, web-crypto | 89.8% | 137 | 129 | 17 |
+| API                                | Packages                                | Usage share | Chrome | Firefox | Safari |
+| ---------------------------------- | --------------------------------------- | ----------- | ------ | ------- | ------ |
+| `crypto.randomUUID`                | webhooks                                | 96.4%       | 92     | 95      | 15.4   |
+| `AbortSignal.timeout`              | none (the examples pass it as `signal`) | 96.1%       | 103    | 100     | 16     |
+| `CompressionStream('deflate-raw')` | compress                                | 96.0%       | 103    | 113     | 16.4   |
+| `Response.json`                    | rpc                                     | 95.3%       | 105    | 115     | 17     |
+| `AbortSignal.any`                  | dns, queue, rpc, sse                    | 93.3%       | 116    | 124     | 17.4   |
+| WebCrypto X25519                   | web-crypto                              | 90.5%       | 133    | 130     | 17     |
+| WebCrypto Ed25519                  | arc, dkim, web-crypto                   | 89.8%       | 137    | 129     | 17     |
 
 Browsers define `crypto.randomUUID` only in a secure context (HTTPS or `localhost`), so on a plain HTTP page `Webhooks.sign` needs an `id`. Chrome 103 to 123 abort an `AbortSignal.timeout` signal with an `AbortError` instead of a `TimeoutError`, so MDN lists full support only from Chrome 124, which lowers the usage share to 92.2%. Cloudflare Workers, Node (22 and later), Bun, and Deno have every API in both tables.
 
@@ -121,13 +121,13 @@ If zile causes problems, removing it takes two steps: commit the `package.json` 
 
 `vite.config.ts` defines the Vitest projects and assigns each test file in a package's `test/` directory to projects by its suffix. `test/` is its own private workspace package, so the libraries a package's tests compare against are dev dependencies there and never appear in the published `package.json`. Tests import the package by name, which resolves through its `exports` map to source because `vite.config.ts` and `tsconfig.base.json` add the `src` condition. `pnpm check:types` type-checks them with Node and Vite types through `tsconfig.test.json`.
 
-| Suffix | Runs in | Purpose |
-| --- | --- | --- |
-| `*.conformance.ts` | Node and browsers | Behavior every runtime must share. Most tests go here. |
-| `*.test.ts` | Node | Tests that need only one runtime. |
-| `*.browser.test.ts` | Browsers | Browser-only behavior. |
-| `*.oracle.test.ts` | Node | Byte-for-byte comparison with the library a package replaces. |
-| `*.bench.ts` | Node | Benchmarks against that library. |
+| Suffix              | Runs in           | Purpose                                                       |
+| ------------------- | ----------------- | ------------------------------------------------------------- |
+| `*.conformance.ts`  | Node and browsers | Behavior every runtime must share. Most tests go here.        |
+| `*.test.ts`         | Node              | Tests that need only one runtime.                             |
+| `*.browser.test.ts` | Browsers          | Browser-only behavior.                                        |
+| `*.oracle.test.ts`  | Node              | Byte-for-byte comparison with the library a package replaces. |
+| `*.bench.ts`        | Node              | Benchmarks against that library.                              |
 
 The `browser` project uses Vitest browser mode with Playwright and runs Chromium, Firefox, and WebKit. Browser mode runs every test file on the page's main thread, so the project also runs `tools/worker/src/conformance.browser.test.ts`, which runs every `*.conformance.ts` file again inside a dedicated module worker. Vitest has no option for this, so `tools/worker/src/worker.ts` sets up the worker state that Vitest's browser tester sets up on the page and runs each file with Vitest's own runner, `expect`, and `vi`. One worker collects the test names of every file, and the page declares one test for each, so a failure in the worker is reported as a failed page test with the worker's error. Each file then runs in a fresh worker. An error outside a test, such as an unhandled rejection or a failed hook, fails the file's suite. `-t` filters these tests by their page names, which start with the file path, such as `-t "packages/lines/"`. A worker that sends nothing for 60 s, or for twice the timeout of the test it started if that is longer, fails its file. In WebKit, a file whose worker stops responding runs once more in a new worker before it fails, because WebKit's `ReadableStreamDefaultReader.releaseLock()` can deadlock the thread it runs on (see [papercuts.md](papercuts.md)).
 
@@ -162,10 +162,10 @@ Run them with `pnpm bench`, which builds every package first and sets `BENCH_DIS
 
 Git hooks run the checks before each commit and push. `pnpm install` installs the hooks through `vp config`. Their scripts are in `.vite-hooks/`, and each one runs the following:
 
-| Hook | Runs |
-| --- | --- |
-| pre-commit | `vp staged`, which runs `vp check --fix` on staged files |
-| pre-push | `vp check`, `pnpm check:prose`, `pnpm check:api`, and `pnpm check:types`, then the Node tests affected by changes since `origin/main` (`pnpm test:changed`) |
+| Hook       | Runs                                                                                                                                                        |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| pre-commit | `vp staged`, which runs `vp check --fix` on staged files                                                                                                    |
+| pre-push   | `vp check`, `pnpm check:prose`, `pnpm check:api`, and `pnpm check:types`, then the Node tests affected by changes since `origin/main` (`pnpm test:changed`) |
 
 Browser tests are slower, so you run them on demand (`pnpm test:browser`), and CI runs them before every release. `git push --no-verify` skips the hooks.
 
@@ -207,7 +207,11 @@ A package that hashes or signs uses the platform's WebCrypto (`crypto.subtle`) b
 
 ```ts
 type Digest = (hash: Hash, data: Uint8Array<ArrayBuffer>) => Uint8Array | Promise<Uint8Array>;
-type Hmac = (hash: Hash, key: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>) => Uint8Array | Promise<Uint8Array>;
+type Hmac = (
+  hash: Hash,
+  key: Uint8Array<ArrayBuffer>,
+  data: Uint8Array<ArrayBuffer>,
+) => Uint8Array | Promise<Uint8Array>;
 type Hasher = { update(data: Uint8Array): unknown; digest(): Uint8Array | Promise<Uint8Array> };
 ```
 
