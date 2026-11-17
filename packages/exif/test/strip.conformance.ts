@@ -14,7 +14,8 @@ import {
 } from './utils.js';
 
 const supported = fixtures.filter((name) => /\.(jpg|png)$/.test(name));
-const unsupported = fixtures.filter((name) => !supported.includes(name));
+const heif = fixtures.filter((name) => /\.(heic|avif)$/.test(name));
+const unsupported = fixtures.filter((name) => !supported.includes(name) && !heif.includes(name));
 
 function includes(bytes: Uint8Array, text: string): boolean {
   const needle = ascii(text);
@@ -202,6 +203,206 @@ describe('strip', () => {
       for (const seed of [1, 2, 3]) {
         expect(await stripStream(randomChunks(bytes, seed, 64))).toEqual(Exif.strip(bytes));
       }
+    });
+  });
+
+  describe('HEIF', () => {
+    for (const name of heif) {
+      test(`StripStream matches strip for ${name} in random chunks`, async () => {
+        const bytes = await fixture(name);
+        const expected = Exif.strip(bytes);
+        for (const seed of [1, 2]) {
+          expect(await stripStream(randomChunks(bytes, seed, 64))).toEqual(expected);
+        }
+      });
+
+      test(`keeps the length and image size of ${name}, and strips it only once`, async () => {
+        const bytes = await fixture(name);
+        const stripped = Exif.strip(bytes);
+        expect(stripped.length).toBe(bytes.length);
+        expect(Exif.parse(stripped)).toMatchObject({
+          ...empty,
+          ifd0: {},
+          imageSize: Exif.parse(bytes).imageSize,
+        });
+        expect(Exif.strip(stripped)).toEqual(stripped);
+      });
+    }
+
+    test('removes the Exif item of an AVIF and keeps every byte of the image data', async () => {
+      const bytes = await fixture('Irvine_CA.avif');
+      expect(Exif.parse(bytes).ifd0).not.toEqual({});
+      const stripped = Exif.strip(bytes);
+      expect(includes(stripped, 'MM\0*')).toBe(false);
+      expect(includes(stripped, 'II*\0')).toBe(false);
+      // The mdat box starts at byte 400, and the av01 item is its first 27,613 bytes.
+      expect(stripped.subarray(400, 28_013)).toEqual(bytes.subarray(400, 28_013));
+    });
+
+    test('keeps the irot and color properties of an iPhone HEIC', async () => {
+      const bytes = await fixture('heic-iphone7-head.heic');
+      const stripped = Exif.strip(bytes, { keepOrientation: false, keepColorProfile: false });
+      expect(stripped).toEqual(Exif.strip(bytes));
+      expect(includes(stripped, 'irot')).toBe(true);
+      expect(includes(stripped, 'prof')).toBe(true);
+      expect(includes(stripped, 'cdsc')).toBe(false);
+    });
+
+    test('returns a HEIC without Exif or XMP items unchanged', async () => {
+      const bytes = await fixture('heic-single-head.heic');
+      expect(Exif.strip(bytes)).toEqual(bytes);
+    });
+
+    const u16 = (n: number) => [n >> 8, n & 255];
+    const u32 = (n: number) => [n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255];
+    const box = (type: string, ...parts: readonly (Uint8Array | readonly number[])[]) => {
+      const body = concat(...parts);
+      return concat(u32(body.length + 8), ascii(type), body);
+    };
+    const fullBox = (type: string, ...parts: readonly (Uint8Array | readonly number[])[]) =>
+      box(type, [0, 0, 0, 0], ...parts);
+    const infe = (id: number, type: string, contentType = '') =>
+      box(
+        'infe',
+        [2, 0, 0, 0],
+        u16(id),
+        u16(0),
+        ascii(type),
+        [0],
+        ascii(contentType && `${contentType}\0`),
+      );
+
+    const ftypBox = box('ftyp', ascii('heic'), u32(0), ascii('mif1heic'));
+    const image = new Uint8Array(40).fill(7);
+    const xmp = ascii('<x:xmpmeta>GPS</x:xmpmeta>');
+    const exif = concat(u32(0), buildTiff({ ifd0: [entry(0x010f, 2, 'Canon')] }));
+    const idatExif = concat(u32(6), exifPrefix, buildTiff({ ifd0: [entry(0x010f, 2, 'Nikon')] }));
+    const imageAt = ftypBox.length + 8;
+    const xmpAt = imageAt + image.length;
+
+    type Location = readonly [id: number, method: number, offset: number, length: number];
+
+    /**
+     * Builds the meta box of a HEIC with an image item 1 and three metadata items: Exif item 2 in
+     * the last mdat, XMP item 3 in the first mdat, and Exif item 4 in idat. Items 2 and 3 refer to
+     * item 1 through `cdsc`. If `stripped` is true, it builds the box that strip should write.
+     */
+    function meta(options: {
+      exifAt: number;
+      stripped?: boolean | undefined;
+      locations?: readonly Location[] | undefined;
+    }) {
+      const stripped = options.stripped ?? false;
+      const keep = (id: number) => !stripped || id === 1;
+      const locations = options.locations ?? [
+        [1, 0, imageAt, image.length],
+        [2, 0, options.exifAt, exif.length],
+        [3, 0, xmpAt, xmp.length],
+        [4, 1, 0, idatExif.length],
+      ];
+      const infes = [
+        infe(1, 'hvc1'),
+        infe(2, 'Exif'),
+        infe(3, 'mime', 'application/rdf+xml'),
+        infe(4, 'Exif'),
+      ].filter((_, i) => keep(i + 1));
+      const kept = locations.filter(([id]) => keep(id));
+      const references = stripped
+        ? [box('thmb', u16(1), u16(1), u16(1))]
+        : [
+            box('cdsc', u16(2), u16(1), u16(1)),
+            box('cdsc', u16(3), u16(1), u16(1)),
+            box('thmb', u16(1), u16(2), u16(2), u16(1)),
+          ];
+      const associations = stripped
+        ? [u16(1), [2, 0x81, 0x02]]
+        : [u16(1), [2, 0x81, 0x02], u16(2), [1, 0x02]];
+      return fullBox(
+        'meta',
+        fullBox('hdlr', u32(0), ascii('pict'), new Uint8Array(13)),
+        fullBox('pitm', u16(1)),
+        box(
+          'iloc',
+          [1, 0, 0, 0, 0x44, 0x00],
+          u16(kept.length),
+          ...kept.map(([id, method, offset, length]) =>
+            concat(u16(id), u16(method), u16(0), u16(1), u32(offset), u32(length)),
+          ),
+        ),
+        fullBox('iinf', u16(infes.length), ...infes),
+        fullBox('iref', ...references),
+        box(
+          'iprp',
+          box(
+            'ipco',
+            box('ispe', u32(0), u32(8), u32(5)),
+            box('colr', ascii('prof'), ascii('icc')),
+          ),
+          fullBox('ipma', u32(stripped ? 1 : 2), ...associations),
+        ),
+        box('idat', stripped ? new Uint8Array(idatExif.length) : idatExif),
+      );
+    }
+
+    const mdatBefore = box('mdat', image, xmp);
+    const metaAt = ftypBox.length + mdatBefore.length;
+    const exifAt = metaAt + meta({ exifAt: 0 }).length + 8;
+    const original = concat(ftypBox, mdatBefore, meta({ exifAt }), box('mdat', exif));
+
+    test('removes Exif and XMP items from meta, idat, and mdat boxes before and after meta', async () => {
+      expect(Exif.parse(original).ifd0).toEqual({ Make: 'Nikon' });
+      const strippedMeta = meta({ exifAt, stripped: true });
+      const padding = meta({ exifAt }).length - strippedMeta.length;
+      const expected = concat(
+        ftypBox,
+        box('mdat', image, new Uint8Array(xmp.length)),
+        strippedMeta,
+        box('free', new Uint8Array(padding - 8)),
+        box('mdat', new Uint8Array(exif.length)),
+      );
+      expect(Exif.strip(original)).toEqual(expected);
+      for (const seed of [1, 2, 3]) {
+        expect(await stripStream(randomChunks(original, seed, 32))).toEqual(expected);
+      }
+    });
+
+    test('throws TruncatedError when the input ends inside the meta box', async () => {
+      const bytes = original.subarray(0, metaAt + 20);
+      expect(() => Exif.strip(bytes)).toThrow(Exif.TruncatedError);
+      await expect(stripStream([bytes])).rejects.toThrow(Exif.TruncatedError);
+    });
+
+    test('throws InvalidInputError for a HEIF file without a meta box', async () => {
+      const bytes = concat(ftypBox, mdatBefore);
+      expect(() => Exif.strip(bytes)).toThrow(Exif.InvalidInputError);
+      await expect(stripStream([bytes])).rejects.toThrow(Exif.InvalidInputError);
+    });
+
+    test('throws UnsupportedError for an MP4 file', () => {
+      const bytes = concat(box('ftyp', ascii('isom'), u32(0), ascii('isommp41')), mdatBefore);
+      expect(() => Exif.strip(bytes)).toThrow(Exif.UnsupportedError);
+    });
+
+    test('throws UnsupportedError when an Exif item shares bytes with the image', () => {
+      const shared = meta({
+        exifAt,
+        locations: [
+          [1, 0, imageAt, image.length],
+          [2, 0, imageAt + 8, 8],
+        ],
+      });
+      expect(() => Exif.strip(concat(ftypBox, mdatBefore, shared))).toThrow(Exif.UnsupportedError);
+    });
+
+    test('throws UnsupportedError when an Exif item is built from another item', () => {
+      const built = meta({
+        exifAt,
+        locations: [
+          [1, 0, imageAt, image.length],
+          [2, 2, 0, 8],
+        ],
+      });
+      expect(() => Exif.strip(concat(ftypBox, mdatBefore, built))).toThrow(Exif.UnsupportedError);
     });
   });
 

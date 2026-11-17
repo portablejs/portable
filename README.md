@@ -18,9 +18,9 @@ const response = await fetch('https://api.openai.com/v1/chat/completions', {
   headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
   body: JSON.stringify({ model, messages, stream: true }),
 });
+const events = response.body!.pipeThrough(new Sse.DecoderStream());
 // `transcript` is a WritableStream<Uint8Array> that writes to a file.
-await response.body!
-  .pipeThrough(new Sse.DecoderStream())
+await events
   .pipeThrough(Streams.filter((event) => event.data !== '[DONE]'))
   .pipeThrough(Streams.map((event) => JSON.parse(event.data)))
   .pipeThrough(new Jsonl.EncoderStream())
@@ -102,7 +102,7 @@ await fetch(`/upload?width=${width}&height=${height}`, { method: 'POST', body: p
 <tbody>
 <tr><th colspan="2" align="left">Images</th></tr>
 <tr><td><a href="packages/image-size">@portable/image-size</a></td><td>Reads an image's type and dimensions from its header, from bytes or a stream.</td></tr>
-<tr><td><a href="packages/exif">@portable/exif</a></td><td>Reads EXIF metadata from JPEG, TIFF, PNG, WebP, HEIC, and AVIF files, and strips it from JPEG, PNG, and WebP.</td></tr>
+<tr><td><a href="packages/exif">@portable/exif</a></td><td>Reads EXIF metadata from JPEG, TIFF, PNG, WebP, HEIC, and AVIF files, and strips it from JPEG, PNG, WebP, HEIC, and AVIF.</td></tr>
 <tr><td><a href="packages/png">@portable/png</a></td><td>Decodes PNG files to RGBA pixels and encodes pixels as PNG.</td></tr>
 </tbody>
 <tbody>

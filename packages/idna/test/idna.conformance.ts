@@ -109,6 +109,8 @@ describe('toAscii', () => {
 
   test('checks the xn-- labels in Unicode input', () => {
     expect(() => Idna.toAscii('xn--b.bücher.example')).toThrow(Idna.InvalidInputError);
+    expect(() => Idna.toAscii('x\u00ADn--b.example')).toThrow(Idna.InvalidInputError);
+    expect(() => Idna.toUnicode('ü.x\u00ADn--b')).toThrow(Idna.InvalidInputError);
   });
 
   test('applies the bidi rule', () => {

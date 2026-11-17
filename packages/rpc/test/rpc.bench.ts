@@ -312,3 +312,39 @@ test('a 2 KB record over a MessageChannel with the json and identity codecs, wit
   );
   expect(result.get('birpc')).not.toBeFasterThan(result.get('@portable/rpc'), { delta: 0.25 });
 });
+
+const message = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'echo', params: [record] });
+
+test('Rpc.answer answers one message within 25% of json-rpc-2.0', async ({ bench }) => {
+  const result = await bench.compare(
+    bench('@portable/rpc', async () => {
+      await Rpc.answer({ methods: api, message });
+    }),
+    bench('json-rpc-2.0, receiveJSON', async () => {
+      JSON.stringify(await jsonRpcServer.receiveJSON(message));
+    }),
+  );
+  expect(result.get('json-rpc-2.0, receiveJSON')).not.toBeFasterThan(result.get('@portable/rpc'), {
+    delta: 0.25,
+  });
+});
+
+const sent: unknown[] = [];
+const notifier = Rpc.notifier<typeof api>((data) => void sent.push(data));
+const jsonRpcNotifier = new JSONRPCClient((payload) => void sent.push(JSON.stringify(payload)));
+
+test('Rpc.notifier encodes a notification within 25% of json-rpc-2.0', async ({ bench }) => {
+  const result = await bench.compare(
+    bench('@portable/rpc', async () => {
+      sent.length = 0;
+      await notifier.echo(record);
+    }),
+    bench('json-rpc-2.0, notify', () => {
+      sent.length = 0;
+      jsonRpcNotifier.notify('echo', [record]);
+    }),
+  );
+  expect(result.get('json-rpc-2.0, notify')).not.toBeFasterThan(result.get('@portable/rpc'), {
+    delta: 0.25,
+  });
+});

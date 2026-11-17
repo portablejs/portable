@@ -43,7 +43,8 @@ export declare namespace toRequest {
 /**
  * Builds the push request for a subscription: a `POST` to its endpoint with the encrypted payload
  * and the `TTL`, `Content-Encoding`, `Authorization`, `Urgency`, and `Topic` headers. Use it to
- * send with your own `fetch` or queue. `send` calls it for you.
+ * send with your own `fetch` or queue. `send` calls it for you. The request has `redirect: 'manual'`, so
+ * `fetch` doesn't follow a redirect to an address the endpoint check didn't see.
  *
  * @example
  * ```ts
@@ -95,6 +96,7 @@ export async function toRequest(options: toRequest.Options): Promise<Request> {
     method: 'POST',
     headers,
     body: body ?? null,
+    redirect: 'manual',
     signal: signal ?? null,
   });
 }

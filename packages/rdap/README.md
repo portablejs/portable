@@ -43,21 +43,21 @@ async function isRegistered(name: string) {
 
 ## API
 
-| Function | Looks up | Server comes from |
-| --- | --- | --- |
-| `Rdap.domain(name, options)` | A domain name, in Unicode or A-labels | IANA's DNS bootstrap file, by the longest matching label suffix |
-| `Rdap.ip(address, options)` | An IPv4 or IPv6 address, or a prefix such as `192.0.2.0/24` | IANA's IPv4 or IPv6 bootstrap file, by the longest matching prefix |
-| `Rdap.asn(number, options)` | An AS number from 0 to 4294967295 | IANA's ASN bootstrap file |
+| Function                     | Looks up                                                    | Server comes from                                                  |
+| ---------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------ |
+| `Rdap.domain(name, options)` | A domain name, in Unicode or A-labels                       | IANA's DNS bootstrap file, by the longest matching label suffix    |
+| `Rdap.ip(address, options)`  | An IPv4 or IPv6 address, or a prefix such as `192.0.2.0/24` | IANA's IPv4 or IPv6 bootstrap file, by the longest matching prefix |
+| `Rdap.asn(number, options)`  | An AS number from 0 to 4294967295                           | IANA's ASN bootstrap file                                          |
 
 Each returns a plain object. These fields are on all three:
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `handle` | `string \| undefined` | The registry's ID for the object. |
-| `status` | `readonly string[]` | RDAP status values, lowercased, such as `client transfer prohibited` or `active`. |
-| `events` | `{ registration, expiration, lastChanged }` | Each is a `Date`, or `undefined` when the response has no such event. A date without a time zone is read as UTC. |
-| `entities` | `readonly Entity[]` | Every contact in the response. An entity nested inside another one, such as a registrar's abuse contact, comes after it in the list. |
-| `raw` | `Record<string, unknown>` | The response JSON, for fields such as `secureDNS`, `remarks`, and `notices`. |
+| Field      | Type                                        | Description                                                                                                                          |
+| ---------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `handle`   | `string \| undefined`                       | The registry's ID for the object.                                                                                                    |
+| `status`   | `readonly string[]`                         | RDAP status values, lowercased, such as `client transfer prohibited` or `active`.                                                    |
+| `events`   | `{ registration, expiration, lastChanged }` | Each is a `Date`, or `undefined` when the response has no such event. A date without a time zone is read as UTC.                     |
+| `entities` | `readonly Entity[]`                         | Every contact in the response. An entity nested inside another one, such as a registrar's abuse contact, comes after it in the list. |
+| `raw`      | `Record<string, unknown>`                   | The response JSON, for fields such as `secureDNS`, `remarks`, and `notices`.                                                         |
 
 An `Entity` is `{ handle, roles, name, org, email, phone, address }`. `roles` lists RDAP roles such as `registrar`, `registrant`, `administrative`, `technical`, and `abuse`. The other fields come from the entity's jCard: the first `fn`, `org`, and `email`; the first `tel` that isn't a fax, with its `tel:` prefix removed; and the `adr` label or its parts joined by line breaks. Redacted values, such as `REDACTED FOR PRIVACY`, are returned as the server sent them.
 
@@ -65,12 +65,12 @@ An `Entity` is `{ handle, roles, name, org, email, phone, address }`. `roles` li
 
 ### Options
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `fetch` | `globalThis.fetch` | Called as `fetch(request)` with a `Request`. Pass one to add headers, set a timeout, route through a proxy, or mock responses. |
-| `signal` | | Aborting rejects the lookup with `signal.reason` and cancels any bootstrap request that no other lookup is waiting for. |
-| `now` | the current time | The current time, as a `Date` or a `Temporal.Instant`. A lookup compares it with the time the bootstrap files were cached to decide whether they have expired. |
-| `follow` | `true` | `Rdap.domain` only. Fetches the registrar's response when the registry links to it. |
+| Option   | Default            | Description                                                                                                                                                    |
+| -------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fetch`  | `globalThis.fetch` | Called as `fetch(request)` with a `Request`. Pass one to add headers, set a timeout, route through a proxy, or mock responses.                                 |
+| `signal` |                    | Aborting rejects the lookup with `signal.reason` and cancels any bootstrap request that no other lookup is waiting for.                                        |
+| `now`    | the current time   | The current time, as a `Date` or a `Temporal.Instant`. A lookup compares it with the time the bootstrap files were cached to decide whether they have expired. |
+| `follow` | `true`             | `Rdap.domain` only. Fetches the registrar's response when the registry links to it.                                                                            |
 
 For a timeout, pass `signal: AbortSignal.timeout(5000)`.
 
@@ -78,7 +78,7 @@ For a timeout, pass `signal: AbortSignal.timeout(5000)`.
 
 gTLD registries such as Verisign and PIR return the registrar, the dates, and the nameservers, and link to the registrar's own RDAP response with a `related` link. The registrar's response has the registrant and the other contacts. With `follow` on, `Rdap.domain` fetches that response too. `entities` then lists the registrar's entities, plus registry entities in roles the registrar has no entity for. `status`, `events`, and `nameservers` stay the registry's, because the registry is the authority for them.
 
-`referral` is `{ url, raw }` with the registrar's JSON, or `{ url, error }` when that request failed. A failed referral doesn't fail the lookup, because registrar servers are less reliable than registries and the registry's data is still correct. A link is followed only if its type is `application/rdap+json` or missing and it points to another URL ending in `/domain/<name>`.
+`referral` is `{ url, raw }` with the registrar's JSON, or `{ url, error }` when that request failed. A failed referral doesn't fail the lookup, because registrar servers are less reliable than registries and the registry's data is still correct. A link is followed only if its type is `application/rdap+json` or missing and it points to another `https` URL ending in `/domain/<name>` whose host is a domain name, not an IP address or `localhost`. The registrar's server can't redirect the request, because a redirect could point to a host that these checks reject.
 
 ### Bootstrap files
 
@@ -86,12 +86,12 @@ The bootstrap files are fetched from `https://data.iana.org/rdap/` on first use 
 
 ### Errors
 
-| Error | When |
-| --- | --- |
-| `InvalidInputError` | The name, address, or number is malformed. No request is sent. |
-| `UnsupportedError` | IANA lists no RDAP server for it, as for `.de` domains or `10.0.0.1`. |
-| `NotFoundError` | The server answered 404. `url` is the URL and `response` is the response. It extends `Errors.ResponseError` but not `Rdap.ResponseError`. |
-| `ResponseError` | Any other HTTP error, or a body that isn't a JSON object. `status`, `url`, the whole `response`, and the parsed `body` (such as an RDAP error with `errorCode` and `title`) are on the error. |
+| Error               | When                                                                                                                                                                                          |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `InvalidInputError` | The name, address, or number is malformed. No request is sent.                                                                                                                                |
+| `UnsupportedError`  | IANA lists no RDAP server for it, as for `.de` domains or `10.0.0.1`.                                                                                                                         |
+| `NotFoundError`     | The server answered 404. `url` is the URL and `response` is the response. It extends `Errors.ResponseError` but not `Rdap.ResponseError`.                                                     |
+| `ResponseError`     | Any other HTTP error, or a body that isn't a JSON object. `status`, `url`, the whole `response`, and the parsed `body` (such as an RDAP error with `errorCode` and `title`) are on the error. |
 
 When `fetch` rejects, such as on a network failure, the lookup rejects with the same error. An argument of the wrong type throws a `TypeError`.
 
@@ -99,13 +99,13 @@ Domain names go through `URL`'s IDNA conversion, then must have at least two lab
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `Rdap.Domain` | What `domain` returns. |
-| `Rdap.Network` | What `ip` returns. |
-| `Rdap.Autnum` | What `asn` returns. |
-| `Rdap.Entity` | A contact, with its jCard reduced to common fields. |
-| `Rdap.Events` | Registration, expiration, and other dates, as `Date`s. |
+| Type            | Description                                                                                |
+| --------------- | ------------------------------------------------------------------------------------------ |
+| `Rdap.Domain`   | What `domain` returns.                                                                     |
+| `Rdap.Network`  | What `ip` returns.                                                                         |
+| `Rdap.Autnum`   | What `asn` returns.                                                                        |
+| `Rdap.Entity`   | A contact, with its jCard reduced to common fields.                                        |
+| `Rdap.Events`   | Registration, expiration, and other dates, as `Date`s.                                     |
 | `Rdap.Referral` | The registrar's response that a registry response links to, or the error from fetching it. |
 
 ## Why use this over whoiser, whois-json, and node-rdap
@@ -155,11 +155,11 @@ The benchmarks serve recorded responses from memory. node-rdap returns the respo
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/rdap, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/rdap | – | 4.9 kB | 5 | none | included |
-| node-rdap | 1.0.0 | 9.9 kB | 5 | `Buffer`, `events`, `net` | included |
-| `fetch` and `response.json()` | – | built in | – | none | – |
+| Library                       | Version | Minified and gzipped | Runtime dependencies | Node built-ins            | TypeScript types |
+| ----------------------------- | ------- | -------------------: | -------------------: | ------------------------- | ---------------- |
+| @portable/rdap                | –       |               4.9 kB |                    5 | none                      | included         |
+| node-rdap                     | 1.0.0   |               9.9 kB |                    5 | `Buffer`, `events`, `net` | included         |
+| `fetch` and `response.json()` | –       |             built in |                    – | none                      | –                |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

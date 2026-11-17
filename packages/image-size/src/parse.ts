@@ -239,7 +239,7 @@ export async function parseStream(
         if (!(error instanceof NeedMore)) {
           throw error;
         }
-        needed = Math.max(error.end, length + 1);
+        needed = Math.max(error.end, length * 2);
       }
     }
   } finally {

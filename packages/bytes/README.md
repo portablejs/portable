@@ -28,14 +28,14 @@ if (!Bytes.timingSafeEqual(expected, Bytes.fromHex(signature))) {
 
 ## API
 
-| Export | Does |
-| --- | --- |
-| `toHex(bytes)` | Encodes a `Uint8Array` as lowercase hex. |
-| `fromHex(text)` | Decodes hex, as a string or its ASCII bytes, to a `Uint8Array`. Upper and lower case are accepted. |
-| `concat(chunks)` | Joins a `readonly Uint8Array[]` into a new `Uint8Array`. The result never shares memory with a chunk. |
-| `equal(a, b)` | Whether `a` and `b` hold the same bytes. Returns at the first difference. |
+| Export                  | Does                                                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `toHex(bytes)`          | Encodes a `Uint8Array` as lowercase hex.                                                                                 |
+| `fromHex(text)`         | Decodes hex, as a string or its ASCII bytes, to a `Uint8Array`. Upper and lower case are accepted.                       |
+| `concat(chunks)`        | Joins a `readonly Uint8Array[]` into a new `Uint8Array`. The result never shares memory with a chunk.                    |
+| `equal(a, b)`           | Whether `a` and `b` hold the same bytes. Returns at the first difference.                                                |
 | `timingSafeEqual(a, b)` | Whether `a` and `b` hold the same bytes, in time that depends only on the length. Returns `false` for different lengths. |
-| `InvalidInputError` | Thrown by `fromHex` for odd-length input or a character that isn't a hex digit. |
+| `InvalidInputError`     | Thrown by `fromHex` for odd-length input or a character that isn't a hex digit.                                          |
 
 `fromHex` follows `Uint8Array.fromHex` and throws for whitespace, a `0x` prefix, and any other character that isn't a hex digit. The error message gives the position of the first bad character.
 
@@ -110,11 +110,11 @@ Node's `Buffer` methods are C++ and are faster on large input. In runtimes that 
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/bytes, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/bytes | – | 1.3 kB | 1 | none | included |
-| uint8array-extras | 1.6.0 | 0.7 kB | 0 | none | included |
-| Node `Buffer` or `node:crypto` | – | built in | – | Node only | – |
+| Library                        | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| ------------------------------ | ------- | -------------------: | -------------------: | -------------- | ---------------- |
+| @portable/bytes                | –       |               1.3 kB |                    1 | none           | included         |
+| uint8array-extras              | 1.6.0   |               0.7 kB |                    0 | none           | included         |
+| Node `Buffer` or `node:crypto` | –       |             built in |                    – | Node only      | –                |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

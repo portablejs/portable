@@ -108,7 +108,11 @@ export async function domain(name: string, options: domain.Options = {}): Promis
     return result;
   }
   try {
-    return withReferral(result, related, (await request(related, context)).json);
+    return withReferral(
+      result,
+      related,
+      (await request(related, { ...context, redirect: 'error' })).json,
+    );
   } catch (error) {
     signal?.throwIfAborted();
     return { ...result, referral: { url: related, error } };

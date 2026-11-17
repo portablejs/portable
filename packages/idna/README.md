@@ -46,8 +46,8 @@ The result equals `new URL('http://' + domain).hostname`, except that `toAscii` 
 
 ### Options
 
-| Option | Default | Description |
-| --- | --- | --- |
+| Option   | Default | Description                                                                                                                                                                                                                                                                                                                                                      |
+| -------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `strict` | `false` | Apply the STD 3 hostname rules: only `a-z`, `0-9`, and `-` in a label, and no `-` at either end of a label or in its third and fourth positions. In `toAscii` it also checks DNS lengths: every label is 1 to 63 characters and the name at most 253, so a trailing dot throws. This is the URL Standard's `beStrict`, and what Unicode's conformance tests use. |
 
 ### Where runtimes differ
@@ -96,13 +96,13 @@ punycode only converts the Punycode encoding of each label. It doesn't map upper
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.2, on Intel(R) Xeon(R) Processor (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/idna, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/idna | – | 3.3 kB | 1 | none | included |
-| tr46 | 7.0.0 | 64 kB | 1 | none | @types/tr46 |
-| punycode | 2.3.1 | 1.5 kB | 0 | none | @types/punycode |
-| `node:url` | – | built in | – | Node only | – |
-| `new URL()` | – | built in | – | none | – |
+| Library        | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| -------------- | ------- | -------------------: | -------------------: | -------------- | ---------------- |
+| @portable/idna | –       |               3.3 kB |                    1 | none           | included         |
+| tr46           | 7.0.0   |                64 kB |                    1 | none           | @types/tr46      |
+| punycode       | 2.3.1   |               1.5 kB |                    0 | none           | @types/punycode  |
+| `node:url`     | –       |             built in |                    – | Node only      | –                |
+| `new URL()`    | –       |             built in |                    – | none           | –                |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

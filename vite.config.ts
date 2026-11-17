@@ -99,7 +99,6 @@ export default defineConfig({
     trailingComma: 'all',
     printWidth: 100,
     ignorePatterns: [
-      '**/*.md',
       '**/package.json',
       '**/CHANGELOG.md',
       '.agents/**',
@@ -217,6 +216,7 @@ export default defineConfig({
           '**/*.oracle.test.ts',
           '**/*.bench.ts',
           'vite.config.ts',
+          'tools/lint/src/apiReport.test.ts',
           'tools/lint/src/publicApi.test.ts',
           'tools/lint/src/forAwait.test.ts',
           'tools/lint/src/examples.test.ts',
@@ -292,6 +292,7 @@ export default defineConfig({
   ssr: { resolve: { conditions: [...src, 'module', 'node', 'development|production'] } },
   staged: {
     '*.{ts,js,json}': 'vp check --fix',
+    '*.md': 'vp fmt',
   },
   test: {
     // Heavy suites (PngSuite, big base64 inputs) take several seconds when other processes load the

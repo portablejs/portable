@@ -2,20 +2,22 @@ import * as Bytes from '@portable/bytes';
 import { assertUint8Array, crc32 } from '@portable/bytes/internal';
 import * as Streams from '@portable/streams';
 import { InvalidInputError, UnsupportedError } from './errors.js';
-import { exifHeader, pngSignature, riff, startsWith, u16be, u32be, webp } from './parse.js';
+import { findMeta, type Range, stripMeta } from './heif.js';
+import { exifHeader, ftyp, pngSignature, riff, startsWith, u16be, u32be, webp } from './parse.js';
 import { readTiff } from './tiff.js';
 
 export declare namespace strip {
   type Options = {
     /**
      * If the original has an `Orientation` from 2 to 8, write an EXIF block with only that tag in
-     * place of the original block, so that viewers and resizers still rotate the image.
+     * place of the original block, so that viewers and resizers still rotate the image. HEIC and
+     * AVIF files store their rotation in an `irot` property, which `strip` always keeps.
      * @default true
      */
     keepOrientation?: boolean | undefined;
     /**
-     * Keep the ICC color profile: the JPEG `ICC_PROFILE` APP2 segments, the PNG `iCCP` chunk or
-     * the WebP `ICCP` chunk.
+     * Keep the ICC color profile: the JPEG `ICC_PROFILE` APP2 segments, the PNG `iCCP` chunk, or
+     * the WebP `ICCP` chunk. `strip` keeps the `colr` property of a HEIC or AVIF file either way.
      * @default true
      */
     keepColorProfile?: boolean | undefined;
@@ -23,12 +25,20 @@ export declare namespace strip {
 }
 
 /**
- * Removes the EXIF and XMP metadata from a JPEG, PNG, or WebP file without re-encoding it. Every
- * byte of the image data is copied unchanged.
+ * Removes the EXIF and XMP metadata from a JPEG, PNG, WebP, HEIC, or AVIF file without
+ * re-encoding it. Every byte of the image data is copied unchanged. For a HEIC or AVIF file,
+ * `strip` returns a file of the same length. It removes the `Exif` and XMP items from the `meta`
+ * box and writes a `free` box after `meta` to fill the bytes `meta` no longer uses. Then it
+ * overwrites the items' data with zeros.
  *
- * @throws {UnsupportedError} The input is not a JPEG, PNG, or WebP file.
+ * @throws {UnsupportedError} The input is not a JPEG, PNG, WebP, HEIC, or AVIF file.
+ * @throws {UnsupportedError} A HEIF `Exif` or XMP item shares bytes with another item, is inside
+ * the `meta` box, has an extent of length 0, or is built from other items.
  * @throws {InvalidInputError} A JPEG has something other than a marker between its segments, or
  * a segment length below 2.
+ * @throws {InvalidInputError} A HEIF file has no `meta` box, or a box in `meta` is too short for
+ * its fields.
+ * @throws {TruncatedError} A HEIF file ends inside its `ftyp` or `meta` box.
  *
  * @example
  * ```ts
@@ -55,10 +65,11 @@ export declare namespace StripStream {
 }
 
 /**
- * A `TransformStream` that removes the EXIF and XMP metadata from a JPEG, PNG, or WebP file, as
- * `strip` does. A JPEG or PNG is written out as it arrives, and the stream holds at most one
- * metadata segment or chunk. A WebP is held whole, because its RIFF header and `VP8X` flags come
- * before the chunks that change them.
+ * A `TransformStream` that removes the EXIF and XMP metadata from a JPEG, PNG, WebP, HEIC, or AVIF
+ * file, as `strip` does. A JPEG or PNG is written out as it arrives, and the stream holds at most
+ * one metadata segment or chunk. A WebP is held whole, because its RIFF header and `VP8X` flags
+ * come before the chunks that change them. A HEIC or AVIF is held up to the end of its `meta` box,
+ * and the rest is written out as it arrives.
  *
  * @example
  * ```ts
@@ -101,7 +112,9 @@ type State =
   | 'pngChunk'
   | 'pngExif'
   | 'pngText'
-  | 'webp';
+  | 'webp'
+  | 'heif'
+  | 'heifData';
 
 const exifPrefix = ascii('Exif\0\0');
 const xmp = ascii('http://ns.adobe.com/xap/1.0/\0');
@@ -120,8 +133,8 @@ type Stripper = { push(chunk: Uint8Array): void; close(): void };
 
 /**
  * Takes the file in chunks of any size and emits the stripped file. Each state waits until the
- * buffer holds `want` bytes, or the input ends, then consumes some of them. `pass` and `skip`
- * count bytes to copy or drop without buffering them.
+ * buffer holds `want` bytes, or the input ends, then consumes some of them. `pass`, `skip`, and
+ * `zero` count bytes to copy, drop, or replace with zeros without buffering them.
  */
 function createStripper(options: strip.Options, emit: (part: Uint8Array) => void): Stripper {
   const keepOrientation = options.keepOrientation ?? true;
@@ -133,7 +146,11 @@ function createStripper(options: strip.Options, emit: (part: Uint8Array) => void
   let want = 12;
   let pass = 0;
   let skip = 0;
+  let zero = 0;
   let orientationWritten = false;
+  let position = 0;
+  let clear: readonly Range[] = [];
+  let cleared = 0;
 
   function push(chunk: Uint8Array): void {
     for (let at = 0; at < chunk.length;) {
@@ -145,6 +162,11 @@ function createStripper(options: strip.Options, emit: (part: Uint8Array) => void
       } else if (bufferStart === bufferEnd && skip > 0) {
         const n = Math.min(skip, chunk.length - at);
         skip -= n;
+        at += n;
+      } else if (bufferStart === bufferEnd && zero > 0) {
+        const n = Math.min(zero, chunk.length - at);
+        emit(new Uint8Array(n));
+        zero -= n;
         at += n;
       } else {
         const n = Math.min(want - (bufferEnd - bufferStart), chunk.length - at);
@@ -175,13 +197,16 @@ function createStripper(options: strip.Options, emit: (part: Uint8Array) => void
   function drain(final: boolean): void {
     while (bufferStart < bufferEnd) {
       const held = bufferEnd - bufferStart;
-      if (pass > 0 || skip > 0) {
-        const n = Math.min(held, pass || skip);
+      if (pass > 0 || skip > 0 || zero > 0) {
+        const n = Math.min(held, pass || skip || zero);
         if (pass > 0) {
           emit(buffer.slice(bufferStart, bufferStart + n));
           pass -= n;
-        } else {
+        } else if (skip > 0) {
           skip -= n;
+        } else {
+          emit(new Uint8Array(n));
+          zero -= n;
         }
         bufferStart += n;
       } else if (held >= want || final) {
@@ -214,6 +239,10 @@ function createStripper(options: strip.Options, emit: (part: Uint8Array) => void
       case 'webp':
         emit(stripWebp(bytes));
         return bytes.length;
+      case 'heif':
+        return heif(bytes, final);
+      case 'heifData':
+        return heifData();
     }
   }
 
@@ -237,6 +266,8 @@ function createStripper(options: strip.Options, emit: (part: Uint8Array) => void
       next('pngSignature', 8);
     } else if (startsWith(bytes, 0, riff) && startsWith(bytes, 8, webp)) {
       next('webp', Infinity);
+    } else if (startsWith(bytes, 4, ftyp)) {
+      next('heif', 16);
     } else {
       throw new UnsupportedError();
     }
@@ -413,6 +444,40 @@ function createStripper(options: strip.Options, emit: (part: Uint8Array) => void
     const file = Bytes.concat(parts);
     file.set(littleEndian32(file.length - 8), 4);
     return file;
+  }
+
+  /**
+   * Holds the file from its start until the end of the `meta` box, then writes it with the
+   * metadata items removed.
+   */
+  function heif(bytes: Uint8Array, final: boolean): number {
+    const meta = findMeta(bytes, final);
+    if (typeof meta === 'number') {
+      want = meta;
+      return 0;
+    }
+    const stripped = stripMeta(bytes, meta);
+    emit(stripped.head);
+    clear = stripped.clear;
+    position = meta.end;
+    next('heifData', 1);
+    return meta.end;
+  }
+
+  /** Copies the rest of a HEIF file, with zeros over the data of the removed items. */
+  function heifData(): number {
+    const range = clear[cleared];
+    if (!range) {
+      pass = Infinity;
+    } else if (position < range.start) {
+      pass = range.start - position;
+      position = range.start;
+    } else {
+      zero = range.end - position;
+      position = range.end;
+      cleared++;
+    }
+    return 0;
   }
 
   /** Returns a TIFF block holding only the Orientation tag of `data`, if it should be kept. */

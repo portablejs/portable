@@ -46,11 +46,11 @@ The type of the remote comes from the server's code, so there is no schema or co
 
 `Rpc.provide(transport, methods, options)` answers those calls. A method can be sync or async, and is called with the object it is defined on as `this`, so class instances work.
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `codec` | `Rpc.json` | Encodes messages for the transport. Any `{ encode, decode }`. |
-| `methods` | | `connect` only: methods the other side can call over the same transport. |
-| `signal` | | Closes the connection. Waiting calls reject with `signal.reason`, running methods are aborted, and the transport is cancelled. |
+| Option    | Default    | Description                                                                                                                    |
+| --------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `codec`   | `Rpc.json` | Encodes messages for the transport. Any `{ encode, decode }`.                                                                  |
+| `methods` |            | `connect` only: methods the other side can call over the same transport.                                                       |
+| `signal`  |            | Closes the connection. Waiting calls reject with `signal.reason`, running methods are aborted, and the transport is cancelled. |
 
 Where the runtime has `Symbol.asyncDispose`, the remote from `connect` or `http` also closes with `await using`, as if `signal` aborted with an `AbortError` `DOMException`:
 
@@ -148,7 +148,14 @@ const { tools } = await Rpc.call(mcp['tools/list'], {});
 
 ## Transports
 
-A transport is any `{ readable, writable }` pair of streams that carries encoded messages.
+A transport is any `{ readable, writable }` pair of streams that carries encoded messages. Which functions to use depends on how the server receives messages:
+
+| Server                                                                                                                           | Use                                                                                                                                   |
+| -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| A worker, iframe, popup, or `MessagePort`                                                                                        | `Rpc.port` or `Rpc.window` with `connect` and `provide`                                                                               |
+| A process that keeps a WebSocket or another stream open                                                                          | `connect` and `provide`                                                                                                               |
+| An HTTP endpoint                                                                                                                 | `Rpc.handler` and `Rpc.http`                                                                                                          |
+| A server that gets one message per callback and can be evicted between them, such as a Durable Object with WebSocket hibernation | `Rpc.answer` and `Rpc.notifier`, described in [Servers that are evicted between messages](#servers-that-are-evicted-between-messages) |
 
 ### `Rpc.port(target, { signal })`
 
@@ -178,7 +185,7 @@ Both sides post a hello every 100 ms until the other answers, so either can load
 
 The handshake has no timeout of its own. Aborting the connection's `signal` closes the whole connection, so to give up on a window that never answers, pass a signal to each call instead: `Rpc.call(..., { signal: AbortSignal.timeout(10_000) })`. When the other window reloads, its new page sends a hello again and the same remote keeps working. A call the old page didn't answer stays pending until its signal aborts.
 
-### `Rpc.handler(api)` and `Rpc.http(url, { fetch, signal })`
+### `Rpc.handler(api, { codec })` and `Rpc.http(url, { fetch, codec, signal })`
 
 `Rpc.handler` returns a `(request: Request) => Promise<Response>` for JSON-RPC over HTTP POST, which works with Workers, Node, Bun, Deno, and any framework that takes a fetch handler:
 
@@ -198,11 +205,40 @@ const api = Rpc.http<Api>('https://example.com/rpc', {
 });
 ```
 
-A response is JSON, or, when a method returns a stream, `application/x-ndjson` with one message per line as the values are produced. Breaking out of a streamed result aborts the request. A request with only notifications gets `204 No Content`, and other HTTP methods get `405`. Methods wrapped with `withContext` receive the `Request`, and their `signal` aborts when the client disconnects. HTTP always uses JSON.
+A response is one encoded message or batch. When a method returns a stream, `handler` writes each value to the response as the method produces it, using the framing in the table below. Breaking out of a streamed result aborts the request. A request with only notifications gets `204 No Content`, and other HTTP methods get `405`. Methods wrapped with `withContext` receive the `Request`, and their `signal` aborts when the client disconnects.
+
+Both take a `codec`, which defaults to `Rpc.json`. Pass the same codec to both. The codec's `contentType` is sent as the `content-type` of requests and responses, and defaults to `application/octet-stream`:
+
+```ts
+import * as cbor from 'cborg';
+
+const codec = { encode: cbor.encode, decode: cbor.decode, contentType: 'application/cbor' };
+const rpc = Rpc.handler(api, { codec });
+const remote = Rpc.http<Api>('https://example.com/rpc', { codec });
+```
+
+`handler` picks the framing of a streamed response from the type that the codec's `encode` returns:
+
+| `encode` returns             | Streamed `content-type`                                                                         | Framing                                                                                                                                               |
+| ---------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A string, as `Rpc.json` does | `application/x-ndjson`                                                                          | One message per line. Write each message without line breaks, as `JSON.stringify` does.                                                               |
+| Bytes, as a CBOR codec does  | `application/vnd.portable.rpc-stream; codec="application/cbor"`, with the codec's `contentType` | Each message follows a 5-byte header: a flags byte of 0 and the message length as a 32-bit big-endian integer, as in the Connect protocol's envelope. |
+
+`http` reads either framing, chosen by the response's `content-type`.
 
 ### WebSocket and server-sent events
 
-A WebSocket wrapped as `readable` and `writable` streams of strings, such as the one [@portable/websockets](https://portablejs.com/packages/websockets) returns, can be passed as a transport unchanged. Without that package, you can wrap a socket in a few lines:
+A WebSocket wrapped as `readable` and `writable` streams of strings can be passed as a transport unchanged. For a socket that reconnects, pass the stream that `WebSockets.connections` from [@portable/websockets](https://portablejs.com/packages/websockets) returns. It holds one transport per connection:
+
+```ts
+import * as WebSockets from '@portable/websockets';
+
+const remote = Rpc.connect<Api>(WebSockets.connections('wss://example.com/rpc'));
+```
+
+With a stream of transports, `connect` sends on the newest transport and holds calls made between transports until the next one arrives. When a transport's `readable` ends, `connect` rejects the calls whose requests went out on that transport with `Rpc.TransportError`, because their responses can't arrive on another connection. It also aborts the methods it was running for the other side of that transport. When the stream ends, waiting calls reject with `Rpc.TransportError`.
+
+Without websockets, you can wrap a socket in a few lines:
 
 ```ts
 const socket = new WebSocket('wss://example.com/rpc');
@@ -230,20 +266,112 @@ Server-sent events carry messages one way only. Pair the event stream from [@por
 ```ts
 const transport = {
   readable: events.pipeThrough(new TransformStream({ transform: (e, c) => c.enqueue(e.data) })),
-  writable: new WritableStream({ write: (message) => void fetch(postUrl, { method: 'POST', body: message as string }) }),
+  writable: new WritableStream({
+    write: (message) => void fetch(postUrl, { method: 'POST', body: message as string }),
+  }),
 };
 ```
+
+## Servers that are evicted between messages
+
+`connect` and `provide` read the transport in a loop and keep each call in memory until it ends. A Durable Object that accepts WebSockets with hibernation can't run that loop or keep calls in memory. Cloudflare calls its `webSocketMessage` method once per message and can evict the object from memory between calls while the socket stays open. On such a server, answer each message with `Rpc.answer`, and send notifications to the client with `Rpc.notifier`. The same functions work in any callback that receives one message at a time, such as the `message` handler of Bun's `ServerWebSocket`.
+
+This Durable Object lets each socket follow circles, and sends a `notice` to the sockets that follow a circle when a request to `/publish` arrives:
+
+```ts
+// room.ts
+import { DurableObject } from 'cloudflare:workers';
+import * as Rpc from '@portable/rpc';
+import type { ClientApi } from './client.ts';
+
+const methods = (socket: WebSocket) => ({
+  follow(circles: string[]) {
+    socket.serializeAttachment({ circles });
+  },
+});
+export type RoomApi = ReturnType<typeof methods>;
+
+export class Room extends DurableObject {
+  async fetch(request: Request) {
+    if (new URL(request.url).pathname === '/publish') {
+      const { circle, text } = await request.json();
+      const followers = this.ctx
+        .getWebSockets()
+        .filter((socket) => socket.deserializeAttachment()?.circles.includes(circle));
+      const clients = Rpc.notifier<ClientApi>((data) => {
+        for (const socket of followers) {
+          socket.send(data);
+        }
+      });
+      await clients.notice({ circle, text });
+      return new Response(null, { status: 204 });
+    }
+    const [client, server] = Object.values(new WebSocketPair());
+    this.ctx.acceptWebSocket(server);
+    return new Response(null, { status: 101, webSocket: client });
+  }
+
+  async webSocketMessage(socket: WebSocket, message: string | ArrayBuffer) {
+    const reply = await Rpc.answer({
+      methods: methods(socket),
+      message: typeof message === 'string' ? message : new Uint8Array(message),
+    });
+    if (reply !== undefined) {
+      socket.send(reply);
+    }
+  }
+}
+```
+
+```ts
+// client.ts
+import * as Rpc from '@portable/rpc';
+import * as WebSockets from '@portable/websockets';
+import type { RoomApi } from './room.ts';
+
+const methods = {
+  notice({ circle, text }: { circle: string; text: string }) {
+    console.log(circle, text);
+  },
+};
+export type ClientApi = typeof methods;
+
+const room = Rpc.connect<RoomApi>(WebSockets.connections('wss://example.com/room'), { methods });
+await room.follow(['friends']);
+```
+
+### `Rpc.answer({ methods, message, codec, signal })`
+
+Decodes one message or batch, calls the methods, and resolves with the encoded reply, or with `undefined` if the message has only notifications. `answer` replies to a batch with one batch of responses, so there is at most one reply to send. Build the methods for each message, as `methods(socket)` does above, to give them the socket that sent the message. If the message doesn't decode, `answer` resolves with a parse error (code `-32700`). If `signal` aborts, `answer` aborts the context signal of each method wrapped with `withContext` and rejects with `signal.reason`.
+
+### `Rpc.notifier<Api>(send, { codec })`
+
+Returns a proxy with the methods of `Api`. Calling one encodes a notification, passes it to `send`, and resolves once `send` returns or its promise resolves. The arguments are type-checked against `Api`. To send params by name, pass a method of the proxy to `Rpc.notify`. When `send` writes to several sockets, as above, each notification is encoded once.
+
+Both `answer` and `notifier` take the same `codec` option as `connect`. If you use another codec, such as CBOR, pass the same one to `answer`, `notifier`, and the client's `connect`.
+
+### Limits
+
+Cloudflare doesn't evict the object while `webSocketMessage` runs, so a method can await storage or `fetch`. `answer` keeps nothing in memory after `webSocketMessage` returns, so it has these limits:
+
+- `answer` can't stream a result. Streaming sends each value in its own message and waits for the client's `$/stream/credit`, so the server has to keep the stream in memory between messages. If a method returns an async iterable or a `ReadableStream`, `answer` cancels it and replies with error code `-32603`. To send a series of values, record the client's interest in storage or in the socket's attachment, and send notifications as `follow` and `notice` do above.
+- `answer` ignores `$/cancel` and `$/stream/credit` messages, because it keeps no record of earlier calls.
+- The server can't make requests to the client, because the client's response would arrive in a later `webSocketMessage` call, after the request that waited for it is gone. Send notifications instead.
+
+### Reconnecting clients
+
+The client above passes the stream that `WebSockets.connections` from [@portable/websockets](https://portablejs.com/packages/websockets) returns, as described in [WebSocket and server-sent events](#websocket-and-server-sent-events). When the Durable Object restarts or the network drops, a call whose request went out on the dropped connection rejects with `Rpc.TransportError`. If the network drops, the rejection waits until the browser notices the dead connection, which can take seconds. Calls made while the socket was disconnected are sent on the next connection.
 
 ## Protocol
 
 Every message is a JSON-RPC 2.0 request, notification, or response, or a batch of them, so `Rpc.provide` answers any JSON-RPC client and `Rpc.connect` calls any JSON-RPC server. Streams and cancellation are notifications with reserved names, as in LSP:
 
-| Message | Sent by | Params |
-| --- | --- | --- |
-| `$/stream` | server | `{ id }`: the result of request `id` is a stream. |
-| `$/stream/next` | server | `{ id, value }`: the next value. The stream ends with the normal response to `id`, or errors with an error response. |
-| `$/stream/credit` | client | `{ id, credit }`: the server may send `credit` more values. |
-| `$/cancel` | client | `{ id }`: stop request `id`. The server aborts the method's signal and answers `-32800`. |
+| Message           | Sent by | Params                                                                                                               |
+| ----------------- | ------- | -------------------------------------------------------------------------------------------------------------------- |
+| `$/stream`        | server  | `{ id }`: the result of request `id` is a stream.                                                                    |
+| `$/stream/next`   | server  | `{ id, value }`: the next value. The stream ends with the normal response to `id`, or errors with an error response. |
+| `$/stream/credit` | client  | `{ id, credit }`: the server may send `credit` more values.                                                          |
+| `$/cancel`        | client  | `{ id }`: stop request `id`. The server aborts the method's signal and answers `-32800`.                             |
 
 A codec turns messages into what the transport carries. `Rpc.json` writes JSON text and reads text or UTF-8 bytes. Pass a binary codec the same way:
 
@@ -257,14 +385,15 @@ Validation is left to the methods. Parse the arguments with your schema library 
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `Rpc.Remote` | The client type `connect` and `http` return for an API type. |
-| `Rpc.Result` | What a remote method returns for a result of a given type. |
-| `Rpc.Transport` | A pair of streams that carry encoded messages. |
-| `Rpc.Codec` | Turns messages into what a transport carries, and back. |
-| `Rpc.Context` | What a method wrapped with `withContext` receives as its first argument. |
-| `Rpc.Message` | A JSON-RPC 2.0 request, notification, or response. |
+| Type            | Description                                                              |
+| --------------- | ------------------------------------------------------------------------ |
+| `Rpc.Remote`    | The client type `connect` and `http` return for an API type.             |
+| `Rpc.Notifier`  | The type `notifier` returns for an API type.                             |
+| `Rpc.Result`    | What a remote method returns for a result of a given type.               |
+| `Rpc.Transport` | A pair of streams that carry encoded messages.                           |
+| `Rpc.Codec`     | Turns messages into what a transport carries, and back.                  |
+| `Rpc.Context`   | What a method wrapped with `withContext` receives as its first argument. |
+| `Rpc.Message`   | A JSON-RPC 2.0 request, notification, or response.                       |
 
 ## Why use this over comlink, penpal, birpc, and json-rpc-2.0
 
@@ -307,13 +436,13 @@ The benchmarks run over a `MessageChannel` with the default JSON codec.
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/rpc, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/rpc | – | 3.5 kB | 4 | none | included |
-| birpc | 4.2.0 | 1.3 kB | 0 | none | included |
-| comlink | 4.4.2 | 1.7 kB | 0 | none | included |
-| penpal | 8.0.1 | 2.3 kB | 0 | none | included |
-| json-rpc-2.0 | 1.8.1 | 4.0 kB | 0 | none | included |
+| Library       | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| ------------- | ------- | -------------------: | -------------------: | -------------- | ---------------- |
+| @portable/rpc | –       |               3.5 kB |                    4 | none           | included         |
+| birpc         | 4.2.0   |               1.3 kB |                    0 | none           | included         |
+| comlink       | 4.4.2   |               1.7 kB |                    0 | none           | included         |
+| penpal        | 8.0.1   |               2.3 kB |                    0 | none           | included         |
+| json-rpc-2.0  | 1.8.1   |               4.0 kB |                    0 | none           | included         |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
@@ -323,6 +452,7 @@ Structured-cloning a nested object costs more in Node than cloning one JSON stri
 - One package covers workers, iframes, popups, WebSockets, and HTTP, with the same API on each. comlink and post-me cover `postMessage`; penpal covers windows and workers; birpc takes callbacks for any channel; and json-rpc-2.0 has no transport.
 - The wire format is JSON-RPC 2.0, so the server also answers clients written in other languages, and the client can call LSP and MCP servers.
 - Async generators and `ReadableStream` results stream back with backpressure and cancellation. comlink needs a proxied callback per value, and birpc and penpal have no streams.
+- `Rpc.answer` and `Rpc.notifier` work on a server that is evicted from memory between messages, such as a Durable Object with WebSocket hibernation. comlink, penpal, and birpc keep each call in memory and need a connection that stays open.
 - Cancellation is an `AbortSignal` that reaches the method on the server. birpc and json-rpc-2.0 have timeouts but can't stop the remote work.
 - json-rpc-2.0 answers a batch of one request with a bare object and an all-notification batch with `null`, and treats a non-string method as unknown. `Rpc.provide` follows the specification in each case.
 - Methods are looked up only as own properties or class methods, never `Object.prototype` names, so `constructor` and `__proto__` can't be called remotely.

@@ -87,17 +87,23 @@ export function selectFields(
   names: readonly string[],
   skip?: Field,
 ): Field[] {
-  const taken = new Set<Field>(skip ? [skip] : []);
+  const byName = new Map<string, Field[]>();
+  for (const field of fields) {
+    if (field === skip) {
+      continue;
+    }
+    const list = byName.get(field.name);
+    if (list) {
+      list.push(field);
+    } else {
+      byName.set(field.name, [field]);
+    }
+  }
   const selected: Field[] = [];
   for (const name of names) {
-    for (let i = fields.length - 1; i >= 0; i--) {
-      const field = fields[i]!;
-      if (field.name !== name || taken.has(field)) {
-        continue;
-      }
-      taken.add(field);
+    const field = byName.get(name)?.pop();
+    if (field) {
       selected.push(field);
-      break;
     }
   }
   return selected;

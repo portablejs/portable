@@ -16,7 +16,7 @@ const { width, height, type } = await ImageSize.parseStream(response.body!);
 // { width: 1600, height: 1200, type: 'jpg', orientation: 1 }
 ```
 
-`parseStream` stops reading and cancels the stream once it has the bytes that hold the dimensions. For a JPEG that means the segments up to its frame header (5 KB of the 730 KB `large.jpg` fixture), and for a PNG the first 24 bytes.
+`parseStream` stops reading and cancels the stream once it has the bytes that hold the dimensions. For a JPEG that means the segments up to its frame header (5 KB of the 730 KB `large.jpg` fixture), and for a PNG the first 24 bytes. If the stream arrives in small chunks, `parseStream` waits until it holds twice as many bytes before it parses the buffer again, so it may read up to twice what the header needs, and the time it takes stays linear in the bytes it reads.
 
 ## API
 
@@ -28,39 +28,39 @@ Returns the size of the image in `bytes`. The bytes need to include only the hea
 
 Reads `stream` until the size is known, then cancels it.
 
-| Option | Default | Description |
-| --- | --- | --- |
+| Option     | Default  | Description                                                                                                                                                                                                                                                                                               |
+| ---------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `maxBytes` | `524288` | The most bytes that `parseStream` buffers. If the header isn't complete by then, `parseStream` rejects with `MaxBytesError`, which stores the limit as `maxBytes`. ICNS files list their icons throughout the file, so a large one needs a higher limit. A negative or `NaN` value throws a `RangeError`. |
-| `signal` | none | Aborting rejects with `signal.reason` and cancels the stream. |
+| `signal`   | none     | Aborting rejects with `signal.reason` and cancels the stream.                                                                                                                                                                                                                                             |
 
 ### `Size`
 
-| Field | Description |
-| --- | --- |
-| `width`, `height` | Pixels. For a file with several images, the largest by area. |
-| `type` | `bmp`, `cur`, `dds`, `gif`, `icns`, `ico`, `j2c`, `jp2`, `jpg`, `jxl` (container), `jxl-stream` (bare codestream), `ktx`, `ktx2`, `png`, `pnm`, `psd`, `svg`, `tga`, `tiff`, `bigtiff`, or `webp`. HEIF files report their brand: `avif`, `avis`, `heic`, `heix`, `hevc`, `hevx`, `mif1`, or `msf1`. |
-| `orientation` | The EXIF orientation of a JPEG (1 to 8), when it has one. `width` and `height` are the stored dimensions, before rotation. |
-| `images` | Every image in an ICO, CUR, or ICNS file with more than one. ICNS entries also have their icon `type`, such as `ic08`. |
+| Field             | Description                                                                                                                                                                                                                                                                                          |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `width`, `height` | Pixels. For a file with several images, the largest by area.                                                                                                                                                                                                                                         |
+| `type`            | `bmp`, `cur`, `dds`, `gif`, `icns`, `ico`, `j2c`, `jp2`, `jpg`, `jxl` (container), `jxl-stream` (bare codestream), `ktx`, `ktx2`, `png`, `pnm`, `psd`, `svg`, `tga`, `tiff`, `bigtiff`, or `webp`. HEIF files report their brand: `avif`, `avis`, `heic`, `heix`, `hevc`, `hevx`, `mif1`, or `msf1`. |
+| `orientation`     | The EXIF orientation of a JPEG (1 to 8), when it has one. `width` and `height` are the stored dimensions, before rotation.                                                                                                                                                                           |
+| `images`          | Every image in an ICO, CUR, or ICNS file with more than one. ICNS entries also have their icon `type`, such as `ic08`.                                                                                                                                                                               |
 
 The size of an animated PNG is the canvas size, with type `png`. The size of a HEIF file is the size of its primary image, cropped by its clean aperture (`clap`) and rotated by its `irot` property.
 
 ### Errors
 
-| Error | Thrown when |
-| --- | --- |
-| `UnsupportedError` | The bytes don't match a supported format. |
-| `TruncatedError` | The input ends before the dimensions, including an empty input. |
+| Error               | Thrown when                                                                                               |
+| ------------------- | --------------------------------------------------------------------------------------------------------- |
+| `UnsupportedError`  | The bytes don't match a supported format.                                                                 |
+| `TruncatedError`    | The input ends before the dimensions, including an empty input.                                           |
 | `InvalidInputError` | The header is malformed, such as a PNG without an `IHDR` chunk or an SVG with neither size nor `viewBox`. |
-| `MaxBytesError` | `parseStream` read `maxBytes` without finding the dimensions. Its `maxBytes` holds the limit. |
+| `MaxBytesError`     | `parseStream` read `maxBytes` without finding the dimensions. Its `maxBytes` holds the limit.             |
 
 Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError`, `ImageSize.InvalidInputError`, and `ImageSize.MaxBytesError`.
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `ImageSize.Size` | What `parse` and `parseStream` return, described above. |
-| `ImageSize.Type` | The `type` values listed under `Size`. |
+| Type              | Description                                                                             |
+| ----------------- | --------------------------------------------------------------------------------------- |
+| `ImageSize.Size`  | What `parse` and `parseStream` return, described above.                                 |
+| `ImageSize.Type`  | The `type` values listed under `Size`.                                                  |
 | `ImageSize.Image` | `{ width, height, type? }`, one entry of `images` for a file that holds several images. |
 
 ## Why use this over image-size and image-meta
@@ -119,11 +119,11 @@ Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError`, `Ima
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.2, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/image-size, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/image-size | – | 5.3 kB | 2 | none | included |
-| image-size | 2.0.4 | 4.6 kB | 0 | none | included |
-| image-meta | 0.3.1 | 6.5 kB | 0 | none | included |
+| Library              | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| -------------------- | ------- | -------------------: | -------------------: | -------------- | ---------------- |
+| @portable/image-size | –       |               5.3 kB |                    2 | none           | included         |
+| image-size           | 2.0.4   |               4.6 kB |                    0 | none           | included         |
+| image-meta           | 0.3.1   |               6.5 kB |                    0 | none           | included         |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

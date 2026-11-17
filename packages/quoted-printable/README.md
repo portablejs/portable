@@ -20,12 +20,12 @@ const bytes = response.body!.pipeThrough(new QuotedPrintable.DecoderStream());
 
 ## API
 
-| Export | Takes | Returns |
-| --- | --- | --- |
-| `encode(input, options?)` | `Uint8Array` or `string` (encoded as UTF-8) | `string` |
-| `decode(input)` | `string` (read as UTF-8) or `Uint8Array` | `Uint8Array` |
-| `new EncoderStream(options?)` | `Uint8Array` or `string` chunks | a `TransformStream` that emits the encoded text as ASCII bytes |
-| `new DecoderStream(options?)` | `string` or `Uint8Array` chunks | a `TransformStream` that emits the decoded bytes |
+| Export                        | Takes                                       | Returns                                                        |
+| ----------------------------- | ------------------------------------------- | -------------------------------------------------------------- |
+| `encode(input, options?)`     | `Uint8Array` or `string` (encoded as UTF-8) | `string`                                                       |
+| `decode(input)`               | `string` (read as UTF-8) or `Uint8Array`    | `Uint8Array`                                                   |
+| `new EncoderStream(options?)` | `Uint8Array` or `string` chunks             | a `TransformStream` that emits the encoded text as ASCII bytes |
+| `new DecoderStream(options?)` | `string` or `Uint8Array` chunks             | a `TransformStream` that emits the decoded bytes               |
 
 `encode()` keeps line breaks, escapes `=`, bytes outside printable ASCII, and a space or tab before a line break or at the end. It also escapes a hyphen that would start a line, so no line of the output can read as a MIME boundary. It inserts soft line breaks (`=` and CRLF) to keep each line within `lineLength`, preferring to break after a space or punctuation, and never breaks inside an escape or a UTF-8 sequence.
 
@@ -35,11 +35,11 @@ Both streams produce the same bytes as the functions however the input is chunke
 
 ## Options
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `lineLength` | `76` | Longest line, not counting the line break. An integer of at least 4, or `false` for no soft line breaks. Anything else throws a `RangeError`. |
-| `binary` | `false` | Escape a CR or LF that isn't part of a CRLF pair, so a transport that rewrites line endings can't change the data. |
-| `signal` | none | `EncoderStream` and `DecoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
+| Option       | Default | Description                                                                                                                                   |
+| ------------ | ------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lineLength` | `76`    | Longest line, not counting the line break. An integer of at least 4, or `false` for no soft line breaks. Anything else throws a `RangeError`. |
+| `binary`     | `false` | Escape a CR or LF that isn't part of a CRLF pair, so a transport that rewrites line endings can't change the data.                            |
+| `signal`     | none    | `EncoderStream` and `DecoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it.               |
 
 `DecoderStream` takes no other option.
 
@@ -91,11 +91,11 @@ Output matches libqp 3.0.1 byte for byte, with web streams instead of Node strea
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/quoted-printable, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/quoted-printable | – | 2.3 kB | 3 | none | included |
-| libqp | 3.0.1 | 1.8 kB | 0 | `Buffer`, `stream` | included |
-| quoted-printable | 1.0.1 | 1.1 kB | 1 | none | @types/quoted-printable |
+| Library                    | Version | Minified and gzipped | Runtime dependencies | Node built-ins     | TypeScript types        |
+| -------------------------- | ------- | -------------------: | -------------------: | ------------------ | ----------------------- |
+| @portable/quoted-printable | –       |               2.3 kB |                    3 | none               | included                |
+| libqp                      | 3.0.1   |               1.8 kB |                    0 | `Buffer`, `stream` | included                |
+| quoted-printable           | 1.0.1   |               1.1 kB |                    1 | none               | @types/quoted-printable |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

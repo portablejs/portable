@@ -215,7 +215,11 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
     enqueue({ type: 'headers', part, bytes });
 
     if (boundary) {
-      frames.push({ part, boundary: encoder.encode(boundary), state: PREAMBLE });
+      const encoded = encoder.encode(boundary);
+      if (encoded.length + 2 > maxBoundaryLineBytes) {
+        throw new MaxBoundaryLineBytesError({ maxBoundaryLineBytes });
+      }
+      frames.push({ part, boundary: encoded, state: PREAMBLE });
       enterSection('preamble', part);
     } else if (
       embedded &&

@@ -27,8 +27,9 @@ for await (const row of Streams.toAsyncIterable(rows)) {
   console.log(row.email);
 }
 
-const body = Streams.fromIterable(users)
-  .pipeThrough(new Csv.EncoderStream({ header: ['id', 'email'] }));
+const body = Streams.fromIterable(users).pipeThrough(
+  new Csv.EncoderStream({ header: ['id', 'email'] }),
+);
 return new Response(body, { headers: { 'content-type': 'text/csv' } });
 ```
 
@@ -49,24 +50,24 @@ const rows = Csv.decode(text, { header: ['id', 'email'] });
 - Spaces and tabs between a closing quote and the next delimiter are skipped.
 - A quote that doesn't start a field is read as text, so `5" pipe` decodes to `5" pipe`.
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `delimiter` | `','` | Field separator, one character. `'\t'` reads TSV. |
-| `quote` | `'"'` | Quote character, one character, or `false` to read quotes as text (TSV without quoting). |
-| `header` | `false` | `true` reads column names from the first row. An array gives the names for input with no header row. A repeated name throws `InvalidInputError`. |
-| `relaxColumnCount` | `false` | Accept rows whose field count differs from the first row's or the header's. With `header`, the missing keys of a short row are left out and the extra fields of a long row are dropped. |
-| `skipEmpty` | `true` | Drop lines with no characters. `false` reads each as a row with one empty field. |
-| `maxLength` | `Infinity` | Longest row, in UTF-16 code units of input text, not counting the line break. The stream fails as soon as an unfinished row is longer than the limit, so a missing closing quote can't make it buffer the whole input. |
-| `encoding` | `'utf-8'` | `TextDecoder` label for byte input, such as `'windows-1252'` or `'utf-16le'`. |
-| `signal` | | `DecoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
+| Option             | Default    | Description                                                                                                                                                                                                            |
+| ------------------ | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `delimiter`        | `','`      | Field separator, one character. `'\t'` reads TSV.                                                                                                                                                                      |
+| `quote`            | `'"'`      | Quote character, one character, or `false` to read quotes as text (TSV without quoting).                                                                                                                               |
+| `header`           | `false`    | `true` reads column names from the first row. An array gives the names for input with no header row. A repeated name throws `InvalidInputError`.                                                                       |
+| `relaxColumnCount` | `false`    | Accept rows whose field count differs from the first row's or the header's. With `header`, the missing keys of a short row are left out and the extra fields of a long row are dropped.                                |
+| `skipEmpty`        | `true`     | Drop lines with no characters. `false` reads each as a row with one empty field.                                                                                                                                       |
+| `maxLength`        | `Infinity` | Longest row, in UTF-16 code units of input text, not counting the line break. The stream fails as soon as an unfinished row is longer than the limit, so a missing closing quote can't make it buffer the whole input. |
+| `encoding`         | `'utf-8'`  | `TextDecoder` label for byte input, such as `'windows-1252'` or `'utf-16le'`.                                                                                                                                          |
+| `signal`           |            | `DecoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it.                                                                                                            |
 
 `decode` throws these errors, and `DecoderStream` fails with them. Their messages give the row number, counting from 1 and including skipped empty lines.
 
-| Error | When |
-| --- | --- |
+| Error                   | When                                                                                                                   |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | `Csv.InvalidInputError` | Text after a closing quote, a row with a different field count (unless `relaxColumnCount`), or a repeated header name. |
-| `Csv.TruncatedError` | The input ends inside a quoted field. |
-| `Csv.MaxLengthError` | A row is longer than `maxLength`, which the error stores. |
+| `Csv.TruncatedError`    | The input ends inside a quoted field.                                                                                  |
+| `Csv.MaxLengthError`    | A row is longer than `maxLength`, which the error stores.                                                              |
 
 A bad option, such as a two-character delimiter or a negative `maxLength`, throws `RangeError`.
 
@@ -78,15 +79,15 @@ A row is an array of values or an object keyed by column name. Strings are writt
 
 A field is quoted only when it contains the delimiter, the quote, CR, or LF, and a row of one empty field is written as `""` so it isn't read back as an empty line. Every row ends with `newline`, including the last.
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `delimiter` | `','` | Field separator, one character. |
-| `quote` | `'"'` | Quote character, or `false` to never quote. With `false`, a field that needs quotes throws `InvalidInputError`. |
-| `newline` | `'\r\n'` | `'\r\n'` or `'\n'`. |
-| `header` | `false` | `true` writes the first object row's keys as a header row. With an array, those names are written as the header row, even with no rows, and each object row's values are read by those names, in that order. Without a header, object rows are written in the first row's key order. A key missing from a row is written as an empty field. |
-| `bom` | `false` | Start with a byte order mark, which Excel needs to read UTF-8. |
-| `escapeFormulas` | `false` | Prefix fields starting with `=`, `+`, `-`, `@`, tab, or CR with `'` and quote them, so spreadsheets don't run them as formulas ([CSV injection](https://owasp.org/www-community/attacks/CSV_Injection)). |
-| `signal` | | `EncoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
+| Option           | Default  | Description                                                                                                                                                                                                                                                                                                                                 |
+| ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `delimiter`      | `','`    | Field separator, one character.                                                                                                                                                                                                                                                                                                             |
+| `quote`          | `'"'`    | Quote character, or `false` to never quote. With `false`, a field that needs quotes throws `InvalidInputError`.                                                                                                                                                                                                                             |
+| `newline`        | `'\r\n'` | `'\r\n'` or `'\n'`.                                                                                                                                                                                                                                                                                                                         |
+| `header`         | `false`  | `true` writes the first object row's keys as a header row. With an array, those names are written as the header row, even with no rows, and each object row's values are read by those names, in that order. Without a header, object rows are written in the first row's key order. A key missing from a row is written as an empty field. |
+| `bom`            | `false`  | Start with a byte order mark, which Excel needs to read UTF-8.                                                                                                                                                                                                                                                                              |
+| `escapeFormulas` | `false`  | Prefix fields starting with `=`, `+`, `-`, `@`, tab, or CR with `'` and quote them, so spreadsheets don't run them as formulas ([CSV injection](https://owasp.org/www-community/attacks/CSV_Injection)).                                                                                                                                    |
+| `signal`         |          | `EncoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it.                                                                                                                                                                                                                                 |
 
 ## Why use this over csv-parse, papaparse, and fast-csv
 
@@ -122,12 +123,12 @@ The benchmarks use 5,000 rows (500 kB) of quoted text, prices, and dates.
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/csv, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/csv | – | 2.5 kB | 3 | none | included |
-| csv-parse or csv-stringify | 7.0.3 | 10 kB | 1 | `Buffer` | included |
-| papaparse | 5.7.0 | 7.0 kB | 0 | none | @types/papaparse |
-| fast-csv | 5.0.8 | 6.9 kB | 1 | `Buffer`, `fs`, `stream`, `string_decoder`, `util` | included |
+| Library                    | Version | Minified and gzipped | Runtime dependencies | Node built-ins                                     | TypeScript types |
+| -------------------------- | ------- | -------------------: | -------------------: | -------------------------------------------------- | ---------------- |
+| @portable/csv              | –       |               2.5 kB |                    3 | none                                               | included         |
+| csv-parse or csv-stringify | 7.0.3   |                10 kB |                    1 | `Buffer`                                           | included         |
+| papaparse                  | 5.7.0   |               7.0 kB |                    0 | none                                               | @types/papaparse |
+| fast-csv                   | 5.0.8   |               6.9 kB |                    1 | `Buffer`, `fs`, `stream`, `string_decoder`, `util` | included         |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

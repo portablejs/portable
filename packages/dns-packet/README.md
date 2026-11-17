@@ -42,34 +42,34 @@ TXT strings decode as `Uint8Array`s, since TXT data is often binary or not UTF-8
 
 `encode(packet, options)`:
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `compress` | `false` | Compress repeated names with pointers. This saves space in responses, but queries rarely gain anything from it. |
-| `framing` | `'none'` | `'tcp'` prefixes the message with its 2-byte length, for DNS over TCP or TLS. |
+| Option     | Default  | Description                                                                                                     |
+| ---------- | -------- | --------------------------------------------------------------------------------------------------------------- |
+| `compress` | `false`  | Compress repeated names with pointers. This saves space in responses, but queries rarely gain anything from it. |
+| `framing`  | `'none'` | `'tcp'` prefixes the message with its 2-byte length, for DNS over TCP or TLS.                                   |
 
 `decode(bytes, options)`:
 
-| Option | Default | Description |
-| --- | --- | --- |
+| Option    | Default  | Description                                                                                             |
+| --------- | -------- | ------------------------------------------------------------------------------------------------------- |
 | `framing` | `'none'` | `'tcp'` reads the 2-byte length first, and throws `TruncatedError` until the whole message has arrived. |
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `DnsPacket.Packet` | What `encode` takes: header fields, flags, and the four record sections. |
-| `DnsPacket.DecodedPacket` | What `decode` returns. Every field is present, and record data is decoded. |
-| `DnsPacket.Question` | `{ name, type, class?, qu? }`. `DecodedQuestion` is its decoded form. |
-| `DnsPacket.ResourceRecord` | A record to encode. `DecodedResourceRecord` is its decoded form. |
-| `DnsPacket.OptRecord` | The EDNS pseudo-record (RFC 6891). `DecodedOptRecord` is its decoded form. |
-| `DnsPacket.RecordData` | The `data` of each record type, keyed by type. `DecodedRecordData` is its decoded form. |
-| `DnsPacket.EdnsOption` | One option of an OPT record. |
-| `DnsPacket.Flags` | The header flags as booleans. |
-| `DnsPacket.RecordType` | A record type name, such as `A` or `TXT`, or `TYPE` and a number for a type without a name. `UnknownType` is a type with no codec here, whose `data` is the raw RDATA. |
-| `DnsPacket.RecordClass` | A class name, such as `IN`. |
-| `DnsPacket.Opcode` | A header opcode name, such as `QUERY`. |
-| `DnsPacket.Rcode` | A response code name, such as `NXDOMAIN`. |
-| `DnsPacket.OptionCode` | An EDNS option name, such as `CLIENT_SUBNET`. |
+| Type                       | Description                                                                                                                                                            |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DnsPacket.Packet`         | What `encode` takes: header fields, flags, and the four record sections.                                                                                               |
+| `DnsPacket.DecodedPacket`  | What `decode` returns. Every field is present, and record data is decoded.                                                                                             |
+| `DnsPacket.Question`       | `{ name, type, class?, qu? }`. `DecodedQuestion` is its decoded form.                                                                                                  |
+| `DnsPacket.ResourceRecord` | A record to encode. `DecodedResourceRecord` is its decoded form.                                                                                                       |
+| `DnsPacket.OptRecord`      | The EDNS pseudo-record (RFC 6891). `DecodedOptRecord` is its decoded form.                                                                                             |
+| `DnsPacket.RecordData`     | The `data` of each record type, keyed by type. `DecodedRecordData` is its decoded form.                                                                                |
+| `DnsPacket.EdnsOption`     | One option of an OPT record.                                                                                                                                           |
+| `DnsPacket.Flags`          | The header flags as booleans.                                                                                                                                          |
+| `DnsPacket.RecordType`     | A record type name, such as `A` or `TXT`, or `TYPE` and a number for a type without a name. `UnknownType` is a type with no codec here, whose `data` is the raw RDATA. |
+| `DnsPacket.RecordClass`    | A class name, such as `IN`.                                                                                                                                            |
+| `DnsPacket.Opcode`         | A header opcode name, such as `QUERY`.                                                                                                                                 |
+| `DnsPacket.Rcode`          | A response code name, such as `NXDOMAIN`.                                                                                                                              |
+| `DnsPacket.OptionCode`     | An EDNS option name, such as `CLIENT_SUBNET`.                                                                                                                          |
 
 ## Why use this over dns-packet
 
@@ -99,10 +99,10 @@ dns-packet writes corrupt packets for some invalid input and reads past bad leng
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/dns-packet, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/dns-packet | – | 7.4 kB | 3 | none | included |
-| dns-packet | 5.6.1 | 8.7 kB | 1 | `buffer` | @types/dns-packet |
+| Library              | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types  |
+| -------------------- | ------- | -------------------: | -------------------: | -------------- | ----------------- |
+| @portable/dns-packet | –       |               7.4 kB |                    3 | none           | included          |
+| dns-packet           | 5.6.1   |               8.7 kB |                    1 | `buffer`       | @types/dns-packet |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

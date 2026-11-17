@@ -590,6 +590,7 @@ describe('backpressure', () => {
     const socket = await server.accept();
     socket.receive('abc');
     socket.receive('def');
+    await sleep(10);
     const error = await errorOf(readable.getReader().read());
     expect(error).toBeInstanceOf(WebSockets.MaxBufferedError);
     expect(error).toMatchObject({ maxBuffered: 5, name: 'WebSockets.MaxBufferedError' });
@@ -654,6 +655,103 @@ describe.skipIf(asyncDispose === undefined)('Symbol.asyncDispose', () => {
     expect(await errorOf(duplex.writable.getWriter().write('x'))).toMatchObject({
       name: 'AbortError',
     });
+    await sleep(10);
+    expect(server.sockets).toHaveLength(1);
+  });
+});
+
+describe('connections', () => {
+  function connections(options: WebSockets.connections.Options = {}) {
+    const server = new FakeServer();
+    const stream = WebSockets.connections(url, {
+      WebSocket: server.WebSocket,
+      delay: 0,
+      ...options,
+    });
+    return { server, reader: stream.getReader() };
+  }
+
+  test('enqueues a pair for each connection once it opens', async () => {
+    const { server, reader } = connections();
+    const socket = await server.accept(0);
+    const { value: first } = await reader.read();
+    await first!.writable.getWriter().write('hello');
+    expect(socket.sent).toEqual(['hello']);
+    socket.receive('world');
+    expect(await read(first!.readable.getReader())).toEqual(['world']);
+  });
+
+  test('ends the readable of a dropped connection with a CloseError and enqueues the next pair', async () => {
+    const { server, reader } = connections();
+    const socket = await server.accept(0);
+    const { value: first } = await reader.read();
+    socket.receive('before');
+    socket.drop(4000, 'restart');
+    const messages = first!.readable.getReader();
+    expect(await read(messages)).toEqual(['before']);
+    expect(await errorOf(messages.read())).toMatchObject({ code: 4000, reason: 'restart' });
+    await server.accept(1);
+    const { value: second } = await reader.read();
+    expect(second).not.toBe(first);
+  });
+
+  test('rejects a write to a dropped connection without sending it', async () => {
+    const { server, reader } = connections();
+    const socket = await server.accept(0);
+    const { value: first } = await reader.read();
+    socket.drop();
+    await expect(first!.writable.getWriter().write('lost')).rejects.toBeInstanceOf(
+      WebSockets.CloseError,
+    );
+    expect(socket.sent).toEqual([]);
+  });
+
+  test('runs open before the pair is enqueued', async () => {
+    const steps: string[] = [];
+    const { server, reader } = connections({
+      open: async ({ send }) => {
+        send('auth');
+        await sleep(5);
+        steps.push('open');
+      },
+    });
+    const socket = await server.accept(0);
+    await reader.read();
+    steps.push('enqueued');
+    expect(steps).toEqual(['open', 'enqueued']);
+    expect(socket.sent).toEqual(['auth']);
+  });
+
+  test('closing a writable closes the socket with 1000 and ends the stream', async () => {
+    const { server, reader } = connections();
+    const socket = await server.accept(0);
+    const { value: first } = await reader.read();
+    const closed = first!.writable.close();
+    expect(socket.closedWith?.code).toBe(1000);
+    socket.drop(1000);
+    await closed;
+    expect(await reader.read()).toEqual({ done: true, value: undefined });
+    expect(server.sockets).toHaveLength(1);
+  });
+
+  test('ends the stream after a close with 1000 and errors it after a close with 1008', async () => {
+    const normal = connections();
+    (await normal.server.accept(0)).drop(1000);
+    await normal.reader.read();
+    expect(await normal.reader.read()).toEqual({ done: true, value: undefined });
+
+    const rejected = connections();
+    (await rejected.server.accept(0)).drop(1008, 'policy');
+    await rejected.reader.read();
+    expect(await errorOf(rejected.reader.read())).toMatchObject({ code: 1008 });
+  });
+
+  test('cancelling the stream closes the socket and stops reconnecting', async () => {
+    const { server, reader } = connections();
+    const socket = await server.accept(0);
+    await reader.read();
+    await reader.cancel();
+    expect(socket.closedWith?.code).toBe(1000);
     await sleep(10);
     expect(server.sockets).toHaveLength(1);
   });

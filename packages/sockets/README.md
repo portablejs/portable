@@ -47,33 +47,33 @@ await greeting(connect, 'mx.example.com');
 
 Imported from `@portable/sockets/node`. Opens a connection to `address` (`{ hostname, port }`) and returns a `Socket` at once. Deno and Bun run it through their `node:net` and `node:tls`. It throws a `TypeError` for a missing hostname or a port that isn't a number, and a `RangeError` for a port outside 0 to 65535 or an unknown `secureTransport`.
 
-| Option | Description |
-| --- | --- |
-| `secureTransport` | `'off'` for plain TCP, `'on'` for TLS from the start, or `'starttls'` for plain TCP that `startTls()` can upgrade. |
-| `allowHalfOpen` | When `false`, the writable side closes as soon as the peer ends its side. When `true`, it stays open until you close it. |
+| Option            | Description                                                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `secureTransport` | `'off'` for plain TCP, `'on'` for TLS from the start, or `'starttls'` for plain TCP that `startTls()` can upgrade.       |
+| `allowHalfOpen`   | When `false`, the writable side closes as soon as the peer ends its side. When `true`, it stays open until you close it. |
 
 With `secureTransport: 'on'` and after `startTls()`, `connect` checks the server certificate against Node's bundled root certificates and the hostname. It also sends the hostname as SNI unless the hostname is an IP address.
 
 The socket has these members:
 
-| Member | Description |
-| --- | --- |
-| `readable` | A `ReadableStream<Uint8Array>` of the bytes the peer sends. It closes when the peer ends its side and errors if the connection fails. Cancelling it discards incoming bytes and leaves the writable side open. |
-| `writable` | A `WritableStream<Uint8Array>` for the bytes to send. Closing it ends this side of the connection. A write after the connection closes rejects with a `TypeError`. |
-| `opened` | Resolves with `{ remoteAddress, localAddress }` (each as `host:port`) once the connection and the TLS handshake are done. Rejects with Node's error, such as one with `code` `ECONNREFUSED`, if the connection fails. |
-| `closed` | Resolves when the connection closes and rejects with the error if it fails. |
-| `close()` | Closes both sides at once, without waiting for the peer, and returns `closed`. Reads after it are done, and writes reject. |
-| `startTls()` | Starts TLS on a socket opened with `secureTransport: 'starttls'` and returns the TLS socket. The old socket's `upgraded` becomes `true`, its readable closes, its writes reject and its `closed` resolves. It throws a `TypeError` for any other socket and on a second call. |
-| `upgraded` | Whether `startTls()` was called on this socket. |
-| `[Symbol.asyncDispose]()` | Calls `close()`, so `await using socket = connect(address, options)` closes the socket at the end of the scope. It exists only where the runtime has `Symbol.asyncDispose`. |
+| Member                    | Description                                                                                                                                                                                                                                                                   |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `readable`                | A `ReadableStream<Uint8Array>` of the bytes the peer sends. It closes when the peer ends its side and errors if the connection fails. Cancelling it discards incoming bytes and leaves the writable side open.                                                                |
+| `writable`                | A `WritableStream<Uint8Array>` for the bytes to send. Closing it ends this side of the connection. A write after the connection closes rejects with a `TypeError`.                                                                                                            |
+| `opened`                  | Resolves with `{ remoteAddress, localAddress }` (each as `host:port`) once the connection and the TLS handshake are done. Rejects with Node's error, such as one with `code` `ECONNREFUSED`, if the connection fails.                                                         |
+| `closed`                  | Resolves when the connection closes and rejects with the error if it fails.                                                                                                                                                                                                   |
+| `close()`                 | Closes both sides at once, without waiting for the peer, and returns `closed`. Reads after it are done, and writes reject.                                                                                                                                                    |
+| `startTls()`              | Starts TLS on a socket opened with `secureTransport: 'starttls'` and returns the TLS socket. The old socket's `upgraded` becomes `true`, its readable closes, its writes reject and its `closed` resolves. It throws a `TypeError` for any other socket and on a second call. |
+| `upgraded`                | Whether `startTls()` was called on this socket.                                                                                                                                                                                                                               |
+| `[Symbol.asyncDispose]()` | Calls `close()`, so `await using socket = connect(address, options)` closes the socket at the end of the scope. It exists only where the runtime has `Symbol.asyncDispose`.                                                                                                   |
 
 ### `create(options)`
 
 Imported from `@portable/sockets/node`. Returns a `connect` that verifies TLS certificates with these options:
 
-| Option | Description |
-| --- | --- |
-| `ca` | Certificates to trust instead of Node's bundled root certificates, as PEM text or an array of them. |
+| Option               | Description                                                                                                                                                     |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ca`                 | Certificates to trust instead of Node's bundled root certificates, as PEM text or an array of them.                                                             |
 | `rejectUnauthorized` | Defaults to `true`. With `false`, any certificate is accepted. Turn it off only to test against a self-signed certificate, and pass `ca` instead where you can. |
 
 ```ts
@@ -96,14 +96,14 @@ These were seen in workerd under Miniflare, which connects through a local proxy
 
 ## Types
 
-| Type | Description |
-| --- | --- |
+| Type              | Description                                                                                                                           |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | `Sockets.Connect` | `(address, options) => Socket`. Both `connect` from `cloudflare:sockets` and `connect` from `@portable/sockets/node` match this type. |
-| `Sockets.Socket` | A connection: `readable`, `writable`, `opened`, `closed`, `upgraded`, `close()`, and `startTls()`. |
-| `Sockets.Address` | `{ hostname, port }`. |
-| `Sockets.Options` | `{ secureTransport, allowHalfOpen }`. Both are required, because the `cloudflare:sockets` types require `allowHalfOpen`. |
-| `Sockets.Info` | What `opened` resolves with: `remoteAddress` and `localAddress`, where the runtime knows them. |
-| `Socket` | From `@portable/sockets/node`: a `Sockets.Socket` with `[Symbol.asyncDispose]()`. |
+| `Sockets.Socket`  | A connection: `readable`, `writable`, `opened`, `closed`, `upgraded`, `close()`, and `startTls()`.                                    |
+| `Sockets.Address` | `{ hostname, port }`.                                                                                                                 |
+| `Sockets.Options` | `{ secureTransport, allowHalfOpen }`. Both are required, because the `cloudflare:sockets` types require `allowHalfOpen`.              |
+| `Sockets.Info`    | What `opened` resolves with: `remoteAddress` and `localAddress`, where the runtime knows them.                                        |
+| `Socket`          | From `@portable/sockets/node`: a `Sockets.Socket` with `[Symbol.asyncDispose]()`.                                                     |
 
 ## Why use this over @arrowood.dev/socket
 
@@ -130,12 +130,11 @@ These were seen in workerd under Miniflare, which connects through a local proxy
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.1, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/sockets, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/sockets | – | 1.5 kB | 2 | `net`, `tls` | included |
-| @arrowood.dev/socket | 0.2.0 | 1.3 kB | 0 | `net`, `stream`, `tls` | included |
-| node:net | – | built in | – | Node only | – |
+| Library              | Version | Minified and gzipped | Runtime dependencies | Node built-ins         | TypeScript types |
+| -------------------- | ------- | -------------------: | -------------------: | ---------------------- | ---------------- |
+| @portable/sockets    | –       |               1.5 kB |                    2 | `net`, `tls`           | included         |
+| @arrowood.dev/socket | 0.2.0   |               1.3 kB |                    0 | `net`, `stream`, `tls` | included         |
+| node:net             | –       |             built in |                    – | Node only              | –                |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
-

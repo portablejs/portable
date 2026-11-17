@@ -1,14 +1,19 @@
 import * as Exif from '@portable/exif';
-import { cuts, fc, fuzz, mutated, outcome, outcomeAsync, split } from '@portable/fuzz';
+import { cuts, fc, fuzz, mutated, outcome, outcomeAsync, readBytes, split } from '@portable/fuzz';
 import { fromIterable } from '@portable/streams';
 import { beforeAll, describe, expect, test } from 'vite-plus/test';
 import { fixture } from './utils.js';
 
 const errors = [Exif.InvalidInputError, Exif.TruncatedError, Exif.UnsupportedError];
 const names = ['tetons.exif', 'IMG_0774.exif', 'png-exif.exif', 'non-ascii.exif', 'starfish.jpg'];
+// The meta box ends at byte 336 of the AVIF and byte 3412 of the HEIC.
+const heif = { 'Irvine_CA.avif': 336, 'heic-iphone7-head.heic': 3412 } satisfies Record<
+  string,
+  number
+>;
 const inputs: Record<string, Uint8Array> = {};
 beforeAll(async () => {
-  for (const name of names) {
+  for (const name of [...names, ...Object.keys(heif)]) {
     inputs[name] = await fixture(name);
   }
 }, 60_000);
@@ -50,6 +55,35 @@ describe('parseStream', () => {
         expect(
           await outcomeAsync(errors, () => Exif.parseStream(fromIterable(split(bytes, at)))),
         ).toEqual(outcome(errors, () => Exif.parse(bytes)));
+      }),
+    );
+  });
+});
+
+describe('strip', () => {
+  for (const [name, within] of Object.entries(heif)) {
+    test(`returns a file of the same length or throws a documented error for a mutated ${name}`, () => {
+      const original = inputs[name]!;
+      fuzz(
+        fc.property(mutated(original, { within }), (bytes) => {
+          const result = outcome(errors, () => Exif.strip(bytes));
+          expect('error' in result || result.value.length === bytes.length).toBe(true);
+        }),
+        { scale: 3 },
+      );
+    });
+  }
+
+  test('StripStream returns what strip returns, however the input is chunked', async () => {
+    const file = fc
+      .constantFrom(...Object.entries(heif))
+      .chain(([name, within]) => mutated(inputs[name]!, { within }));
+    await fuzz(
+      fc.asyncProperty(file, cuts, async (bytes, at) => {
+        const stream = fromIterable(split(bytes, at)).pipeThrough(new Exif.StripStream());
+        expect(await outcomeAsync(errors, () => readBytes(stream))).toEqual(
+          outcome(errors, () => Exif.strip(bytes)),
+        );
       }),
     );
   });

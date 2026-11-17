@@ -29,13 +29,13 @@ await Streams.toText(Streams.fromIterable(rows()).pipeThrough(upper)); // 'AB'
 
 Each collector reads a `ReadableStream`, an async iterable (such as a Node `Readable`) or an iterable to the end. It releases the stream's lock when it finishes, and cancels the stream if it stops early.
 
-| Function | Returns |
-| --- | --- |
-| `toBytes(source, { maxBytes, signal })` | `Uint8Array`. String chunks are encoded as UTF-8. |
-| `toBlob(source, { maxBytes, type, signal })` | `Blob` with the given `type`. String chunks are encoded as UTF-8. |
+| Function                                         | Returns                                                                                                              |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `toBytes(source, { maxBytes, signal })`          | `Uint8Array`. String chunks are encoded as UTF-8.                                                                    |
+| `toBlob(source, { maxBytes, type, signal })`     | `Blob` with the given `type`. String chunks are encoded as UTF-8.                                                    |
 | `toText(source, { maxBytes, encoding, signal })` | `string`. Byte chunks are decoded with `TextDecoder` (`encoding` defaults to `'utf-8'`), and string chunks are kept. |
-| `toJson(source, { maxBytes, encoding, signal })` | `JSON.parse` of the text, typed `unknown`. |
-| `toArray(source, { signal })` | The chunks, unchanged. |
+| `toJson(source, { maxBytes, encoding, signal })` | `JSON.parse` of the text, typed `unknown`.                                                                           |
+| `toArray(source, { signal })`                    | The chunks, unchanged.                                                                                               |
 
 `toBytes`, `toBlob`, `toText`, and `toJson` take `Uint8Array` and `string` chunks, and reject with a `TypeError` for any other chunk. When the source yields more than `maxBytes` bytes (string chunks count as their UTF-8 length), the collector cancels the source and rejects with `MaxBytesError`, whose `maxBytes` property holds the limit. Aborting `signal` cancels the source and rejects with `signal.reason`.
 
@@ -45,12 +45,12 @@ const body = await Streams.toJson(request.body!, { maxBytes: 100_000 });
 
 ## Combine
 
-| Function | Does |
-| --- | --- |
-| `concat(sources, { signal })` | One stream with every chunk of the first source, then every chunk of the second, and so on. A source is read only after the one before it ends. |
-| `merge(sources, { signal })` | One stream that reads every source in the array at once and passes chunks on as they arrive. |
-| `limitBytes(maxBytes, { signal })` | A `TransformStream` that passes chunks through and fails with `MaxBytesError` once more than `maxBytes` bytes have passed. |
-| `tee(source, count, { highWaterMark, unit, signal })` | `count` streams that each receive every chunk of `source`. |
+| Function                                              | Does                                                                                                                                            |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `concat(sources, { signal })`                         | One stream with every chunk of the first source, then every chunk of the second, and so on. A source is read only after the one before it ends. |
+| `merge(sources, { signal })`                          | One stream that reads every source in the array at once and passes chunks on as they arrive.                                                    |
+| `limitBytes(maxBytes, { signal })`                    | A `TransformStream` that passes chunks through and fails with `MaxBytesError` once more than `maxBytes` bytes have passed.                      |
+| `tee(source, count, { highWaterMark, unit, signal })` | `count` streams that each receive every chunk of `source`.                                                                                      |
 
 Sources are streams, async iterables, or iterables. An error in one source errors the output and cancels the others, and cancelling the output cancels every source.
 
@@ -77,13 +77,13 @@ await Promise.all([
 
 ## Bridge streams and iterables
 
-| Function | Does |
-| --- | --- |
-| `fromIterable(iterable)` | A `ReadableStream` that pulls one value per read. Cancelling it calls the iterator's `return()`, so a generator's `finally` blocks run. Uses `ReadableStream.from` when the runtime has it. |
-| `toAsyncIterable(stream, { preventCancel })` | An async iterator over a stream. Leaving a `for await` loop early cancels the stream, or with `preventCancel: true` only releases the lock. Uses `stream.values()` when the runtime has it. |
-| `transform(async function* (source) { ... }, { signal })` | A `{ readable, writable }` pair for `pipeThrough`, built from an async generator that reads `source` and yields output. The generator runs only as fast as the output is read. An error thrown in it errors the output and cancels the input. Cancelling the output ends `source` and runs the generator's `finally` blocks. |
-| `map(fn, { signal })`, `filter(fn, { signal })`, `tap(fn, { signal })` | `TransformStream`s that call `fn(chunk, index)`. `fn` may return a promise, and chunks stay in order. |
-| `batch(size, { signal })` | A `TransformStream` that groups chunks into arrays of `size`, with a shorter last array. |
+| Function                                                               | Does                                                                                                                                                                                                                                                                                                                         |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fromIterable(iterable)`                                               | A `ReadableStream` that pulls one value per read. Cancelling it calls the iterator's `return()`, so a generator's `finally` blocks run. Uses `ReadableStream.from` when the runtime has it.                                                                                                                                  |
+| `toAsyncIterable(stream, { preventCancel })`                           | An async iterator over a stream. Leaving a `for await` loop early cancels the stream, or with `preventCancel: true` only releases the lock. Uses `stream.values()` when the runtime has it.                                                                                                                                  |
+| `transform(async function* (source) { ... }, { signal })`              | A `{ readable, writable }` pair for `pipeThrough`, built from an async generator that reads `source` and yields output. The generator runs only as fast as the output is read. An error thrown in it errors the output and cancels the input. Cancelling the output ends `source` and runs the generator's `finally` blocks. |
+| `map(fn, { signal })`, `filter(fn, { signal })`, `tap(fn, { signal })` | `TransformStream`s that call `fn(chunk, index)`. `fn` may return a promise, and chunks stay in order.                                                                                                                                                                                                                        |
+| `batch(size, { signal })`                                              | A `TransformStream` that groups chunks into arrays of `size`, with a shorter last array.                                                                                                                                                                                                                                     |
 
 Aborting `signal` errors a transform with `signal.reason`, and `pipeThrough` then cancels its source. Aborting the `signal` of `concat` or `merge` errors the output with `signal.reason` and cancels every source. `fromIterable` and `toAsyncIterable` take no signal. Cancel the stream that `fromIterable` returns, or pass `signal` to the `pipeTo` that reads it, and leave a `toAsyncIterable` loop early to cancel its stream.
 
@@ -129,10 +129,10 @@ import * as NodeStreams from '@portable/streams/node';
 const text = await Streams.toText(NodeStreams.toWeb(createReadStream('notes.txt')));
 ```
 
-| Function | Does |
-| --- | --- |
-| `toWeb(readable, { signal })` | A `ReadableStream` of plain `Uint8Array`s from a `Readable` of bytes. `Buffer` chunks become `Uint8Array`s, and the strings from a `Readable` with `setEncoding` are encoded back to the bytes they came from. Any other chunk errors the stream with a `TypeError`. |
-| `toWebObjects(readable, { signal })` | A `ReadableStream` of the values of an object-mode `Readable`, typed `unknown`. `Buffer` chunks become `Uint8Array`s. |
+| Function                             | Does                                                                                                                                                                                                                                                                 |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `toWeb(readable, { signal })`        | A `ReadableStream` of plain `Uint8Array`s from a `Readable` of bytes. `Buffer` chunks become `Uint8Array`s, and the strings from a `Readable` with `setEncoding` are encoded back to the bytes they came from. Any other chunk errors the stream with a `TypeError`. |
+| `toWebObjects(readable, { signal })` | A `ReadableStream` of the values of an object-mode `Readable`, typed `unknown`. `Buffer` chunks become `Uint8Array`s.                                                                                                                                                |
 
 Both read from the `Readable` only when the stream's reader asks for a chunk, so a slow reader pauses the `Readable`. An error or a `destroy()` on the `Readable` errors the stream, and cancelling the stream destroys the `Readable` with the cancel reason. Aborting `signal` errors the stream with `signal.reason` and destroys the `Readable` with it.
 
@@ -146,8 +146,8 @@ import { Writable } from 'node:stream';
 import * as Csv from '@portable/csv';
 
 const response = await fetch('https://example.com/report.csv');
-await response.body!
-  .pipeThrough(new Csv.DecoderStream())
+const rows = response.body!.pipeThrough(new Csv.DecoderStream());
+await rows
   .pipeThrough(Streams.map((row: readonly string[]) => `${row.join('\t')}\n`))
   .pipeThrough(new TextEncoderStream())
   .pipeThrough(new CompressionStream('gzip'))
@@ -156,9 +156,9 @@ await response.body!
 
 ## Types
 
-| Type | Description |
-| --- | --- |
-| `Streams.Source` | What the collectors and combinators read: a `ReadableStream`, an async iterable, or an iterable. |
+| Type                            | Description                                                                                                                              |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `Streams.Source`                | What the collectors and combinators read: a `ReadableStream`, an async iterable, or an iterable.                                         |
 | `Streams.abortable.Transformer` | The `Transformer` that `abortable` takes and returns. It adds the optional `cancel` method, which TypeScript's DOM types don't have yet. |
 
 ## Why use this over get-stream, concat-stream, and merge2
@@ -213,17 +213,17 @@ The libraries above were written for Node streams. This package reads web stream
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/streams, and the bars are scaled to the fastest library.
 
-| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
-| --- | --- | ---: | ---: | --- | --- |
-| @portable/streams | – | 1.7 kB | 2 | none | included |
-| get-stream | 9.0.1 | 2.1 kB | 2 | `Buffer` | included |
-| concat-stream | 2.0.0 | 15 kB | 7 | `buffer`, `events`, `util` | @types/concat-stream |
-| bl | 7.0.12 | 2.0 kB | 0 | `buffer`, `stream` | included |
-| stream-to-array | 2.3.0 | 0.9 kB | 1 | none | @types/stream-to-array |
-| raw-body | 4.0.0 | 4.8 kB | 7 | `Buffer`, `async_hooks` | included |
-| merge2 | 1.4.1 | 1.2 kB | 0 | `stream` | @types/merge2 |
-| merge-stream | 2.0.0 | 0.8 kB | 0 | `stream` | @types/merge-stream |
-| through2 | 5.0.11 | 25 kB | 10 | `buffer`, `events` | included |
+| Library           | Version | Minified and gzipped | Runtime dependencies | Node built-ins             | TypeScript types       |
+| ----------------- | ------- | -------------------: | -------------------: | -------------------------- | ---------------------- |
+| @portable/streams | –       |               1.7 kB |                    2 | none                       | included               |
+| get-stream        | 9.0.1   |               2.1 kB |                    2 | `Buffer`                   | included               |
+| concat-stream     | 2.0.0   |                15 kB |                    7 | `buffer`, `events`, `util` | @types/concat-stream   |
+| bl                | 7.0.12  |               2.0 kB |                    0 | `buffer`, `stream`         | included               |
+| stream-to-array   | 2.3.0   |               0.9 kB |                    1 | none                       | @types/stream-to-array |
+| raw-body          | 4.0.0   |               4.8 kB |                    7 | `Buffer`, `async_hooks`    | included               |
+| merge2            | 1.4.1   |               1.2 kB |                    0 | `stream`                   | @types/merge2          |
+| merge-stream      | 2.0.0   |               0.8 kB |                    0 | `stream`                   | @types/merge-stream    |
+| through2          | 5.0.11  |                25 kB |                   10 | `buffer`, `events`         | included               |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

@@ -47,6 +47,7 @@ type Reader = {
   next: number;
   pointers: Map<number, number>;
   end: number;
+  budget: number;
 };
 
 export function readTiff(bytes: Uint8Array, start: number, end: number): Tiff {
@@ -67,6 +68,7 @@ export function readTiff(bytes: Uint8Array, start: number, end: number): Tiff {
     next: 0,
     pointers: new Map(),
     end: 8,
+    budget: 2 * length,
   } satisfies Reader;
   if (r.view.getUint16(2, r.le) !== 42) {
     throw new InvalidInputError('Invalid TIFF header: magic number is not 42.');
@@ -136,7 +138,16 @@ function readIfd(r: Reader, offset: number, names: Names): Tags {
     }
     const name =
       names[tag] ?? tagNames[tag] ?? `0x${tag.toString(16).toUpperCase().padStart(4, '0')}`;
-    tags[name] ??= readValue(r, type, count, at);
+    if (name in tags) {
+      continue;
+    }
+    if (type !== 7 && byteLength > 4) {
+      r.budget -= byteLength;
+      if (r.budget < 0) {
+        continue;
+      }
+    }
+    tags[name] = readValue(r, type, count, at);
   }
   if (fits(r, entriesEnd + 4)) {
     r.next = view.getUint32(entriesEnd, le);
