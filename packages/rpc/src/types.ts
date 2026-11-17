@@ -34,11 +34,13 @@ export type Message =
 
 /**
  * Turns messages into what a transport carries, and back. `decode` may return anything:
- * malformed messages are answered with JSON-RPC errors.
+ * malformed messages are answered with JSON-RPC errors. Set `received` when `decode` accepts more
+ * types than `encode` returns. For example, `Rpc.json` encodes to a string but decodes a string or
+ * bytes.
  */
-export type Codec<encoded = unknown> = {
+export type Codec<encoded = unknown, received = encoded> = {
   encode(message: Message): encoded;
-  decode(data: encoded): unknown;
+  decode(data: received): unknown;
 };
 
 /** A pair of streams that carry encoded messages, such as a WebSocket wrapped in streams. */
@@ -49,7 +51,10 @@ export type Transport = {
 
 /** What a method wrapped with `withContext` receives as its first argument. */
 export type Context = {
-  /** Aborted when the caller cancels the call or the connection closes. */
+  /**
+   * Aborted when the caller cancels the call or the connection closes. For a method called by
+   * `answer`, it is also aborted when the `signal` passed to `answer` aborts.
+   */
   readonly signal: AbortSignal;
   /** The HTTP request, for methods served by `handler`. */
   readonly request?: Request | undefined;

@@ -5,9 +5,9 @@
 ## @portable/rpc
 
 ```ts
-type Codec<encoded = unknown> = {
+type Codec<encoded = unknown, received = encoded> = {
   encode(message: Message): encoded;
-  decode(data: encoded): unknown;
+  decode(data: received): unknown;
 };
 
 type Context = {
@@ -21,6 +21,16 @@ type Message =
   | ResponseMessage
   | readonly (RequestMessage | NotificationMessage)[]
   | readonly ResponseMessage[];
+
+type Notifier<api> = 0 extends 1 & api
+  ? any
+  : {
+      readonly [key in keyof api]: api[key] extends (...args: infer args) => unknown
+        ? (...args: args) => Promise<void>
+        : api[key] extends object
+          ? Notifier<api[key]>
+          : never;
+    };
 
 type Remote<api> = 0 extends 1 & api
   ? any
@@ -53,6 +63,19 @@ type Transport = {
 
 class TransportError extends Errors.BaseError {
   static readonly kind: string;
+}
+
+function answer<encoded = string, received = string | Uint8Array>(
+  options: answer.Options<encoded, received>,
+): Promise<answer.ReturnType<encoded>>;
+namespace answer {
+  type Options<encoded, received> = {
+    methods: object;
+    message: NoInfer<received>;
+    codec?: Codec<encoded, received> | undefined;
+    signal?: AbortSignal | undefined;
+  };
+  type ReturnType<encoded> = encoded | undefined;
 }
 
 function call<fn extends (...args: any[]) => unknown>(
@@ -88,7 +111,17 @@ namespace http {
   };
 }
 
-const json: Codec<string | Uint8Array>;
+const json: Codec<string, string | Uint8Array>;
+
+function notifier<api>(
+  send: (data: any) => void | PromiseLike<void>,
+  options?: notifier.Options,
+): Notifier<api>;
+namespace notifier {
+  type Options = {
+    codec?: Codec<any> | undefined;
+  };
+}
 
 function notify<fn extends (...args: any[]) => unknown>(
   method: fn,

@@ -2,7 +2,10 @@ import type { Client } from './client.js';
 import { asyncDisposeSymbol } from '@portable/errors/internal';
 import type { Params } from './types.js';
 
-type Target = { client: Pick<Client, 'request' | 'notify'>; method: string };
+type Target = {
+  client: { request: Client['request'] | Client['notify']; notify: Client['notify'] };
+  method: string;
+};
 
 const targetKey = Symbol.for('portable.rpc.target');
 
@@ -38,7 +41,7 @@ function target(method: unknown): Target {
       ? (method as { [targetKey]?: Target | undefined })[targetKey]
       : undefined;
   if (!found) {
-    throw new TypeError('Expected a method of a remote from connect or http.');
+    throw new TypeError('Expected a method of a remote from connect or http, or of a notifier.');
   }
   return found;
 }
