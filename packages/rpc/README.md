@@ -185,7 +185,7 @@ Both sides post a hello every 100 ms until the other answers, so either can load
 
 The handshake has no timeout of its own. Aborting the connection's `signal` closes the whole connection, so to give up on a window that never answers, pass a signal to each call instead: `Rpc.call(..., { signal: AbortSignal.timeout(10_000) })`. When the other window reloads, its new page sends a hello again and the same remote keeps working. A call the old page didn't answer stays pending until its signal aborts.
 
-### `Rpc.handler(api)` and `Rpc.http(url, { fetch, signal })`
+### `Rpc.handler(api, { codec })` and `Rpc.http(url, { fetch, codec, signal })`
 
 `Rpc.handler` returns a `(request: Request) => Promise<Response>` for JSON-RPC over HTTP POST, which works with Workers, Node, Bun, Deno, and any framework that takes a fetch handler:
 
@@ -205,7 +205,26 @@ const api = Rpc.http<Api>('https://example.com/rpc', {
 });
 ```
 
-A response is JSON, or, when a method returns a stream, `application/x-ndjson` with one message per line as the values are produced. Breaking out of a streamed result aborts the request. A request with only notifications gets `204 No Content`, and other HTTP methods get `405`. Methods wrapped with `withContext` receive the `Request`, and their `signal` aborts when the client disconnects. HTTP always uses JSON.
+A response is one encoded message or batch. When a method returns a stream, `handler` writes each value to the response as the method produces it, using the framing in the table below. Breaking out of a streamed result aborts the request. A request with only notifications gets `204 No Content`, and other HTTP methods get `405`. Methods wrapped with `withContext` receive the `Request`, and their `signal` aborts when the client disconnects.
+
+Both take a `codec`, which defaults to `Rpc.json`. Pass the same codec to both. The codec's `contentType` is sent as the `content-type` of requests and responses, and defaults to `application/octet-stream`:
+
+```ts
+import * as cbor from 'cborg';
+
+const codec = { encode: cbor.encode, decode: cbor.decode, contentType: 'application/cbor' };
+const rpc = Rpc.handler(api, { codec });
+const remote = Rpc.http<Api>('https://example.com/rpc', { codec });
+```
+
+`handler` picks the framing of a streamed response from the type that the codec's `encode` returns:
+
+| `encode` returns             | Streamed `content-type`                                                                         | Framing                                                                                                                                               |
+| ---------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A string, as `Rpc.json` does | `application/x-ndjson`                                                                          | One message per line. Write each message without line breaks, as `JSON.stringify` does.                                                               |
+| Bytes, as a CBOR codec does  | `application/vnd.portable.rpc-stream; codec="application/cbor"`, with the codec's `contentType` | Each message follows a 5-byte header: a flags byte of 0 and the message length as a 32-bit big-endian integer, as in the Connect protocol's envelope. |
+
+`http` reads either framing, chosen by the response's `content-type`.
 
 ### WebSocket and server-sent events
 

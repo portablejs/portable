@@ -1,19 +1,56 @@
+import { toBufferSource } from '@portable/bytes/internal';
 import * as Errors from '@portable/errors';
-import * as Jsonl from '@portable/jsonl';
+import * as Lines from '@portable/lines';
+import { encode } from './answer.js';
 import { createClient } from './client.js';
+import { json } from './connect.js';
+import { rpcStream, unwrapStream, wrap } from './envelope.js';
 import type { AsyncDisposeMethod } from '@portable/errors/internal';
 import { RemoteError, TransportError } from './errors.js';
 import { remote } from './remote.js';
-import { createServer, error, noop } from './server.js';
-import type { Id, Message, Remote } from './types.js';
+import { error } from './dispatch.js';
+import { createServer } from './server.js';
+import { noop } from './util.js';
+import type { Codec, Id, Message, Remote } from './types.js';
 
 const ndjson = 'application/x-ndjson';
+const textEncoder = new TextEncoder();
+const newline = new Uint8Array([10]);
 
 /**
- * Answers calls to `methods` over HTTP. The returned function answers a POST of a JSON-RPC request or batch. The
- * response is JSON, or, when a method returns a stream, newline-delimited messages that contain the
- * stream's values as they are produced. Methods wrapped with `withContext` get the `Request`, and
- * their `signal` aborts when the client disconnects.
+ * A codec for HTTP. Its `decode` receives a whole response body as bytes, one line of a
+ * newline-delimited stream as text, or the bytes of one enveloped message.
+ */
+type HttpCodec = Codec<string | Uint8Array, string | Uint8Array>;
+
+const mediaType = (codec: HttpCodec) => codec.contentType ?? 'application/octet-stream';
+const writesText = (codec: HttpCodec) => {
+  try {
+    return typeof codec.encode({ jsonrpc: '2.0', id: null, result: null }) === 'string';
+  } catch {
+    return false;
+  }
+};
+const body = (data: string | Uint8Array) =>
+  typeof data === 'string' ? data : toBufferSource(data);
+
+export declare namespace handler {
+  type Options = {
+    /**
+     * Decodes request bodies and encodes responses. Its `contentType` is sent as `content-type`.
+     * @default Rpc.json
+     */
+    codec?: Codec<any, any> | undefined;
+  };
+}
+
+/**
+ * Answers calls to `methods` over HTTP. The returned function answers a POST of a JSON-RPC request
+ * or batch, encoded with `codec`. When a method returns a stream, the returned function sends each
+ * value as a separate message as the method produces it. If the codec's `encode` returns a string,
+ * as `Rpc.json` does, it sends one message per line. If `encode` returns bytes, it sends each
+ * message after a 5-byte length header, as the Connect protocol does. Methods wrapped with `withContext` get the `Request`, and their `signal`
+ * aborts when the client disconnects.
  *
  * @example
  * ```ts
@@ -23,22 +60,30 @@ const ndjson = 'application/x-ndjson';
  * export default { fetch: (request: Request) => rpc(request) };
  * ```
  */
-export function handler(methods: object): (request: Request) => Promise<Response> {
+export function handler(
+  methods: object,
+  options: handler.Options = {},
+): (request: Request) => Promise<Response> {
+  const codec = (options.codec ?? json) satisfies HttpCodec;
+  const headers = { 'content-type': mediaType(codec) };
+  const text = writesText(codec);
+  const respondWith = (response: Message) =>
+    new Response(body(encode(codec, response as Parameters<typeof encode>[1])), { headers });
   return async (request) => {
     if (request.method !== 'POST') {
       return new Response(null, { status: 405, headers: { allow: 'POST' } });
     }
     let message: unknown;
     try {
-      message = JSON.parse(await request.text());
+      message = codec.decode(new Uint8Array(await request.arrayBuffer()));
     } catch {
-      return Response.json(error(null, -32700, 'Parse error'));
+      return respondWith(error(null, -32700, 'Parse error'));
     }
 
     const buffered: Message[] = [];
     const streams = new Set<Id>();
     let streamed = false;
-    let writer: WritableStreamDefaultWriter<unknown> | undefined;
+    let writer: WritableStreamDefaultWriter<Message> | undefined;
     const send = (message: Message): Promise<void> | void => {
       if (isStreamStart(message)) {
         streamed = true;
@@ -62,9 +107,20 @@ export function handler(methods: object): (request: Request) => Promise<Response
     if (!streamed) {
       request.signal.removeEventListener('abort', onAbort);
       const [response] = buffered;
-      return response ? Response.json(response) : new Response(null, { status: 204 });
+      return response ? respondWith(response) : new Response(null, { status: 204 });
     }
-    const encoder = new Jsonl.EncoderStream();
+    const encoder = new TransformStream<Message, Uint8Array>({
+      transform(message, controller) {
+        const data = codec.encode(message);
+        const bytes = typeof data === 'string' ? textEncoder.encode(data) : data;
+        if (!text) {
+          controller.enqueue(wrap(bytes));
+          return;
+        }
+        controller.enqueue(bytes);
+        controller.enqueue(newline);
+      },
+    });
     writer = encoder.writable.getWriter();
     writer.closed.then(
       () => request.signal.removeEventListener('abort', onAbort),
@@ -82,7 +138,7 @@ export function handler(methods: object): (request: Request) => Promise<Response
       void writer.close().catch(noop);
     }
     return new Response(encoder.readable, {
-      headers: { 'content-type': ndjson },
+      headers: { 'content-type': text ? ndjson : `${rpcStream}; codec="${mediaType(codec)}"` },
     });
   };
 }
@@ -93,11 +149,14 @@ export declare namespace http {
     fetch?: ((request: Request) => Promise<Response>) | undefined;
     /** Aborts every request and rejects waiting calls with `signal.reason`. */
     signal?: AbortSignal | undefined;
+    /** Encodes request bodies and decodes responses. Use the same codec as the `handler`. @default Rpc.json */
+    codec?: Codec<any, any> | undefined;
   };
 }
 
 type Batch = {
-  messages: string[];
+  messages: Message[];
+  encoded: (string | Uint8Array)[];
   pending: Set<Id>;
   controller: AbortController;
   sent: Promise<void>;
@@ -123,6 +182,8 @@ export function http<api>(
   options: http.Options = {},
 ): Remote<api> & AsyncDisposeMethod {
   const { fetch = (request: Request) => globalThis.fetch(request) } = options;
+  const codec = (options.codec ?? json) satisfies HttpCodec;
+  const contentType = mediaType(codec);
   const disposer = new AbortController();
   const signal = options.signal
     ? AbortSignal.any([options.signal, disposer.signal])
@@ -135,10 +196,11 @@ export function http<api>(
     if (!Array.isArray(message) && 'method' in message && message.method === '$/cancel') {
       return cancel((message.params as { id: Id }).id);
     }
-    const text = JSON.stringify(message);
+    const encoded = codec.encode(message);
     if (!queued) {
       const batch: Batch = {
         messages: [],
+        encoded: [],
         pending: new Set(),
         controller: new AbortController(),
         sent: Promise.resolve(),
@@ -146,7 +208,8 @@ export function http<api>(
       batch.sent = batch.sent.then(() => post(batch));
       queued = batch;
     }
-    queued.messages.push(text);
+    queued.messages.push(message);
+    queued.encoded.push(encoded);
     if (!Array.isArray(message) && 'id' in message) {
       queued.pending.add(message.id);
       batches.set(message.id, queued);
@@ -191,7 +254,7 @@ export function http<api>(
 
   async function post(batch: Batch) {
     queued = undefined;
-    const { messages, controller, pending } = batch;
+    const { messages, encoded, controller, pending } = batch;
     if (signal.aborted) {
       controller.abort(signal.reason);
     }
@@ -200,8 +263,17 @@ export function http<api>(
       const response = await fetch(
         new Request(url, {
           method: 'POST',
-          headers: { 'content-type': 'application/json', accept: `application/json, ${ndjson}` },
-          body: messages.length === 1 ? messages[0]! : `[${messages.join(',')}]`,
+          headers: {
+            'content-type': contentType,
+            accept: `${contentType}, ${ndjson}, ${rpcStream}`,
+          },
+          body: body(
+            encoded.length === 1
+              ? encoded[0]!
+              : codec === json
+                ? `[${encoded.join(',')}]`
+                : codec.encode(messages as Message),
+          ),
           signal: controller.signal,
         }),
       );
@@ -211,14 +283,19 @@ export function http<api>(
           cause: new Errors.ResponseError({ response }),
         });
       }
-      if (response.body && response.headers.get('content-type')?.startsWith(ndjson)) {
-        const reader = response.body.pipeThrough(new Jsonl.DecoderStream()).getReader();
+      const type = response.headers.get('content-type') ?? '';
+      if (response.body && (type.startsWith(ndjson) || type.startsWith(rpcStream))) {
+        const reader = response.body
+          .pipeThrough<string | Uint8Array>(
+            type.startsWith(ndjson) ? new Lines.DecoderStream({ skipEmpty: true }) : unwrapStream(),
+          )
+          .getReader();
         for (let r = await reader.read(); !r.done; r = await reader.read()) {
-          receive(batch, r.value);
+          receive(batch, codec.decode(r.value));
         }
       } else if (response.status !== 204) {
-        const body: unknown = await response.json();
-        for (const message of Array.isArray(body) ? body : [body]) {
+        const decoded = codec.decode(new Uint8Array(await response.arrayBuffer()));
+        for (const message of Array.isArray(decoded) ? decoded : [decoded]) {
           receive(batch, message);
         }
       }

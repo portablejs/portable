@@ -8,6 +8,7 @@
 type Codec<encoded = unknown, received = encoded> = {
   encode(message: Message): encoded;
   decode(data: received): unknown;
+  readonly contentType?: string | undefined;
 };
 
 type Context = {
@@ -101,13 +102,22 @@ namespace connect {
   };
 }
 
-function handler(methods: object): (request: Request) => Promise<Response>;
+function handler(
+  methods: object,
+  options?: handler.Options,
+): (request: Request) => Promise<Response>;
+namespace handler {
+  type Options = {
+    codec?: Codec<any, any> | undefined;
+  };
+}
 
 function http<api>(url: string | URL, options?: http.Options): Remote<api> & AsyncDisposeMethod;
 namespace http {
   type Options = {
     fetch?: ((request: Request) => Promise<Response>) | undefined;
     signal?: AbortSignal | undefined;
+    codec?: Codec<any, any> | undefined;
   };
 }
 

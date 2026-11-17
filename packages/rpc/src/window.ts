@@ -1,6 +1,6 @@
 import { TransportError } from './errors.js';
 import { direct } from './port.js';
-import { deferred, noop } from './server.js';
+import { deferred, noop } from './util.js';
 import type { Transport } from './types.js';
 
 const key = '@portable/rpc';
