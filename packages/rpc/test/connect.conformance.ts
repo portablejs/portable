@@ -680,3 +680,117 @@ describe.skipIf(asyncDispose === undefined)('Symbol.asyncDispose', () => {
     expect((remote.math as unknown as Record<symbol, unknown>)[asyncDispose!]).toBeUndefined();
   });
 });
+
+/** A transport to `api` that the test can drop, as a WebSocket connection drops. */
+function connection(api: object) {
+  let toClient!: ReadableStreamDefaultController<unknown>;
+  let toServer!: ReadableStreamDefaultController<unknown>;
+  let dropped = false;
+  Rpc.provide(
+    {
+      readable: new ReadableStream({ start: (c) => void (toServer = c) }),
+      writable: new WritableStream({ write: (m) => void (dropped || toClient.enqueue(m)) }),
+    },
+    api,
+  );
+  const transport = {
+    readable: new ReadableStream({ start: (c) => void (toClient = c) }),
+    writable: new WritableStream({
+      write(m) {
+        if (dropped) {
+          throw new Error('The connection is closed.');
+        }
+        toServer.enqueue(m);
+      },
+    }),
+  };
+  return {
+    transport,
+    drop() {
+      dropped = true;
+      toClient.error(new Error('The connection dropped.'));
+      toServer.close();
+    },
+  };
+}
+
+function connections() {
+  const { readable, writable } = new TransformStream<Rpc.Transport, Rpc.Transport>();
+  const writer = writable.getWriter();
+  return {
+    readable,
+    add: (transport: Rpc.Transport) => writer.write(transport),
+    end: () => writer.close(),
+  };
+}
+
+describe('a stream of transports', () => {
+  const api = {
+    add: (a: number, b: number) => a + b,
+    never: () => new Promise<never>(() => {}),
+  };
+
+  test('makes calls over the current transport', async () => {
+    const stream = connections();
+    const remote = Rpc.connect<typeof api>(stream.readable);
+    void stream.add(connection(api).transport);
+    expect(await remote.add(1, 2)).toBe(3);
+  });
+
+  test('rejects a call sent on a dropped transport and answers later calls on the next transport', async () => {
+    const stream = connections();
+    const remote = Rpc.connect<typeof api>(stream.readable);
+    const first = connection(api);
+    void stream.add(first.transport);
+    expect(await remote.add(1, 1)).toBe(2);
+    const lost = remote.never();
+    await settle();
+    first.drop();
+    await expect(lost).rejects.toBeInstanceOf(Rpc.TransportError);
+    void stream.add(connection(api).transport);
+    expect(await remote.add(2, 2)).toBe(4);
+  });
+
+  test('holds calls made between transports and sends them on the next', async () => {
+    const stream = connections();
+    const remote = Rpc.connect<typeof api>(stream.readable);
+    const first = connection(api);
+    void stream.add(first.transport);
+    expect(await remote.add(1, 1)).toBe(2);
+    first.drop();
+    await settle();
+    const held = remote.add(3, 4);
+    await settle();
+    void stream.add(connection(api).transport);
+    expect(await held).toBe(7);
+  });
+
+  test('sends calls made before the first transport once it arrives', async () => {
+    const stream = connections();
+    const remote = Rpc.connect<typeof api>(stream.readable);
+    const early = remote.add(5, 5);
+    await settle();
+    void stream.add(connection(api).transport);
+    expect(await early).toBe(10);
+  });
+
+  test('rejects waiting calls with TransportError when the stream ends', async () => {
+    const stream = connections();
+    const remote = Rpc.connect<typeof api>(stream.readable);
+    const waiting = remote.add(1, 2);
+    void stream.end();
+    await expect(waiting).rejects.toBeInstanceOf(Rpc.TransportError);
+    await expect(remote.add(1, 2)).rejects.toBeInstanceOf(Rpc.TransportError);
+  });
+
+  test('the signal cancels the stream and rejects waiting calls', async () => {
+    const stream = connections();
+    const controller = new AbortController();
+    const remote = Rpc.connect<typeof api>(stream.readable, { signal: controller.signal });
+    void stream.add(connection(api).transport);
+    const waiting = remote.never();
+    await settle();
+    controller.abort(new Error('stop'));
+    await expect(waiting).rejects.toThrow('stop');
+  });
+});

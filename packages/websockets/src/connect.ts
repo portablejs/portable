@@ -1,23 +1,18 @@
-import * as Timers from '@portable/timers';
+import { withAsyncDispose } from '@portable/errors/internal';
+import { connections } from './connections.js';
+import { MaxBufferedError } from './errors.js';
 import {
   type Duplex,
   type Message,
-  OPEN,
   type Socket,
-  type SocketEvent,
+  assertSize,
   cancelledError,
   disposedError,
-  toOutgoing,
-  assertSize,
-  queueLimit,
-  drained,
-  isNormalClose,
   messageSize,
-  timeout as startTimer,
-  toMessage,
+  queueLimit,
+  toOutgoing,
 } from './Socket.js';
-import { withAsyncDispose } from '@portable/errors/internal';
-import { CloseError, MaxBufferedError } from './errors.js';
+import type * as Timers from '@portable/timers';
 
 export declare namespace connect {
   type Options = {
@@ -104,14 +99,6 @@ export declare namespace connect {
   type Url = string | URL | (() => string | URL | PromiseLike<string | URL>);
 }
 
-type Outcome = { ready: boolean } & (
-  | { kind: 'close'; close: connect.Close }
-  | { kind: 'error'; error: unknown; final?: boolean | undefined }
-);
-
-const finalCodes = new Set([1000, 1002, 1003, 1007, 1008, 1009, 1010]);
-const defaultReconnectIf = (event: connect.Close) => !finalCodes.has(event.code);
-
 /**
  * Opens a WebSocket that reconnects when the connection drops, and returns its readable and writable
  * sides. Both streams stay the same across reconnects.
@@ -138,42 +125,17 @@ const defaultReconnectIf = (event: connect.Close) => !finalCodes.has(event.code)
  * ```
  */
 export function connect(url: connect.Url, options: connect.Options = {}): Duplex {
-  const {
-    protocols,
-    signal,
-    delay = { initial: 1000, max: 30_000 },
-    attempts = Infinity,
-    timeout = 10_000,
-    open,
-    reconnectIf = defaultReconnectIf,
-    maxQueued = 1000,
-    highWaterMark = 1 << 20,
-    maxBuffered = Infinity,
-    heartbeat,
-    WebSocket: Impl = globalThis.WebSocket,
-  } = options;
-  if (typeof Impl !== 'function') {
-    throw new TypeError('No WebSocket class found. Pass one as the `WebSocket` option.');
-  }
-  const next = Timers.backoff(delay);
-  assertSize('attempts', attempts, 1);
-  assertSize('timeout', timeout, 1);
+  const { signal, maxQueued = 1000, maxBuffered = Infinity, ...rest } = options;
   assertSize('maxQueued', maxQueued);
-  assertSize('highWaterMark', highWaterMark);
   assertSize('maxBuffered', maxBuffered, 1);
-  if (heartbeat) {
-    assertSize('heartbeat.interval', heartbeat.interval, 1);
-    assertSize('heartbeat.timeout', heartbeat.timeout ?? heartbeat.interval, 1);
-  }
-  const ping = heartbeat && toOutgoing(heartbeat.ping);
-  const protocolList = typeof protocols === 'string' ? protocols : protocols && [...protocols];
+  const stop = new AbortController();
+  const source = connections(url, { ...rest, signal: signal?.aborted ? signal : stop.signal });
 
   let readableController!: ReadableStreamDefaultController<Message>;
   let writableController!: WritableStreamDefaultController;
-  const stop = new AbortController();
   let failure: unknown;
   let closing = false;
-  let current: Socket | undefined;
+  let current: WritableStreamDefaultWriter<string | Uint8Array> | undefined;
   const queue: (string | Uint8Array<ArrayBuffer>)[] = [];
   let waiters: (() => void)[] = [];
 
@@ -206,6 +168,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     queue.length = 0;
     notify();
   };
+  const onAbort = () => finish(signal!.reason, false);
 
   const push = (message: Message) => {
     if (stop.signal.aborted) {
@@ -217,243 +180,69 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     }
   };
 
-  const onAbort = () => finish(signal!.reason, false);
-
-  async function session(): Promise<Outcome> {
-    let socket: Socket;
-    try {
-      const target = typeof url === 'function' ? await url() : url;
-      if (stop.signal.aborted) {
-        return { ready: false, kind: 'error', error: failure };
+  async function run(source: ReadableStream<Duplex>) {
+    const reader = source.getReader();
+    for (;;) {
+      let next: ReadableStreamReadResult<Duplex>;
+      try {
+        next = await reader.read();
+      } catch (error) {
+        return finish(error, false);
       }
-      socket = new Impl(String(target), protocolList);
-    } catch (error) {
-      return { ready: false, kind: 'error', error, final: typeof url !== 'function' };
-    }
-    socket.binaryType = 'arraybuffer';
-
-    const attempt = new AbortController();
-    let ready = false;
-    let outcome: Outcome | undefined;
-    let ended!: (outcome: Outcome) => void;
-    const result = new Promise<Outcome>((resolve) => (ended = resolve));
-
-    let handshake = !!open;
-    const inbox: Message[] = [];
-    let wakeHandshake: (() => void) | undefined;
-    const release = () => {
-      handshake = false;
-      for (const message of inbox) {
-        push(message);
+      if (next.done) {
+        return finish(lastError, true);
       }
-      inbox.length = 0;
-      wakeHandshake?.();
-    };
-
-    let pingTimer: ReturnType<typeof setInterval> | undefined;
-    let pongTimer: ReturnType<typeof setTimeout> | undefined;
-    const openTimer = startTimer(
-      () =>
-        attempt.abort(
-          new DOMException(`The WebSocket did not open within ${timeout} ms.`, 'TimeoutError'),
-        ),
-      timeout,
-    );
-
-    const end = (next: Outcome) => {
-      if (outcome) {
-        return;
+      const writer = next.value.writable.getWriter();
+      const messages = next.value.readable.getReader();
+      let open = true;
+      while (open && queue.length > 0 && !stop.signal.aborted) {
+        try {
+          await writer.write(queue[0]);
+          queue.shift();
+          notify();
+        } catch {
+          open = false;
+        }
       }
-      outcome = next;
-      socket.removeEventListener('message', onMessage);
-      socket.removeEventListener('close', onClose);
-      stop.signal.removeEventListener('abort', onStop);
-      clearTimeout(openTimer);
-      clearInterval(pingTimer);
-      clearTimeout(pongTimer);
-      if (current === socket) {
+      if (open && !stop.signal.aborted) {
+        current = writer;
+        notify();
+        if (closing) {
+          void writer.close().catch(() => {});
+        }
+      }
+      try {
+        for (;;) {
+          const { done, value } = await messages.read();
+          if (done) {
+            break;
+          }
+          push(value);
+        }
+      } catch {}
+      if (current === writer) {
         current = undefined;
       }
-      release();
-      attempt.abort();
+      await writer.closed.catch((error: unknown) => (lastError = error));
       notify();
-      ended(next);
-    };
-
-    const onMessage = (event: SocketEvent) => {
-      let message: Message;
-      try {
-        message = toMessage(event.data);
-      } catch (error) {
-        return finish(error, false);
-      }
-      if (heartbeat?.pong(message)) {
-        clearTimeout(pongTimer);
-        pongTimer = undefined;
-      } else if (handshake) {
-        inbox.push(message);
-        wakeHandshake?.();
-      } else {
-        push(message);
-      }
-    };
-    const onClose = (event: SocketEvent) =>
-      end({
-        ready,
-        kind: 'close',
-        close: { code: event.code ?? 1005, reason: event.reason ?? '' },
-      });
-    const onStop = () => attempt.abort(stop.signal.reason);
-
-    socket.addEventListener('message', onMessage);
-    socket.addEventListener('close', onClose);
-    // Keep an error listener after teardown: the ws package throws if an error event has no
-    // listener.
-    socket.addEventListener('error', () => {});
-    stop.signal.addEventListener('abort', onStop);
-    attempt.signal.addEventListener('abort', () => {
-      if (outcome) {
-        return;
-      }
-      socket.close(stop.signal.aborted ? 1000 : undefined);
-      end({ ready, kind: 'error', error: attempt.signal.reason });
-    });
-    if (stop.signal.aborted) {
-      onStop();
-    }
-
-    const opened = await Promise.race([
-      new Promise<boolean>((resolve) => socket.addEventListener('open', () => resolve(true))),
-      result.then(() => false),
-    ]);
-    if (!opened) {
-      return result;
-    }
-
-    if (open) {
-      const messages = new ReadableStream<Message>(
-        {
-          async pull(controller) {
-            while (handshake && inbox.length === 0) {
-              await new Promise<void>((resolve) => (wakeHandshake = resolve));
-            }
-            if (inbox.length > 0) {
-              controller.enqueue(inbox.shift()!);
-            } else {
-              controller.close();
-            }
-          },
-          cancel: release,
-        },
-        { highWaterMark: 0 },
-      );
-      const send = (message: string | Uint8Array) => {
-        if (outcome || socket.readyState !== OPEN) {
-          throw new DOMException('The WebSocket is not open.', 'InvalidStateError');
-        }
-        socket.send(toOutgoing(message));
-      };
-      const handshakeDone = Promise.resolve().then(() =>
-        open({ send, messages, signal: attempt.signal }),
-      );
-      handshakeDone.catch(() => {});
-      try {
-        await Promise.race([handshakeDone, result]);
-      } catch (error) {
-        attempt.abort(error);
-      }
-      if (outcome) {
-        return result;
-      }
-    }
-
-    clearTimeout(openTimer);
-    release();
-    let sent = 0;
-    while (sent < queue.length && socket.readyState === OPEN) {
-      socket.send(queue[sent++]!);
-    }
-    queue.splice(0, sent);
-    if (socket.readyState !== OPEN) {
-      return result;
-    }
-    ready = true;
-    current = socket;
-    notify();
-
-    if (heartbeat) {
-      const { interval, timeout: wait = interval } = heartbeat;
-      pingTimer = setInterval(() => {
-        if (socket.readyState !== OPEN) {
-          return;
-        }
-        socket.send(ping!);
-        pongTimer ??= startTimer(
-          () =>
-            attempt.abort(
-              new DOMException(`No heartbeat reply within ${wait} ms.`, 'TimeoutError'),
-            ),
-          wait,
-        );
-      }, interval);
-    }
-    return result;
-  }
-
-  async function run() {
-    for (let failures = 0; !stop.signal.aborted;) {
-      const outcome = await session();
-      if (stop.signal.aborted) {
-        return;
-      }
-      if (closing && queue.length === 0) {
-        return finish(undefined, true);
-      }
-      if (outcome.ready) {
-        failures = 0;
-      }
-      if (outcome.kind === 'close') {
-        let reconnect: boolean;
-        try {
-          reconnect = await reconnectIf(outcome.close, { attempt: failures + 1 });
-        } catch (error) {
-          return finish(error, false);
-        }
-        if (stop.signal.aborted) {
-          return;
-        }
-        if (!reconnect) {
-          const { code, reason } = outcome.close;
-          return finish(new CloseError({ code, reason }), isNormalClose(code));
-        }
-      }
-      const error =
-        outcome.kind === 'error'
-          ? outcome.error
-          : new CloseError({ code: outcome.close.code, reason: outcome.close.reason });
-      if (outcome.kind === 'error' && outcome.final) {
-        return finish(error, false);
-      }
-      if (++failures >= attempts) {
-        return finish(error, false);
-      }
-      await Timers.sleep(next({ attempt: failures, error }), { signal: stop.signal }).catch(
-        () => {},
-      );
     }
   }
+
+  let lastError: unknown;
 
   const write = (input: string | Uint8Array): Promise<void> | undefined => {
     const chunk = toOutgoing(input);
     if (stop.signal.aborted) {
       throw failure;
     }
-    if (current?.readyState === OPEN && queue.length === 0) {
-      if (current.bufferedAmount > highWaterMark) {
-        return drained(current, highWaterMark).then(() => write(chunk));
-      }
-      current.send(chunk);
-      return;
+    const writer = current;
+    if (writer && queue.length === 0) {
+      return writer.write(chunk).catch(() => {
+        if (current === writer) {
+          current = undefined;
+        }
+        return write(chunk);
+      });
     }
     if (queue.length < maxQueued) {
       queue.push(chunk);
@@ -490,7 +279,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
       }
       closing = true;
       if (current) {
-        current.close(1000);
+        await current.close().catch(() => {});
       } else {
         finish(undefined, true);
       }
@@ -504,7 +293,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     finish(signal.reason, false);
   } else {
     signal?.addEventListener('abort', onAbort);
-    void run();
+    void run(source);
   }
   return withAsyncDispose({ readable, writable }, async () => finish(disposedError(), false));
 }

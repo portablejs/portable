@@ -209,7 +209,17 @@ A response is JSON, or, when a method returns a stream, `application/x-ndjson` w
 
 ### WebSocket and server-sent events
 
-A WebSocket wrapped as `readable` and `writable` streams of strings, such as the one [@portable/websockets](https://portablejs.com/packages/websockets) returns, can be passed as a transport unchanged. Without that package, you can wrap a socket in a few lines:
+A WebSocket wrapped as `readable` and `writable` streams of strings can be passed as a transport unchanged. For a socket that reconnects, pass the stream that `WebSockets.connections` from [@portable/websockets](https://portablejs.com/packages/websockets) returns. It holds one transport per connection:
+
+```ts
+import * as WebSockets from '@portable/websockets';
+
+const remote = Rpc.connect<Api>(WebSockets.connections('wss://example.com/rpc'));
+```
+
+With a stream of transports, `connect` sends on the newest transport and holds calls made between transports until the next one arrives. When a transport's `readable` ends, `connect` rejects the calls whose requests went out on that transport with `Rpc.TransportError`, because their responses can't arrive on another connection. It also aborts the methods it was running for the other side of that transport. When the stream ends, waiting calls reject with `Rpc.TransportError`.
+
+Without websockets, you can wrap a socket in a few lines:
 
 ```ts
 const socket = new WebSocket('wss://example.com/rpc');
@@ -307,7 +317,7 @@ const methods = {
 };
 export type ClientApi = typeof methods;
 
-const room = Rpc.connect<RoomApi>(WebSockets.connect('wss://example.com/room'), { methods });
+const room = Rpc.connect<RoomApi>(WebSockets.connections('wss://example.com/room'), { methods });
 await room.follow(['friends']);
 ```
 
@@ -331,7 +341,7 @@ Cloudflare doesn't evict the object while `webSocketMessage` runs, so a method c
 
 ### Reconnecting clients
 
-If the WebSocket from [@portable/websockets](https://portablejs.com/packages/websockets) reconnects, a call whose request went out on the dropped connection is never answered. Requests written while the socket was disconnected are queued and answered as usual. To limit the wait, pass a signal with `Rpc.call(room.follow, [['friends']], { signal: AbortSignal.timeout(10_000) })`.
+The client above passes the stream that `WebSockets.connections` from [@portable/websockets](https://portablejs.com/packages/websockets) returns, as described in [WebSocket and server-sent events](#websocket-and-server-sent-events). When the Durable Object restarts or the network drops, a call whose request went out on the dropped connection rejects with `Rpc.TransportError`. If the network drops, the rejection waits until the browser notices the dead connection, which can take seconds. Calls made while the socket was disconnected are sent on the next connection.
 
 ## Protocol
 

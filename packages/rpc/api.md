@@ -90,7 +90,7 @@ namespace call {
 }
 
 function connect<api>(
-  transport: Transport,
+  transport: Transport | ReadableStream<Transport>,
   options?: connect.Options,
 ): Remote<api> & AsyncDisposeMethod;
 namespace connect {
