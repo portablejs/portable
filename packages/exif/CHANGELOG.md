@@ -1,5 +1,15 @@
 # @portable/exif
 
+## 0.2.0
+
+### Minor Changes
+
+- [#64](https://github.com/portablejs/portable/pull/64) [`27bf758`](https://github.com/portablejs/portable/commit/27bf758bf0e181a5aebc18676701031b1e35dec9) - `strip` and `StripStream` remove the `Exif` and XMP items from HEIC and AVIF files, which they used to reject with `UnsupportedError`. `strip` keeps the file's length, so every other byte stays at its offset. It writes the smaller `meta` box followed by a `free` box, and it overwrites the removed items' data with zeros. `StripStream` holds a HEIC or AVIF file only up to the end of its `meta` box.
+
+### Patch Changes
+
+- [#61](https://github.com/portablejs/portable/pull/61) [`c437905`](https://github.com/portablejs/portable/commit/c4379052f1e97d8c64fce323a5529799824b5a4f) - `parse` decodes at most twice the size of the TIFF data in values longer than 4 bytes and skips the tags after that, so many entries that point at one large value no longer decode to far more than the input. It also skips a second tag with the same name in one IFD.
+
 ## 0.1.0
 
 ### Minor Changes

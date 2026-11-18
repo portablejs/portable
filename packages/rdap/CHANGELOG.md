@@ -1,5 +1,16 @@
 # @portable/rdap
 
+## 0.2.0
+
+### Minor Changes
+
+- [#61](https://github.com/portablejs/portable/pull/61) [`c437905`](https://github.com/portablejs/portable/commit/c4379052f1e97d8c64fce323a5529799824b5a4f) - `Rdap.domain` follows a registrar referral only if the link uses https and its host is a domain name, not an IP address or `localhost`, and it no longer follows redirects on the referral request.
+
+### Patch Changes
+
+- Updated dependencies [[`e6b7965`](https://github.com/portablejs/portable/commit/e6b79659df02963502e63a580ba5bad3901ff038)]:
+  - @portable/idna@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes
