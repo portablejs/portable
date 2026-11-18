@@ -30,10 +30,8 @@ function digitValue(code: number): number {
   return base;
 }
 
-const digits = 'abcdefghijklmnopqrstuvwxyz0123456789';
-
-// Both directions count positions with a Fenwick tree, so a long label takes O(n log n) time. The
-// RFC's sample code inserts into an array and rescans the input for each code point, both O(n²).
+// Decoding places code points with a Fenwick tree, so a long label takes O(n log n) time. The RFC's
+// sample code inserts into an array, which is O(n²).
 
 /**
  * RFC 3492 decoding of one label without its `xn--` prefix. Returns `undefined` for invalid input.
@@ -119,106 +117,4 @@ export function decode(input: string): string | undefined {
     text += String.fromCodePoint(code);
   }
   return text;
-}
-
-function markHandled(tree: Int32Array, position: number): void {
-  for (let j = position + 1; j < tree.length; j += j & -j) {
-    tree[j]!++;
-  }
-}
-
-function countHandled(tree: Int32Array, end: number): number {
-  let count = 0;
-  for (let j = end; j > 0; j -= j & -j) {
-    count += tree[j]!;
-  }
-  return count;
-}
-
-const positionScale = 2 ** 32;
-
-/** RFC 3492 encoding of one label, without the `xn--` prefix. Returns `undefined` on overflow. */
-export function encode(input: string): string | undefined {
-  let output = '';
-  let size = 0;
-  let extended = 0;
-  for (let i = 0; i < input.length; i++, size++) {
-    const code = input.charCodeAt(i);
-    if (code < 0x80) {
-      output += input[i];
-    } else {
-      extended++;
-      if (code >= 0xd800 && code <= 0xdbff && input.codePointAt(i)! > 0xffff) {
-        i++;
-      }
-    }
-  }
-
-  // Each extended code point sorted by value, then position, packed into one number.
-  const handledTree = new Int32Array(size + 1);
-  const order = new Float64Array(extended);
-  for (let i = 0, position = 0, k = 0; i < input.length; i++, position++) {
-    const code = input.codePointAt(i)!;
-    if (code > 0xffff) {
-      i++;
-    }
-    if (code < 0x80) {
-      markHandled(handledTree, position);
-    } else {
-      order[k++] = code * positionScale + position;
-    }
-  }
-  order.sort();
-
-  const basic = output.length;
-  let handled = basic;
-  if (basic > 0) {
-    output += '-';
-  }
-
-  let n = initialN;
-  let delta = 0;
-  let bias = initialBias;
-  for (let first = 0; first < extended;) {
-    const m = Math.floor(order[first]! / positionScale);
-    if (m - n > Math.floor((maxInt - delta) / (handled + 1))) {
-      return undefined;
-    }
-    delta += (m - n) * (handled + 1);
-    n = m;
-    let end = first;
-    let previous = 0;
-    for (; end < extended && Math.floor(order[end]! / positionScale) === m; end++) {
-      const position = order[end]! % positionScale;
-      delta += countHandled(handledTree, position) - countHandled(handledTree, previous);
-      if (delta > maxInt) {
-        return undefined;
-      }
-      let q = delta;
-      for (let k = base; ; k += base) {
-        const t = k <= bias ? tMin : k >= bias + tMax ? tMax : k - bias;
-        if (q < t) {
-          break;
-        }
-        output += digits[t + ((q - t) % (base - t))];
-        q = Math.floor((q - t) / (base - t));
-      }
-      output += digits[q];
-      bias = adapt(delta, handled + 1, handled === basic);
-      delta = 0;
-      handled++;
-      previous = position + 1;
-    }
-    delta += countHandled(handledTree, size) - countHandled(handledTree, previous);
-    if (delta > maxInt) {
-      return undefined;
-    }
-    for (let j = first; j < end; j++) {
-      markHandled(handledTree, order[j]! % positionScale);
-    }
-    first = end;
-    delta++;
-    n++;
-  }
-  return output;
 }

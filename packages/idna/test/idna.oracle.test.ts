@@ -3,6 +3,7 @@ import punycode from 'punycode/punycode.js';
 import tr46 from 'tr46';
 import { describe, expect, test } from 'vite-plus/test';
 import * as Idna from '@portable/idna';
+import { hostToAscii } from '@portable/idna/internal';
 import { attempt, idnaTestCases } from './utils.js';
 
 const pieces = [
@@ -49,10 +50,37 @@ const viaTr46 = (domain: string, strict: boolean) => {
   return error ? null : result;
 };
 
+const endsInNumber = /(^|\.)(0x[0-9a-f]*|[0-9]+)\.?$/i;
+
+/**
+ * Whether `actual` matches tr46's `expected`. The package rejects whatever the runtime's URL
+ * host parser rejects, such as a domain with a character newer than Node's Unicode tables, and
+ * Unicode input that the parser reads as an IPv4 address. A rejection matches if the parser rejects
+ * the input, if it rejects tr46's Unicode form of the input, or if that form ends in a number.
+ */
+function matches(input: string, actual: string | null, expected: string | null): boolean {
+  if (actual === expected) {
+    return true;
+  }
+  if (actual !== null) {
+    return false;
+  }
+  const unicode = viaTr46(input, false);
+  return (
+    hostToAscii(input) === undefined ||
+    (unicode !== null && (hostToAscii(unicode) === undefined || endsInNumber.test(unicode)))
+  );
+}
+
 describe('matches tr46 7.0.0', () => {
   test.each([false, true])('toUnicode, strict: %s', (strict) => {
     const differences = inputs.filter(
-      (input) => attempt(() => Idna.toUnicode(input, { strict })) !== viaTr46(input, strict),
+      (input) =>
+        !matches(
+          input,
+          attempt(() => Idna.toUnicode(input, { strict })),
+          viaTr46(input, strict),
+        ),
     );
     expect(differences).toEqual([]);
   });
@@ -67,7 +95,11 @@ describe('matches tr46 7.0.0', () => {
     };
     const differences = inputs.filter(
       (input) =>
-        attempt(() => Idna.toAscii(input, { strict: true })) !== tr46.toASCII(input, flags),
+        !matches(
+          input,
+          attempt(() => Idna.toAscii(input, { strict: true })),
+          tr46.toASCII(input, flags),
+        ),
     );
     expect(differences).toEqual([]);
   });
@@ -82,7 +114,7 @@ describe('matches tr46 7.0.0', () => {
       if (expected === '' || (expected !== null && /[\0-\x20#%/:<>?@[\\\]^|\x7f]/.test(expected))) {
         return actual !== null;
       }
-      return actual !== expected;
+      return !matches(input, actual, expected);
     });
     expect(differences).toEqual([]);
   });
@@ -91,12 +123,11 @@ describe('matches tr46 7.0.0', () => {
 describe('matches node:url', () => {
   // domainToASCII and domainToUnicode run Node's whole host parser, which also reads IPv4 addresses,
   // percent-encoding and URL delimiters. Node's tables predate Unicode 18 and lack its new characters.
-  const endsInNumber = /(^|\.)(0x[0-9a-f]*|[0-9]+)\.?$/i;
   const domains = inputs.filter(
     (input) =>
       !/[%?#/\\@:]/.test(input) &&
       !/\P{Assigned}/u.test(input + (attempt(() => Idna.toUnicode(input)) ?? '')) &&
-      !endsInNumber.test(attempt(() => Idna.toAscii(input)) ?? ''),
+      !endsInNumber.test(tr46.toASCII(input) ?? ''),
   );
 
   test('domainToASCII, except that Node skips the bidi rule', () => {
