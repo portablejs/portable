@@ -24,9 +24,8 @@ export class TruncatedError extends Errors.TruncatedError {
  * Thrown for malformed input. When decoding: an unknown label type, a name over 255 bytes, a
  * compression pointer that doesn't point backwards (so loops are rejected), or record data that
  * doesn't match its type. When encoding: an empty label or one over 63 bytes, an invalid IP
- * address, a TXT string over 255 bytes, an OPT record whose name isn't the root, and so on.
- * `encode` doesn't check numeric fields. It writes a value outside a field's range modulo the
- * field's size.
+ * address, a TXT string over 255 bytes, an OPT record whose name isn't the root, a number that
+ * isn't an integer in its field's range, and so on.
  *
  * @example
  * ```ts
