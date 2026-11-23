@@ -828,6 +828,24 @@ describe('encoding', () => {
     expect(() => encode(invalid({ answers: [record] }))).toThrow(InvalidInputError);
   });
 
+  test('rejects numbers that do not fit their field', () => {
+    const srv = (port: number) => ({
+      answers: [
+        { type: 'SRV', name: 'a.com', data: { priority: 0, weight: 0, port, target: 'b.com' } },
+      ],
+    });
+    expect(() => encode(invalid(srv(70000)))).toThrow(InvalidInputError);
+    expect(() => encode(invalid(srv(-1)))).toThrow(InvalidInputError);
+    expect(() => encode(invalid(srv(1.5)))).toThrow(InvalidInputError);
+    expect(() => encode({ id: 65536 })).toThrow(InvalidInputError);
+    expect(() =>
+      encode({ answers: [{ type: 'A', name: 'a.com', ttl: 2 ** 32, data: '1.2.3.4' }] }),
+    ).toThrow(InvalidInputError);
+    expect(decode(encode(invalid(srv(65535)))).answers[0]).toMatchObject({
+      data: { port: 65535 },
+    });
+  });
+
   test('encodes UTF-8 names and TXT strings', () => {
     expect(roundTripData('TXT', ['héllo ☃'])).toEqual([utf8('héllo ☃')]);
     expect(roundTripData('CNAME', 'bücher.example')).toBe('bücher.example');

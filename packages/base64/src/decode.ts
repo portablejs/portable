@@ -106,7 +106,7 @@ type State = {
 function createState(alphabet: Alphabet, mode: Mode): State {
   assertAlphabet(alphabet);
   if (mode !== 'loose' && mode !== 'strict' && mode !== 'mime') {
-    throw new RangeError(`Unknown mode: ${String(mode)}. Use 'loose', 'strict' or 'mime'.`);
+    throw new RangeError(`Unknown mode: ${String(mode)}. Use 'loose', 'strict', or 'mime'.`);
   }
   return {
     values: mode === 'mime' ? tables.both : tables[alphabet],

@@ -26,7 +26,7 @@ export class TruncatedError extends Errors.TruncatedError {
 /**
  * Thrown for malformed data: a varint longer than 10 bytes or too large for its type, text that
  * doesn't decode when `fatal` is set, or a frame too long for its prefix. `offset` is where the
- * value starts.
+ * value starts in the reader's bytes, or, for `FrameDecoderStream`, in the stream.
  *
  * @example
  * ```ts
