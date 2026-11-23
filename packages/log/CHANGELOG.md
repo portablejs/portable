@@ -1,5 +1,11 @@
 # @portable/log
 
+## 0.1.1
+
+### Patch Changes
+
+- [#54](https://github.com/portablejs/portable/pull/54) [`c9a3699`](https://github.com/portablejs/portable/commit/c9a369918ada1a0eed911537d38cb2695ce612ba) - The JSDoc for `Logger.with` says that the console output prints the properties as an object after the arguments, and `Logger.namespace` has JSDoc. The README explains `with`, and separates the functions that change global settings from the ones that make loggers.
+
 ## 0.1.0
 
 ### Minor Changes

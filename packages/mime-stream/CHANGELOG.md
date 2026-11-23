@@ -1,5 +1,11 @@
 # @portable/mime-stream
 
+## 0.1.1
+
+### Patch Changes
+
+- [#61](https://github.com/portablejs/portable/pull/61) [`c437905`](https://github.com/portablejs/portable/commit/c4379052f1e97d8c64fce323a5529799824b5a4f) - `DecoderStream` throws `MaxBoundaryLineBytesError` when a `boundary` parameter is longer than `maxBoundaryLineBytes` allows, instead of reading lines that can never match it.
+
 ## 0.1.0
 
 ### Minor Changes
