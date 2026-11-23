@@ -1,5 +1,11 @@
 # @portable/binary
 
+## 0.1.1
+
+### Patch Changes
+
+- [#57](https://github.com/portablejs/portable/pull/57) [`49395b4`](https://github.com/portablejs/portable/commit/49395b408efd523484e913511ade25d5345d7c0f) - `FrameDecoderStream` gives `InvalidInputError.offset` for a bad varint prefix as a position in the stream. It used to give the position in its internal buffer, which differs from the stream position after the first chunk.
+
 ## 0.1.0
 
 ### Minor Changes

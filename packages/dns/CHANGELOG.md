@@ -1,5 +1,13 @@
 # @portable/dns
 
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies [[`49395b4`](https://github.com/portablejs/portable/commit/49395b408efd523484e913511ade25d5345d7c0f), [`e6b7965`](https://github.com/portablejs/portable/commit/e6b79659df02963502e63a580ba5bad3901ff038)]:
+  - @portable/dns-packet@0.1.1
+  - @portable/idna@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

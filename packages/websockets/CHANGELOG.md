@@ -1,5 +1,11 @@
 # @portable/websockets
 
+## 0.2.0
+
+### Minor Changes
+
+- [#70](https://github.com/portablejs/portable/pull/70) [`6a146a1`](https://github.com/portablejs/portable/commit/6a146a1941bf7c9a05bc5102abc7eed6e205e054) - Add `WebSockets.connections(url, options)`, which returns a `ReadableStream` with one `{ readable, writable }` pair per connection. When a pair's socket closes, its `readable` delivers the messages it holds and then ends. A write to a closed connection rejects and sends nothing. Use it when you need to know which messages went out on which connection. `connect` is now built on it and behaves as before.
+
 ## 0.1.0
 
 ### Minor Changes

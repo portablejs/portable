@@ -1,5 +1,13 @@
 # @portable/image-size
 
+## 0.1.1
+
+### Patch Changes
+
+- [#61](https://github.com/portablejs/portable/pull/61) [`c437905`](https://github.com/portablejs/portable/commit/c4379052f1e97d8c64fce323a5529799824b5a4f) - `parseStream` parses its buffer again only after the buffer has doubled, so a stream of small chunks no longer takes quadratic time. It can read up to twice the bytes a format needs before it returns.
+
+- [#57](https://github.com/portablejs/portable/pull/57) [`49395b4`](https://github.com/portablejs/portable/commit/49395b408efd523484e913511ade25d5345d7c0f) - `parse` and `parseStream` convert an SVG `pc` length at 16 pixels per pica. They used to convert it at about 0.11 pixels, so `width="2pc"` gave a width of 0 instead of 32.
+
 ## 0.1.0
 
 ### Minor Changes
