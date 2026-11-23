@@ -37,10 +37,10 @@ Returns a logger. `debug` and `info` calls print only when a pattern enables the
 | Member                                                               | Description                                                                                                                                                                                                                |
 | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `debug(...args)`, `info(...args)`, `warn(...args)`, `error(...args)` | Logs at that level. The arguments are the same as `console.log`'s, and a string first argument can hold `%s`, `%d`, `%o`, and the other format specifiers. The methods don't use `this`, so `const { debug } = log` works. |
-| `extend(suffix)` | Returns a logger for `namespace:suffix` with the same properties. |
-| `with(properties)` | Returns a logger with the same namespace whose records also include `properties`. See [Properties](#properties). |
-| `isEnabled(level)` | Whether a call at `level` would log with the current patterns. Use it to skip expensive work: `if (log.isEnabled('debug')) { log.debug(dump(state)); }`. |
-| `namespace` | The namespace string. |
+| `extend(suffix)`                                                     | Returns a logger for `namespace:suffix` with the same properties.                                                                                                                                                          |
+| `with(properties)`                                                   | Returns a logger with the same namespace whose records also include `properties`. See [Properties](#properties).                                                                                                           |
+| `isEnabled(level)`                                                   | Whether a call at `level` would log with the current patterns. Use it to skip expensive work: `if (log.isEnabled('debug')) { log.debug(dump(state)); }`.                                                                   |
+| `namespace`                                                          | The namespace string.                                                                                                                                                                                                      |
 
 #### Properties
 
