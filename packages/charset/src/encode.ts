@@ -14,6 +14,8 @@ export declare namespace encode {
      * What to write for a character the charset can't represent:
      * `'replace'` writes `?`, `'html'` writes an HTML numeric character reference such as `&#26085;`,
      * `'error'` throws `UnsupportedError`, and a function returns the text to write instead.
+     * `encode` encodes that text in the same charset and throws `UnsupportedError` if the text
+     * holds a character the charset can't encode.
      * @default 'replace'
      */
     unmappable?: Unmappable | undefined;

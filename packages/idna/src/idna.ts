@@ -39,7 +39,9 @@ export declare namespace toUnicode {
  * Idna.toAscii('Bücher.example'); // 'xn--bcher-kva.example'
  * ```
  *
- * @throws {InvalidInputError} if the domain isn't valid.
+ * @throws {InvalidInputError} When the domain breaks a rule of UTS #46, when a label is too long
+ * to encode, when the result is empty, or when the result contains a character that `URL` forbids
+ * in a host, such as a space, `%`, `/`, or `@`.
  */
 export function toAscii(domain: string, options: toAscii.Options = {}): string {
   const { strict = false } = options;

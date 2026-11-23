@@ -13,6 +13,7 @@ export declare namespace Store {
   type GetOptions = {
     /** The limiter's `now`, for a store that expires keys itself. */
     now?: Date | undefined;
+    /** The `signal` passed to `take`. */
     signal?: AbortSignal | undefined;
   };
   type SetOptions = {
@@ -22,6 +23,7 @@ export declare namespace Store {
     ttl: number;
     /** The limiter's `now`, for a store that expires keys itself. */
     now?: Date | undefined;
+    /** The `signal` passed to `take`. */
     signal?: AbortSignal | undefined;
   };
 }

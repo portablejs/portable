@@ -25,8 +25,10 @@ export declare namespace DecoderStream {
 
 /**
  * A `TransformStream` that decodes NDJSON (newline-delimited JSON, also called JSON Lines) into
- * values, one per line. Lines may end in LF or CRLF. Blank and whitespace-only lines are skipped.
- * Each line is parsed with `JSON.parse`, so a `null` line is emitted as `null`.
+ * values, one per line. Lines may end in LF or CRLF, and a lone CR doesn't end a line. Blank
+ * and whitespace-only lines are skipped. Each line is parsed with `JSON.parse`, so a `null` line
+ * is emitted as `null`. Invalid UTF-8 is replaced with U+FFFD, and a leading byte order mark is
+ * removed.
  *
  * The stream fails with `InvalidInputError` on a line that isn't valid JSON, unless
  * `invalid` is `'skip'`, and with `MaxLengthError` on a line longer than `maxLength`.

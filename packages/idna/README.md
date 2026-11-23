@@ -38,6 +38,8 @@ function displayHost(hostname: string): string {
 }
 ```
 
+`toUnicode` is for display, so it checks less than `toAscii`. It returns an empty domain as it is, and without `strict` it also accepts a character such as a space or `/`. To check a domain, call `toAscii`.
+
 ### `toAscii(domain, options?)`
 
 Follows the URL Standard's domain parser. It lowercases ASCII input and passes other input to the runtime's URL host parser, with the same checks as `toUnicode`. It throws `Idna.InvalidInputError` when the domain breaks a rule, when the result is empty, or when the domain contains a character that URL forbids in a host or treats as a delimiter, such as a space, `%`, `/`, `?`, or `@`.

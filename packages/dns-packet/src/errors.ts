@@ -25,6 +25,8 @@ export class TruncatedError extends Errors.TruncatedError {
  * compression pointer that doesn't point backwards (so loops are rejected), or record data that
  * doesn't match its type. When encoding: an empty label or one over 63 bytes, an invalid IP
  * address, a TXT string over 255 bytes, an OPT record whose name isn't the root, and so on.
+ * `encode` doesn't check numeric fields. It writes a value outside a field's range modulo the
+ * field's size.
  *
  * @example
  * ```ts

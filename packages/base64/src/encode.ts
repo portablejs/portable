@@ -27,6 +27,9 @@ export declare namespace encode {
  * Base64.encode(new Uint8Array([0xfb, 0xff]), { alphabet: 'base64url', omitPadding: true }); // '-_8'
  * Base64.encode(attachment, { lineLength: 76 }); // MIME body, lines joined with CRLF
  * ```
+ *
+ * @throws {RangeError} For an unknown `alphabet`, or a `lineLength` that isn't a positive integer
+ * or `false`.
  */
 export function encode(input: Uint8Array | string, options: encode.Options = {}): string {
   const {

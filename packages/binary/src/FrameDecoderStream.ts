@@ -15,7 +15,7 @@ export declare namespace FrameDecoderStream {
     prefix?: Prefix | undefined;
     /** Byte order of a `uint16` or `uint32` prefix. @default 'big' */
     endian?: Endian | undefined;
-    /** The largest frame, not counting its prefix. @default Infinity */
+    /** The largest frame, not counting its prefix. Set it when the input comes from outside the program. @default Infinity */
     maxBytes?: number | undefined;
   };
 }

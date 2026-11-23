@@ -51,17 +51,17 @@ async function isRegistered(name: string) {
 
 Each returns a plain object. These fields are on all three:
 
-| Field      | Type                                        | Description                                                                                                                          |
-| ---------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `handle`   | `string \| undefined`                       | The registry's ID for the object.                                                                                                    |
-| `status`   | `readonly string[]`                         | RDAP status values, lowercased, such as `client transfer prohibited` or `active`.                                                    |
-| `events`   | `{ registration, expiration, lastChanged }` | Each is a `Date`, or `undefined` when the response has no such event. A date without a time zone is read as UTC.                     |
-| `entities` | `readonly Entity[]`                         | Every contact in the response. An entity nested inside another one, such as a registrar's abuse contact, comes after it in the list. |
-| `raw`      | `Record<string, unknown>`                   | The response JSON, for fields such as `secureDNS`, `remarks`, and `notices`.                                                         |
+| Field      | Type                                        | Description                                                                                                                                                                                                                      |
+| ---------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `handle`   | `string \| undefined`                       | The registry's ID for the object.                                                                                                                                                                                                |
+| `status`   | `readonly string[]`                         | RDAP status values, lowercased, such as `client transfer prohibited` or `active`.                                                                                                                                                |
+| `events`   | `{ registration, expiration, lastChanged }` | Each is a `Date`, or `undefined` when the response has no such event or its date doesn't parse. When an action appears more than once, the first one with a date that parses is used. A date without a time zone is read as UTC. |
+| `entities` | `readonly Entity[]`                         | Every contact in the response. An entity nested inside another one, such as a registrar's abuse contact, comes after it in the list.                                                                                             |
+| `raw`      | `Record<string, unknown>`                   | The response JSON, for fields such as `secureDNS`, `remarks`, and `notices`.                                                                                                                                                     |
 
-An `Entity` is `{ handle, roles, name, org, email, phone, address }`. `roles` lists RDAP roles such as `registrar`, `registrant`, `administrative`, `technical`, and `abuse`. The other fields come from the entity's jCard: the first `fn`, `org`, and `email`; the first `tel` that isn't a fax, with its `tel:` prefix removed; and the `adr` label or its parts joined by line breaks. Redacted values, such as `REDACTED FOR PRIVACY`, are returned as the server sent them.
+An `Entity` is `{ handle, roles, name, org, email, phone, address }`. `roles` lists RDAP roles, lowercased, such as `registrar`, `registrant`, `administrative`, `technical`, and `abuse`. The other fields come from the entity's jCard: the first `fn`, `org`, and `email`; the first `tel` that isn't a fax, with its `tel:` prefix removed; and the `adr` label or its parts joined by line breaks. Redacted values, such as `REDACTED FOR PRIVACY`, are returned as the server sent them.
 
-`Rdap.domain` also returns `name` (A-labels, lowercased), `unicodeName`, `nameservers` (lowercased, without trailing dots) and `referral`. `Rdap.ip` returns `name`, `version` (4 or 6), `startAddress`, `endAddress`, `cidrs`, `type`, `country`, and `parentHandle`. `Rdap.asn` returns `name`, `start`, `end`, `type`, and `country`.
+`Rdap.domain` also returns `name` (A-labels, lowercased), `unicodeName`, `nameservers` (lowercased, without trailing dots), and `referral`. `Rdap.ip` returns `name`, `version` (4 or 6), `startAddress`, `endAddress`, `cidrs`, `type`, `country`, and `parentHandle`. `Rdap.asn` returns `name`, `start`, `end`, `type`, and `country`.
 
 ### Options
 
@@ -82,7 +82,7 @@ gTLD registries such as Verisign and PIR return the registrar, the dates, and th
 
 ### Bootstrap files
 
-The bootstrap files are fetched from `https://data.iana.org/rdap/` on first use and cached in memory for 24 hours, which is IANA's `max-age`. The cache is kept per `fetch` function, so a mocked `fetch` in a test never sees files another `fetch` loaded. Concurrent lookups share one request, and a failed request isn't cached. When a service lists both an `https` and an `http` URL, the `https` one is used.
+The bootstrap files are fetched from `https://data.iana.org/rdap/` on first use and cached in memory for 24 hours, which is IANA's `max-age`. The cache is kept per `fetch` function, so a mocked `fetch` in a test never sees files another `fetch` loaded. Create your `fetch` wrapper once and reuse it. A new function on each call starts with an empty cache, so every lookup downloads the bootstrap file again. Concurrent lookups share one request. A failed request isn't cached. When a service lists both an `https` and an `http` URL, the `https` one is used.
 
 ### Errors
 
@@ -95,7 +95,7 @@ The bootstrap files are fetched from `https://data.iana.org/rdap/` on first use 
 
 When `fetch` rejects, such as on a network failure, the lookup rejects with the same error. An argument of the wrong type throws a `TypeError`.
 
-Domain names go through `URL`'s IDNA conversion, then must have at least two labels of letters, digits, and hyphens, each up to 63 characters and not starting or ending with a hyphen, and at most 253 characters in total. An IPv4-mapped IPv6 address (`::ffff:192.0.2.1`) is looked up as IPv4, and IPv6 is sent in the RFC 5952 form.
+Domain names go through `URL`'s IDNA conversion, then must have at least two labels of letters, digits, and hyphens, each up to 63 characters and not starting or ending with a hyphen, and at most 253 characters in total. The last label can't be all digits. To look up a TLD itself, fetch `https://rdap.iana.org/domain/<tld>`. An IPv4-mapped IPv6 address (`::ffff:192.0.2.1`) is looked up as IPv4. Other IPv6 addresses are sent in the RFC 5952 form.
 
 ## Types
 

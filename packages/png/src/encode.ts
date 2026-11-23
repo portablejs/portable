@@ -62,6 +62,12 @@ export declare namespace encodeSync {
  * const bytes = await Png.encode({ width: 16, height: 16, data });
  * return new Response(bytes, { headers: { 'content-type': 'image/png' } });
  * ```
+ *
+ * @throws {InvalidInputError} `data` has the wrong length, or `width` or `height` isn't a positive
+ * integer.
+ * @throws {UnsupportedError} `colorType` is 3.
+ * @throws {TypeError} `data` isn't a `Uint8Array` or `Uint8ClampedArray`.
+ * @throws {RangeError} `filter` isn't 0 to 4 or a non-empty list of them.
  */
 export async function encode(
   image: RgbaImage,
@@ -86,6 +92,12 @@ export async function encode(
  *
  * const bytes = Png.encodeSync({ width, height, data }, { deflate: (raw) => zlibSync(raw, { level: 9 }) });
  * ```
+ *
+ * @throws {InvalidInputError} `data` has the wrong length, or `width` or `height` isn't a positive
+ * integer.
+ * @throws {UnsupportedError} `colorType` is 3.
+ * @throws {TypeError} `data` isn't a `Uint8Array` or `Uint8ClampedArray`.
+ * @throws {RangeError} `filter` isn't 0 to 4 or a non-empty list of them.
  */
 export function encodeSync(image: RgbaImage, options: encodeSync.Options): Uint8Array<ArrayBuffer> {
   const colorType = options.colorType ?? 6;

@@ -67,7 +67,7 @@ export type Client = AsyncDisposeMethod & {
   readonly secure: boolean;
   /** The extension lines of the EHLO reply, such as `'SIZE 35882577'`. Empty after a HELO fallback. */
   readonly extensions: readonly string[];
-  /** Sends one message. Rejects if the sender, every recipient or the message is refused. */
+  /** Sends one message. Rejects if the sender, every recipient, or the message is refused. */
   send(mail: Mail, options?: Client.SendOptions): Promise<Result>;
   /** Sends QUIT and closes the socket. Never rejects. */
   close(options?: Client.CloseOptions): Promise<void>;
@@ -94,6 +94,7 @@ export declare namespace connect {
      * `@portable/sockets/node`.
      */
     connect: Sockets.Connect;
+    /** The server's host name, passed to `connect` as `hostname`. */
     host: string;
     /** @default 465 when `secure` is `'on'`, otherwise 587 */
     port?: number | undefined;
@@ -102,12 +103,19 @@ export declare namespace connect {
      * @default 'on' for port 465, otherwise 'starttls'
      */
     secure?: 'on' | 'starttls' | 'off' | undefined;
+    /**
+     * Credentials. With `auth` set, the client always authenticates, and `connect` rejects
+     * with `EAUTH` if the server offers AUTH but no supported method.
+     */
     auth?: Auth | undefined;
     /** Send credentials over an unencrypted connection. Without it, AUTH requires TLS. @default false */
     allowInsecureAuth?: boolean | undefined;
     /** The client's host name for EHLO. @default '[127.0.0.1]' */
     name?: string | undefined;
-    /** Speak LMTP (RFC 2033): LHLO, and one reply per recipient after the message. @default false */
+    /**
+     * Speak LMTP (RFC 2033): LHLO, and one reply per recipient after the message. Set `port` and
+     * `secure` too, because the defaults are for SMTP submission. @default false
+     */
     lmtp?: boolean | undefined;
     /** Limits connecting, the TLS handshake, and authentication. Aborting rejects with `signal.reason`. */
     signal?: AbortSignal | undefined;
@@ -291,7 +299,9 @@ function sizeLimit(extensions: readonly string[]): number {
 }
 
 /**
- * Opens an SMTP session: connects, reads the greeting, sends EHLO (or HELO), starts TLS and logs in.
+ * Opens an SMTP session: connects, reads the greeting, sends EHLO, starts TLS, and logs in. If the
+ * server refuses EHLO, it sends HELO when `secure` is `'on'` or `'off'`, and rejects with `ETLS`
+ * when it is `'starttls'`.
  *
  * @example
  * ```ts

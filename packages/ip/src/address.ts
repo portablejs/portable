@@ -17,7 +17,7 @@ const zoneCharacter = /^[\w.~-]+$/;
  * Parses an IPv4 or IPv6 address.
  *
  * IPv4 must be four decimal numbers from 0 to 255 without leading zeros. `parse` throws on octal
- * (`0177.0.0.1`), hex (`0x7f.0.0.1`), integer (`2130706433`) and short (`127.1`) forms, because
+ * (`0177.0.0.1`), hex (`0x7f.0.0.1`), integer (`2130706433`), and short (`127.1`) forms, because
  * programs disagree on what they mean. IPv6 follows RFC 4291: up to four hex digits per group,
  * at most one `::`, an optional dotted IPv4 address in the last 32 bits, and an optional `%zone`.
  *
@@ -143,7 +143,7 @@ export function format(address: Address | string): string {
 
 /**
  * Orders two addresses: IPv4 before IPv6, then by bytes, then by zone. Returns a negative number,
- * zero or a positive number, so you can pass it to `Array.prototype.sort`. An IPv4 address and its
+ * zero, or a positive number, so you can pass it to `Array.prototype.sort`. An IPv4 address and its
  * IPv4-mapped IPv6 form count as different addresses. Pass both through `unmap` to treat them as
  * one.
  *

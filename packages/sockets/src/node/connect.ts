@@ -13,8 +13,8 @@ export type Socket = Omit<Sockets.Socket, 'startTls'> &
   AsyncDisposeMethod & {
     /**
      * Starts TLS on a socket opened with `secureTransport: 'starttls'` and returns the encrypted
-     * socket. After the call, this socket's readable closes, its writes reject and its `closed`
-     * resolves.
+     * socket. After the call, this socket's readable closes, its writes reject, and its
+     * `closed` resolves.
      */
     startTls(): Socket;
   };
