@@ -1,6 +1,7 @@
 import {
   CONNECTING,
   type Duplex,
+  type HeartbeatTimer,
   type Message,
   OPEN,
   type Socket,
@@ -8,8 +9,11 @@ import {
   cancelledError,
   disposedError,
   toOutgoing,
+  assertHeartbeat,
   assertSize,
+  isAboveHighWaterMark,
   queueLimit,
+  startHeartbeat,
   closedError,
   drained,
   isNormalClose,
@@ -17,6 +21,7 @@ import {
   toMessage,
 } from './Socket.js';
 import { withAsyncDispose } from '@portable/errors/internal';
+import type { connect } from './connect.js';
 import { CloseError, MaxBufferedError } from './errors.js';
 
 export declare namespace fromSocket {
@@ -31,6 +36,12 @@ export declare namespace fromSocket {
      * `MaxBufferedError` and the socket closes. @default Infinity
      */
     maxBuffered?: number | undefined;
+    /**
+     * Sends `ping` every `interval` ms once the socket opens. When no `pong` arrives within
+     * `timeout` ms, `fromSocket` closes the socket with code 1000 and fails both streams with a
+     * `TimeoutError` `DOMException`.
+     */
+    heartbeat?: connect.Heartbeat | undefined;
   };
 }
 
@@ -57,15 +68,17 @@ export declare namespace fromSocket {
  * ```
  */
 export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Duplex {
-  const { signal, highWaterMark = 1 << 20, maxBuffered = Infinity } = options;
+  const { signal, highWaterMark = 1 << 20, maxBuffered = Infinity, heartbeat } = options;
   assertSize('highWaterMark', highWaterMark);
   assertSize('maxBuffered', maxBuffered, 1);
+  const ping = heartbeat && assertHeartbeat(heartbeat);
   socket.binaryType = 'arraybuffer';
 
   let readableController!: ReadableStreamDefaultController<Message>;
   let writableController!: WritableStreamDefaultController;
   let done = false;
   let failure: unknown;
+  let heartbeatTimer: HeartbeatTimer | undefined;
 
   const opened = new Promise<void>((resolve, reject) => {
     if (socket.readyState !== CONNECTING) {
@@ -85,6 +98,7 @@ export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Du
     socket.removeEventListener('message', onMessage);
     socket.removeEventListener('close', onClose);
     signal?.removeEventListener('abort', onAbort);
+    heartbeatTimer?.stop();
     try {
       if (closeReadable) {
         readableController.close();
@@ -106,6 +120,9 @@ export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Du
       message = toMessage(event.data);
     } catch (error) {
       return shutdown(error);
+    }
+    if (heartbeat?.pong(message)) {
+      return heartbeatTimer?.pong();
     }
     readableController.enqueue(message);
     if (readableController.desiredSize! < 0) {
@@ -143,7 +160,7 @@ export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Du
     },
     write(input) {
       const chunk = toOutgoing(input);
-      if (!done && socket.readyState === OPEN && socket.bufferedAmount <= highWaterMark) {
+      if (!done && socket.readyState === OPEN && !isAboveHighWaterMark(socket, highWaterMark)) {
         return socket.send(chunk);
       }
       return opened
@@ -166,6 +183,16 @@ export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Du
     },
   });
 
+  if (heartbeat) {
+    void opened.then(
+      () => {
+        if (!done && socket.readyState === OPEN) {
+          heartbeatTimer = startHeartbeat(socket, heartbeat, ping!, shutdown);
+        }
+      },
+      () => {},
+    );
+  }
   if (signal?.aborted) {
     onAbort();
   }

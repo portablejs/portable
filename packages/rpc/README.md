@@ -59,6 +59,12 @@ await using worker = Rpc.connect<Api>(Rpc.port(new Worker('./worker.ts', { type:
 await worker.add(1, 2);
 ```
 
+`Rpc.closed(remote)` returns a promise that settles when a connection from `connect` closes. It resolves when the transport's `readable` ends, or for a stream of transports, when the stream ends. It rejects with the reason that waiting calls get when the transport fails, `signal` aborts, or the remote is disposed. Use it to notice that the other side went away without making a call:
+
+```ts
+Rpc.closed(worker).catch((reason) => console.log('The worker connection failed:', reason));
+```
+
 Disposing, like aborting `signal`, cancels the transport's streams, which closes a WebSocket wrapped in streams. A `Worker` or `MessagePort` stays open, so call `terminate()` or `close()` yourself. TypeScript sees `[Symbol.asyncDispose]` only when your `lib` includes `esnext.disposable`. A method with a symbol key can't be called remotely, so `[Symbol.asyncDispose]` never hides one of your methods. In a runtime without `Symbol.asyncDispose` (such as Safari 26), pass a `signal` and abort it to close the remote, which does the same teardown.
 
 ### Options per call

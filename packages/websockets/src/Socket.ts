@@ -1,6 +1,7 @@
 import { assertUint8Array, toBufferSource } from '@portable/bytes/internal';
 import * as Timers from '@portable/timers';
 import type { AsyncDisposeMethod } from '@portable/errors/internal';
+import type { connect } from './connect.js';
 
 /** A received message: text as a `string`, binary data as a `Uint8Array`. */
 export type Message = string | Uint8Array<ArrayBuffer>;
@@ -19,10 +20,14 @@ export type Duplex = AsyncDisposeMethod & {
   writable: WritableStream<string | Uint8Array>;
 };
 
-/** The part of the platform `WebSocket` this package uses. Any object with this shape works. */
+/**
+ * The part of the platform `WebSocket` this package uses. Any object with this shape works. A
+ * socket without `bufferedAmount`, such as a Cloudflare Workers `WebSocket`, sends each write at
+ * once.
+ */
 export type Socket = {
   readonly readyState: number;
-  readonly bufferedAmount: number;
+  readonly bufferedAmount?: number | undefined;
   binaryType: string;
   send(data: string | Uint8Array<ArrayBuffer>): void;
   close(code?: number, reason?: string): void;
@@ -70,11 +75,62 @@ export function toOutgoing(message: unknown): string | Uint8Array<ArrayBuffer> {
 export const messageSize = (message: Message): number =>
   typeof message === 'string' ? message.length : message.byteLength;
 
+export function isAboveHighWaterMark(socket: Socket, highWaterMark: number): boolean {
+  return (socket.bufferedAmount ?? 0) > highWaterMark;
+}
+
 export async function drained(socket: Socket, highWaterMark: number): Promise<void> {
-  for (let wait = 1; socket.bufferedAmount > highWaterMark && socket.readyState === OPEN;) {
+  for (let wait = 1; isAboveHighWaterMark(socket, highWaterMark) && socket.readyState === OPEN;) {
     await Timers.sleep(wait);
     wait = Math.min(wait * 2, 32);
   }
+}
+
+export type HeartbeatTimer = {
+  /** Stops the timer for the reply. Call it when `heartbeat.pong` returns `true`. */
+  pong(): void;
+  /** Stops sending pings. */
+  stop(): void;
+};
+
+export function assertHeartbeat(heartbeat: connect.Heartbeat): string | Uint8Array<ArrayBuffer> {
+  assertSize('heartbeat.interval', heartbeat.interval, 1);
+  assertSize('heartbeat.timeout', heartbeat.timeout ?? heartbeat.interval, 1);
+  return toOutgoing(heartbeat.ping);
+}
+
+/**
+ * Sends `ping` on `socket` every `heartbeat.interval` ms, and calls `missed` with a `TimeoutError`
+ * when no reply arrives within `heartbeat.timeout` ms of a ping.
+ */
+export function startHeartbeat(
+  socket: Socket,
+  heartbeat: connect.Heartbeat,
+  ping: string | Uint8Array<ArrayBuffer>,
+  missed: (error: DOMException) => void,
+): HeartbeatTimer {
+  const { interval, timeout: wait = interval } = heartbeat;
+  let pongTimer: ReturnType<typeof setTimeout> | undefined;
+  const pingTimer = setInterval(() => {
+    if (socket.readyState !== OPEN) {
+      return;
+    }
+    socket.send(ping);
+    pongTimer ??= timeout(
+      () => missed(new DOMException(`No heartbeat reply within ${wait} ms.`, 'TimeoutError')),
+      wait,
+    );
+  }, interval);
+  return {
+    pong() {
+      clearTimeout(pongTimer);
+      pongTimer = undefined;
+    },
+    stop() {
+      clearInterval(pingTimer);
+      clearTimeout(pongTimer);
+    },
+  };
 }
 
 export function isNormalClose(code: number): boolean {

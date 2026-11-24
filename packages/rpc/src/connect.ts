@@ -87,8 +87,10 @@ export function connect<api>(
   ) satisfies Send;
   const client = createClient(send, true);
   const server = createServer(methods, send, { flow: true });
+  const closed = closedPromise();
 
-  function close(reason: unknown) {
+  function close(reason: unknown, clean = false) {
+    closed.settle(reason, clean);
     signal?.removeEventListener('abort', onAbort);
     unlisten?.();
     client.close(reason);
@@ -139,16 +141,28 @@ export function connect<api>(
           }
           dispatch(value);
         }
-        close(new TransportError('The transport closed.'));
+        close(new TransportError('The transport closed.'), true);
       } catch (cause) {
         failed(cause);
       }
     })();
   }
 
-  return remote(client, '', async () => {
-    await shutdown(new DOMException('The connection was disposed.', 'AbortError'));
-  });
+  return remote(
+    client,
+    '',
+    async () => {
+      await shutdown(new DOMException('The connection was disposed.', 'AbortError'));
+    },
+    closed.promise,
+  );
+}
+
+function closedPromise() {
+  const { promise, resolve, reject } = deferred<void>();
+  promise.catch(noop);
+  const settle = (reason: unknown, clean: boolean) => (clean ? resolve() : reject(reason));
+  return { promise, settle };
 }
 
 type Connection = {
@@ -167,6 +181,7 @@ function reconnecting<api>(
   const queue: { message: Message; data: unknown; written: () => void }[] = [];
   let current: Connection | undefined;
   let closed: { reason: unknown } | undefined;
+  const ended = closedPromise();
 
   const write = async (connection: Connection, message: Message, data: unknown) => {
     const id = requestId(message);
@@ -234,7 +249,7 @@ function reconnecting<api>(
     for (;;) {
       const { done, value } = await source.read();
       if (done) {
-        return close(new TransportError('The transport closed.'));
+        return close(new TransportError('The transport closed.'), true);
       }
       const writer = value.writable.getWriter();
       const connection = {
@@ -282,11 +297,12 @@ function reconnecting<api>(
     }
   }
 
-  function close(reason: unknown) {
+  function close(reason: unknown, clean = false) {
     if (closed) {
       return;
     }
     closed = { reason };
+    ended.settle(reason, clean);
     signal?.removeEventListener('abort', onAbort);
     client.close(reason);
     current?.server.close(reason);
@@ -315,9 +331,14 @@ function reconnecting<api>(
     );
   }
 
-  return remote(client, '', async () => {
-    await shutdown(new DOMException('The connection was disposed.', 'AbortError'));
-  });
+  return remote(
+    client,
+    '',
+    async () => {
+      await shutdown(new DOMException('The connection was disposed.', 'AbortError'));
+    },
+    ended.promise,
+  );
 }
 
 function requestId(message: Message): Id | undefined {

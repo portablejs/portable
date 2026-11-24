@@ -8,13 +8,22 @@ type Target = {
 };
 
 const targetKey = Symbol.for('portable.rpc.target');
+const closedKey = Symbol.for('portable.rpc.closed');
 
-export function remote(client: Target['client'], method = '', dispose?: () => Promise<void>): any {
+export function remote(
+  client: Target['client'],
+  method = '',
+  dispose?: () => Promise<void>,
+  closed?: Promise<void>,
+): any {
   const children = new Map<string, unknown>();
   const proxy = new Proxy(function () {}, {
     get(_, key) {
       if (key === targetKey) {
         return { client, method };
+      }
+      if (key === closedKey && closed) {
+        return closed;
       }
       if (key === asyncDisposeSymbol && dispose) {
         return dispose;
@@ -108,4 +117,33 @@ export function notify<fn extends (...args: any[]) => unknown>(
 ): Promise<void> {
   const { client, method: name } = target(method);
   return client.notify(name, params as Params, options.signal);
+}
+
+/**
+ * Returns a promise that settles when the connection of a remote from `connect` closes. It
+ * resolves when the transport's `readable` ends, or for a stream of transports, when the stream
+ * ends. It rejects with the reason that waiting calls reject with when the transport fails,
+ * `signal` aborts, or the remote is disposed. A remote from `http` has no connection, so `closed`
+ * throws a `TypeError` for it.
+ *
+ * @example
+ * ```ts
+ * import * as Rpc from '@portable/rpc';
+ *
+ * const remote = Rpc.connect<Api>(transport);
+ * Rpc.closed(remote).then(
+ *   () => console.log('The other side closed the connection.'),
+ *   (reason) => console.log('The connection failed:', reason),
+ * );
+ * ```
+ */
+export function closed(remote: object): Promise<void> {
+  const promise =
+    typeof remote === 'function'
+      ? (remote as { [closedKey]?: Promise<void> | undefined })[closedKey]
+      : undefined;
+  if (!promise) {
+    throw new TypeError('Expected a remote from connect.');
+  }
+  return promise;
 }

@@ -4,15 +4,19 @@ import type { connect } from './connect.js';
 import { CloseError, MaxBufferedError } from './errors.js';
 import {
   type Duplex,
+  type HeartbeatTimer,
   type Message,
   OPEN,
   type Socket,
   type SocketEvent,
+  assertHeartbeat,
   assertSize,
   cancelledError,
   closedError,
   drained,
+  isAboveHighWaterMark,
   isNormalClose,
+  startHeartbeat,
   messageSize,
   timeout as startTimer,
   toMessage,
@@ -93,11 +97,7 @@ export function connections(
   assertSize('timeout', timeout, 1);
   assertSize('highWaterMark', highWaterMark);
   assertSize('maxBuffered', maxBuffered, 1);
-  if (heartbeat) {
-    assertSize('heartbeat.interval', heartbeat.interval, 1);
-    assertSize('heartbeat.timeout', heartbeat.timeout ?? heartbeat.interval, 1);
-  }
-  const ping = heartbeat && toOutgoing(heartbeat.ping);
+  const ping = heartbeat && assertHeartbeat(heartbeat);
   const protocolList = typeof protocols === 'string' ? protocols : protocols && [...protocols];
 
   let controller!: ReadableStreamDefaultController<Duplex>;
@@ -192,8 +192,7 @@ export function connections(
       wakeHandshake?.();
     };
 
-    let pingTimer: ReturnType<typeof setInterval> | undefined;
-    let pongTimer: ReturnType<typeof setTimeout> | undefined;
+    let heartbeatTimer: HeartbeatTimer | undefined;
     const openTimer = startTimer(
       () =>
         attempt.abort(
@@ -212,8 +211,7 @@ export function connections(
       socket.removeEventListener('close', onClose);
       stop.signal.removeEventListener('abort', onStop);
       clearTimeout(openTimer);
-      clearInterval(pingTimer);
-      clearTimeout(pongTimer);
+      heartbeatTimer?.stop();
       attempt.abort();
       const error =
         next.kind === 'error'
@@ -258,7 +256,7 @@ export function connections(
       },
       async write(chunk) {
         const data = toOutgoing(chunk);
-        if (socket.bufferedAmount > highWaterMark) {
+        if (isAboveHighWaterMark(socket, highWaterMark)) {
           await drained(socket, highWaterMark);
         }
         if (outcome || socket.readyState !== OPEN) {
@@ -282,8 +280,7 @@ export function connections(
         return end({ ready, closedByClient, kind: 'error', error, final: true });
       }
       if (heartbeat?.pong(message)) {
-        clearTimeout(pongTimer);
-        pongTimer = undefined;
+        heartbeatTimer?.pong();
       } else if (handshake) {
         inbox.push(message);
         wakeHandshake?.();
@@ -370,20 +367,7 @@ export function connections(
     ready = true;
 
     if (heartbeat) {
-      const { interval, timeout: wait = interval } = heartbeat;
-      pingTimer = setInterval(() => {
-        if (socket.readyState !== OPEN) {
-          return;
-        }
-        socket.send(ping!);
-        pongTimer ??= startTimer(
-          () =>
-            attempt.abort(
-              new DOMException(`No heartbeat reply within ${wait} ms.`, 'TimeoutError'),
-            ),
-          wait,
-        );
-      }, interval);
+      heartbeatTimer = startHeartbeat(socket, heartbeat, ping!, (error) => attempt.abort(error));
     }
     const duplex = withAsyncDispose({ readable, writable }, async () => {
       closeByClient();

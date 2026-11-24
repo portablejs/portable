@@ -90,7 +90,7 @@ A WebSocket has no acknowledgements. When a connection drops, messages the serve
 
 ### Backpressure
 
-Writes wait while `bufferedAmount` is above `highWaterMark`. `connect` checks it again after 1 ms, then backs off to every 32 ms.
+Writes wait while `bufferedAmount` is above `highWaterMark`. `connect` checks it again after 1 ms, then backs off to every 32 ms. A Cloudflare Workers `WebSocket` has no `bufferedAmount`, so on that socket each write is sent at once.
 
 A browser can't pause reading from a WebSocket: messages arrive whether or not anyone reads them, and `readable` queues them. `maxBuffered` sets a limit, so a reader that falls behind gets a `MaxBufferedError` instead of the tab running out of memory.
 
@@ -123,7 +123,7 @@ for await (const { readable, writable } of Streams.toAsyncIterable(connections))
 
 ## `fromSocket(socket, options)`
 
-Returns `{ readable, writable }` for a socket you already have. It never reconnects. It sets `binaryType` to `'arraybuffer'`, and writes wait until a connecting socket opens. Options: `signal`, `highWaterMark`, and `maxBuffered`, as above. `readable` ends when the socket closes with 1000, 1001, or 1005 and fails with a `CloseError` for other codes. `writable.close()` closes the socket with 1000 without waiting for the close handshake. `readable.cancel()`, `writable.abort()`, `signal`, and `[Symbol.asyncDispose]()` close it with 1000 and fail both streams.
+Returns `{ readable, writable }` for a socket you already have. It never reconnects. It sets `binaryType` to `'arraybuffer'`, and writes wait until a connecting socket opens. Options: `signal`, `highWaterMark`, `maxBuffered`, and `heartbeat`, as above. With `heartbeat`, pings start when the socket opens, and a missed reply closes the socket with 1000 and fails both streams with a `TimeoutError` `DOMException`, because `fromSocket` can't reconnect. `readable` ends when the socket closes with 1000, 1001, or 1005 and fails with a `CloseError` for other codes. `writable.close()` closes the socket with 1000 without waiting for the close handshake. `readable.cancel()`, `writable.abort()`, `signal`, and `[Symbol.asyncDispose]()` close it with 1000 and fail both streams.
 
 ## Errors
 
@@ -136,12 +136,12 @@ Returns `{ readable, writable }` for a socket you already have. It never reconne
 
 These fail the streams:
 
-| Error                               | When                                                                                                                          |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `WebSockets.CloseError`             | The connection closed permanently. `code` and `reason` store the close event's values.                                        |
-| `WebSockets.MaxBufferedError`       | Received messages exceeded `maxBuffered`, stored in `maxBuffered`.                                                            |
-| `TimeoutError` (`DOMException`)     | `attempts` is used up, and the last attempt timed out while opening or while waiting for a heartbeat reply.                   |
-| The `WebSocket` constructor's error | `url` is a string or `URL` that the constructor rejects, such as `'ftp://x'`, which throws a `SyntaxError`. It isn't retried. |
+| Error                               | When                                                                                                                                                                    |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `WebSockets.CloseError`             | The connection closed permanently. `code` and `reason` store the close event's values.                                                                                  |
+| `WebSockets.MaxBufferedError`       | Received messages exceeded `maxBuffered`, stored in `maxBuffered`.                                                                                                      |
+| `TimeoutError` (`DOMException`)     | `attempts` is used up, and the last attempt timed out while opening or while waiting for a heartbeat reply. From `fromSocket`, a heartbeat reply didn't arrive in time. |
+| The `WebSocket` constructor's error | `url` is a string or `URL` that the constructor rejects, such as `'ftp://x'`, which throws a `SyntaxError`. It isn't retried.                                           |
 
 `writer.write()` rejects with a `TypeError` for a value that isn't a string or a `Uint8Array`. The `send` passed to `open` throws an `InvalidStateError` `DOMException` once the connection closes.
 
