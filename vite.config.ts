@@ -1,3 +1,4 @@
+import { cloudflareTest } from '@cloudflare/vitest-plugin';
 import { defineConfig } from 'vite-plus';
 import type { Plugin } from 'vite-plus';
 import { playwright } from 'vite-plus/test/browser-playwright';
@@ -322,6 +323,17 @@ export default defineConfig({
             'packages/*/{test,src}/**/*.conformance.ts',
             '!packages/*/{test,src}/**/*.browser.test.ts',
           ],
+        },
+      },
+      {
+        extends: true,
+        plugins: [cloudflareTest({ miniflare: { compatibilityDate: '2026-07-01' } })],
+        test: {
+          name: 'workers',
+          benchmark: { include: [] },
+          // Only websockets so far. The conformance tests of timers, charset, rdap, and other
+          // packages fail in workerd, and we haven't found the cause of each failure yet.
+          include: ['packages/websockets/test/*.conformance.ts'],
         },
       },
       {

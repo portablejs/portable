@@ -130,12 +130,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm fuzz
 
-  # Every package bundled into one Worker and run in workerd through Miniflare. See
-  # tools/workers/src/run.ts.
+  # Bundles every package into one Worker and runs it in workerd through Miniflare (see
+  # tools/workers/src/run.ts), then runs the `workers` project in vite.config.ts.
   test-workers:
     name: Test (workerd)
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
