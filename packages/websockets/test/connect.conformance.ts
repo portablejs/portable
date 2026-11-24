@@ -597,6 +597,15 @@ describe('backpressure', () => {
     expect(socket.closedWith).toBeDefined();
     await expect(writable.getWriter().write('x')).rejects.toBe(error);
   });
+
+  test('readable delivers empty messages in order', async () => {
+    const { server, readable } = setup();
+    const socket = await server.accept();
+    socket.receive('');
+    socket.receive(new ArrayBuffer(0));
+    socket.receive('last');
+    expect(await read(readable.getReader(), 3)).toEqual(['', bytes(), 'last']);
+  });
 });
 
 describe('heartbeat', () => {

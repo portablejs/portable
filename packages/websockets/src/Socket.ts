@@ -72,8 +72,10 @@ export function toOutgoing(message: unknown): string | Uint8Array<ArrayBuffer> {
   return typeof message === 'string' ? message : toBufferSource(assertUint8Array(message));
 }
 
+// An empty message counts as 1, because Workers drops a chunk whose strategy size is less than 1,
+// and because `maxBuffered` would otherwise never limit a flood of empty messages.
 export const messageSize = (message: Message): number =>
-  typeof message === 'string' ? message.length : message.byteLength;
+  Math.max(typeof message === 'string' ? message.length : message.byteLength, 1);
 
 export function isAboveHighWaterMark(socket: Socket, highWaterMark: number): boolean {
   return (socket.bufferedAmount ?? 0) > highWaterMark;

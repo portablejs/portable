@@ -127,6 +127,23 @@ describe('fromSocket', () => {
     expect(socket.closedWith).toBeDefined();
     await expect(writable.getWriter().write('x')).rejects.toBe(error);
   });
+
+  test('reads empty text and binary messages in order', async () => {
+    const { socket, readable } = open();
+    socket.receive('');
+    socket.receive(new ArrayBuffer(0));
+    socket.receive('last');
+    expect(await read(readable.getReader(), 3)).toEqual(['', bytes(), 'last']);
+  });
+
+  test('maxBuffered counts an empty message as 1', async () => {
+    const { socket, readable } = open({ maxBuffered: 2 });
+    socket.receive('');
+    socket.receive('');
+    socket.receive('');
+    const error = await errorOf(readable.getReader().read());
+    expect(error).toBeInstanceOf(WebSockets.MaxBufferedError);
+  });
 });
 
 describe('fromSocket heartbeat', () => {
