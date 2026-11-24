@@ -1,11 +1,11 @@
 import * as WebSockets from '@portable/websockets';
 import { describe, expect, test } from 'vite-plus/test';
-import { FakeWebSocket, bytes, errorOf, read, sleep } from './utils.js';
+import { FakeWebSocket, bytes, errorOf, read, sleep, until } from './utils.js';
 
-function open() {
+function open(options: WebSockets.fromSocket.Options = {}) {
   const socket = new FakeWebSocket('wss://example.com');
   socket.accept();
-  return { socket, ...WebSockets.fromSocket(socket) };
+  return { socket, ...WebSockets.fromSocket(socket, options) };
 }
 
 describe('fromSocket', () => {
@@ -105,6 +105,17 @@ describe('fromSocket', () => {
     expect(socket.sent).toEqual(['x']);
   });
 
+  test('writes go straight out on a socket without bufferedAmount', async () => {
+    const socket = new FakeWebSocket('wss://example.com');
+    socket.accept();
+    const withoutBufferedAmount = Object.assign(socket, { bufferedAmount: undefined });
+    const { writable } = WebSockets.fromSocket(withoutBufferedAmount, { highWaterMark: 0 });
+    const writer = writable.getWriter();
+    await writer.write('a');
+    await writer.write('b');
+    expect(socket.sent).toEqual(['a', 'b']);
+  });
+
   test('maxBuffered fails both streams and closes the socket', async () => {
     const socket = new FakeWebSocket('wss://example.com');
     socket.accept();
@@ -115,6 +126,73 @@ describe('fromSocket', () => {
     expect(error).toMatchObject({ name: 'WebSockets.MaxBufferedError', maxBuffered: 3 });
     expect(socket.closedWith).toBeDefined();
     await expect(writable.getWriter().write('x')).rejects.toBe(error);
+  });
+});
+
+describe('fromSocket heartbeat', () => {
+  const heartbeat = { ping: 'ping', pong: (message: unknown) => message === 'pong', interval: 10 };
+
+  test('sends the ping and hides the pong from readable', async () => {
+    const { socket, readable } = open({ heartbeat });
+    await until(() => socket.sent.length > 0);
+    expect(socket.sent[0]).toBe('ping');
+    socket.receive('pong');
+    socket.receive('data');
+    expect(await read(readable.getReader(), 1)).toEqual(['data']);
+  });
+
+  test('starts pinging only once a connecting socket opens', async () => {
+    const socket = new FakeWebSocket('wss://example.com');
+    WebSockets.fromSocket(socket, { heartbeat });
+    await sleep(30);
+    expect(socket.sent).toEqual([]);
+    socket.accept();
+    await until(() => socket.sent.length > 0);
+    expect(socket.sent[0]).toBe('ping');
+  });
+
+  test('a missed reply closes the socket with 1000 and fails both streams', async () => {
+    const { socket, readable, writable } = open({ heartbeat: { ...heartbeat, timeout: 10 } });
+    const error = await errorOf(readable.getReader().read());
+    expect(error).toMatchObject({ name: 'TimeoutError' });
+    expect(socket.closedWith).toEqual({ code: 1000, reason: undefined });
+    await expect(writable.getWriter().write('x')).rejects.toBe(error);
+  });
+
+  test('keeps the socket open while pongs arrive', async () => {
+    const { socket } = open({ heartbeat: { ...heartbeat, interval: 50, timeout: 300 } });
+    const answer = setInterval(() => {
+      if (socket.sent.at(-1) === 'ping') {
+        socket.receive('pong');
+      }
+    }, 1);
+    await sleep(500);
+    clearInterval(answer);
+    expect(socket.closedWith).toBeUndefined();
+  });
+
+  test('never pings a socket that was already closed when wrapped', async () => {
+    const socket = new FakeWebSocket('wss://example.com');
+    socket.accept();
+    socket.close(1000);
+    WebSockets.fromSocket(socket, { heartbeat });
+    await sleep(30);
+    expect(socket.sent).toEqual([]);
+  });
+
+  test('stops pinging once the streams end', async () => {
+    const { socket, readable } = open({ heartbeat });
+    await readable.cancel();
+    const sent = socket.sent.length;
+    await sleep(40);
+    expect(socket.sent).toHaveLength(sent);
+  });
+
+  test('rejects an interval below 1 with a RangeError', () => {
+    const socket = new FakeWebSocket('wss://example.com');
+    expect(() =>
+      WebSockets.fromSocket(socket, { heartbeat: { ...heartbeat, interval: 0 } }),
+    ).toThrow(RangeError);
   });
 });
 

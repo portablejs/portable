@@ -29,7 +29,7 @@ type Message = string | Uint8Array<ArrayBuffer>;
 
 type Socket = {
   readonly readyState: number;
-  readonly bufferedAmount: number;
+  readonly bufferedAmount?: number | undefined;
   binaryType: string;
   send(data: string | Uint8Array<ArrayBuffer>): void;
   close(code?: number, reason?: string): void;
@@ -90,6 +90,7 @@ namespace fromSocket {
     signal?: AbortSignal | undefined;
     highWaterMark?: number | undefined;
     maxBuffered?: number | undefined;
+    heartbeat?: connect.Heartbeat | undefined;
   };
 }
 
