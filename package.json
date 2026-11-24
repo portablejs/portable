@@ -35,9 +35,7 @@
     "@vitest/coverage-v8": "catalog:",
     "playwright": "catalog:",
     "typescript": "catalog:",
-    "vite": "catalog:",
     "vite-plus": "catalog:",
-    "vitest": "catalog:",
     "zile": "catalog:"
   },
   "packageManager": "pnpm@11.28.6",
