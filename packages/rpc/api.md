@@ -90,8 +90,6 @@ namespace call {
   };
 }
 
-function closed(remote: object): Promise<void>;
-
 function connect<api>(
   transport: Transport | ReadableStream<Transport>,
   options?: connect.Options,
