@@ -2,6 +2,12 @@
 
 Decisions made while building the packages, with the options considered and the reason for each choice. Newest first. Change any of them by editing this file.
 
+## The websockets conformance tests run in workerd through @cloudflare/vitest-plugin
+
+- **Options:** keep only the checks in `tools/workers/src/checks.ts`; a `workers` Vitest project for websockets only, using @cloudflare/vitest-plugin, which supports Vitest 5; the same project for every package's conformance tests.
+- **Trade-offs:** workerd stores a `highWaterMark` as a 32-bit integer, so `Number.MAX_SAFE_INTEGER` wraps to -1. The websockets check missed this bug because it calls the package once, and its read was already pending when the message arrived, so the queue never held a message. Because of that bug, 12 websockets conformance tests fail in workerd. Running those tests in workerd also found a second bug: workerd drops a chunk whose `size` is less than 1, so websockets loses an empty message (see docs/papercuts.md). When we ran every package's conformance tests in workerd, tests failed in timers, charset, rdap, and other packages. We have to find the cause in each package before the project can include it. The plugin has vitest as a peer dependency, so the root `package.json` lists vitest and aliases `vite` to the Vite that vite-plus uses. Otherwise pnpm installs a second copy of vitest for the plugin, and every test file fails in workerd. The plugin depends on a beta of Miniflare 5, while `tools/workers` uses Miniflare 4.
+- **Chosen:** a `workers` project for the websockets conformance tests, run by `pnpm test:workers` after the checks, and in the same CI job. Add a package to the project once its conformance tests pass in workerd, and remove its check from `checks.ts` if the conformance tests cover the same platform APIs.
+
 ## HTTP picks a stream's framing from the type the codec's `encode` returns
 
 - **Options:** stream only when the codec's `contentType` is `application/json`; stream newline-delimited messages for a codec that returns strings and answer a stream with `-32603` for one that returns bytes; frame bytes with a length prefix; a `framing` option on `handler` and `http` that takes an encoder and a decoder `TransformStream`.

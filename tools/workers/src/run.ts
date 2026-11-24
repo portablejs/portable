@@ -1,9 +1,10 @@
 // Bundles every package into one Worker and runs it in workerd through Miniflare. The Worker
 // imports every entry point in each package's `exports`, then runs the checks in checks.ts.
 // Because it imports every module, a module that calls `setTimeout` or `crypto.getRandomValues`
-// at the top level fails here as it would on Cloudflare. This runs outside Vitest because
-// @cloudflare/vitest-pool-workers supports only Vitest 4. Move it to Vitest once the pool
-// supports Vitest 5.
+// at the top level fails here as it would on Cloudflare. The `workers` project in vite.config.ts
+// runs conformance tests in workerd only for the packages it lists, so these checks cover every
+// other package. Once a package's conformance tests pass in workerd, add the package to that
+// project, and remove its check here if the tests cover the same platform APIs.
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import { resolve } from 'node:path';
