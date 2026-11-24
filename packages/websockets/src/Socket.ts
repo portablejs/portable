@@ -72,8 +72,10 @@ export function toOutgoing(message: unknown): string | Uint8Array<ArrayBuffer> {
   return typeof message === 'string' ? message : toBufferSource(assertUint8Array(message));
 }
 
+// An empty message counts as 1, because Workers drops a chunk whose strategy size is less than 1,
+// and because `maxBuffered` would otherwise never limit a flood of empty messages.
 export const messageSize = (message: Message): number =>
-  typeof message === 'string' ? message.length : message.byteLength;
+  Math.max(typeof message === 'string' ? message.length : message.byteLength, 1);
 
 export function isAboveHighWaterMark(socket: Socket, highWaterMark: number): boolean {
   return (socket.bufferedAmount ?? 0) > highWaterMark;
@@ -144,8 +146,17 @@ export function assertSize(name: string, value: number, min = 0): void {
 }
 
 // The Streams spec allows a `highWaterMark` of `Infinity`, but Workers throws a TypeError for it.
+// Workers also stores a `highWaterMark` as a 32-bit integer, so a value of 2 ** 31 or more wraps
+// to a negative number, and `desiredSize` is negative before anything is queued.
 export function queueLimit(maxBuffered: number): number {
-  return Math.min(maxBuffered, Number.MAX_SAFE_INTEGER);
+  return Math.min(maxBuffered, 2 ** 31 - 1);
+}
+
+export function isOverMaxBuffered(
+  controller: ReadableStreamDefaultController<unknown>,
+  maxBuffered: number,
+): boolean {
+  return queueLimit(maxBuffered) - controller.desiredSize! > maxBuffered;
 }
 
 export const closedError = (): DOMException =>

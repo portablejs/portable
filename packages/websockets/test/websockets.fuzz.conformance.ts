@@ -15,7 +15,7 @@ const open = (options?: WebSockets.fromSocket.Options) => {
 };
 
 const size = (message: WebSockets.Message) =>
-  typeof message === 'string' ? message.length : message.byteLength;
+  Math.max(typeof message === 'string' ? message.length : message.byteLength, 1);
 
 test('reads received messages in order and writes written ones in order', async () => {
   await fuzz(

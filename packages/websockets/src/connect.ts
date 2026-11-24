@@ -9,6 +9,7 @@ import {
   cancelledError,
   disposedError,
   messageSize,
+  isOverMaxBuffered,
   queueLimit,
   toOutgoing,
 } from './Socket.js';
@@ -177,7 +178,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
       return;
     }
     readableController.enqueue(message);
-    if (readableController.desiredSize! < 0) {
+    if (isOverMaxBuffered(readableController, maxBuffered)) {
       finish(new MaxBufferedError({ maxBuffered }), false);
     }
   };
