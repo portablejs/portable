@@ -437,9 +437,10 @@ export const checks: Record<string, (env: Env) => Promise<void> | void> = {
     const duplex = WebSockets.fromSocket(client);
     const writer = duplex.writable.getWriter();
     await writer.write('hi');
+    await writer.write('again');
     const reader = duplex.readable.getReader();
-    const { value } = await reader.read();
-    equal(value, 'echo hi');
+    equal((await reader.read()).value, 'echo hi');
+    equal((await reader.read()).value, 'echo again');
     reader.releaseLock();
     writer.releaseLock();
     client.close();

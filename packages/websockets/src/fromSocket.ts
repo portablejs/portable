@@ -12,6 +12,7 @@ import {
   assertHeartbeat,
   assertSize,
   isAboveHighWaterMark,
+  isOverMaxBuffered,
   queueLimit,
   startHeartbeat,
   closedError,
@@ -125,7 +126,7 @@ export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Du
       return heartbeatTimer?.pong();
     }
     readableController.enqueue(message);
-    if (readableController.desiredSize! < 0) {
+    if (isOverMaxBuffered(readableController, maxBuffered)) {
       shutdown(new MaxBufferedError({ maxBuffered }));
     }
   };
